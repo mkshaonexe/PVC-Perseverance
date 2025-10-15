@@ -65,9 +65,9 @@ fun AppNavigation() {
                 .padding(paddingValues)
         ) {
             when (currentRoute) {
-                Screen.Dashboard.route -> Page1Screen() // Dashboard = Page1Screen
+                Screen.Dashboard.route -> Page2Screen() // Dashboard = Page2Screen (study stats)
                 Screen.Home.route -> PomodoroScreen() // Home = Pomodoro timer
-                Screen.Group.route -> Page2Screen() // Group = Page2Screen (study stats)
+                Screen.Group.route -> Page1Screen() // Group = Page1Screen
                 Screen.Settings.route -> SettingsScreen()
             }
         }
