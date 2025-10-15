@@ -117,12 +117,12 @@ fun Page2Screen() {
                     Image(
                         painter = painterResource(id = R.drawable.hello_world_2_ref),
                         contentDescription = "Reference icon",
-                        modifier = Modifier.size(48.dp)
+                        modifier = Modifier.size(72.dp)
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
                     Text(
                         text = "0:00:09",
-                        fontSize = 12.sp,
+                        fontSize = 16.sp,
                         color = Color(0xFFFF8C42)
                     )
                 }
