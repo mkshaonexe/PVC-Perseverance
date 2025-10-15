@@ -8,7 +8,7 @@ data class StudySession(
     val subject: String,
     val startTime: LocalDateTime,
     val endTime: LocalDateTime,
-    val durationMinutes: Int
+    val durationSeconds: Int  // Store in seconds for accuracy
 )
 
 data class SubjectStudyTime(

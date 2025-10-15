@@ -1,6 +1,7 @@
 package com.perseverance.pvc.ui.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.perseverance.pvc.data.*
 import kotlinx.coroutines.Job
@@ -25,7 +26,8 @@ data class StudyUiState(
     val completedSessions: Int = 0
 )
 
-class StudyViewModel : ViewModel() {
+class StudyViewModel(application: Application) : AndroidViewModel(application) {
+    private val repository = StudyRepository(application.applicationContext)
     private val _uiState = MutableStateFlow(StudyUiState())
     val uiState: StateFlow<StudyUiState> = _uiState.asStateFlow()
     
@@ -40,13 +42,13 @@ class StudyViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
             
-            // Generate sample data for demonstration
-            val sampleData = generateSampleStudyData()
-            
-            _uiState.value = _uiState.value.copy(
-                chartData = sampleData,
-                isLoading = false
-            )
+            // Load real data from repository
+            repository.getStudyChartData(days = 7).collect { chartData ->
+                _uiState.value = _uiState.value.copy(
+                    chartData = chartData,
+                    isLoading = false
+                )
+            }
         }
     }
     
@@ -104,69 +106,24 @@ class StudyViewModel : ViewModel() {
         )
     }
     
-    private fun generateSampleStudyData(): StudyChartData {
-        val today = LocalDate.now()
-        val yesterday = today.minusDays(1)
-        val twoDaysAgo = today.minusDays(2)
-        
-        // Sample subjects
-        val subjects = listOf("Mathematics", "Physics", "Chemistry", "Biology", "English")
-        
-        // Generate sample data for the last 3 days
-        val dailyData = listOf(
-            createDailyData(twoDaysAgo, subjects),
-            createDailyData(yesterday, subjects),
-            createDailyData(today, subjects)
-        )
-        
-        val totalStudyTime = dailyData.sumOf { day ->
-            day.subjects.sumOf { it.totalMinutes }
-        }
-        
-        val mostStudiedSubject = dailyData.lastOrNull()?.subjects
-            ?.maxByOrNull { it.totalMinutes }?.subject
-        
-        return StudyChartData(
-            dailyData = dailyData,
-            totalStudyTime = totalStudyTime,
-            mostStudiedSubject = mostStudiedSubject
-        )
-    }
-    
-    private fun createDailyData(date: LocalDate, subjects: List<String>): DailyStudyData {
-        val subjectStudyTimes = subjects.map { subject ->
-            val totalMinutes = (30..180).random() // Random study time between 30-180 minutes
-            val sessionCount = (1..4).random() // 1-4 sessions per subject
-            
-            val sessions = (1..sessionCount).map { sessionIndex ->
-                val sessionMinutes = totalMinutes / sessionCount
-                val startTime = LocalDateTime.of(date, java.time.LocalTime.of(8 + sessionIndex * 2, 0))
-                val endTime = startTime.plusMinutes(sessionMinutes.toLong())
-                
-                StudySession(
-                    id = "${subject}_${date}_${sessionIndex}",
-                    subject = subject,
-                    startTime = startTime,
-                    endTime = endTime,
-                    durationMinutes = sessionMinutes
-                )
-            }
-            
-            SubjectStudyTime(
-                subject = subject,
-                totalMinutes = totalMinutes,
-                sessions = sessions
-            )
-        }
-        
-        return DailyStudyData(
-            date = date,
-            subjects = subjectStudyTimes
-        )
-    }
-    
     fun refreshData() {
         loadStudyData()
+    }
+    
+    // Helper function to add test data (for development/testing)
+    fun addTestData() {
+        viewModelScope.launch {
+            val subjects = listOf("Mathematics", "Physics", "English")
+            subjects.forEach { subject ->
+                val session = repository.createStudySession(
+                    subject = subject,
+                    durationSeconds = 25 * 60,  // 25 minutes in seconds
+                    startTime = LocalDateTime.now().minusHours(1)
+                )
+                repository.saveStudySession(session)
+            }
+            refreshData()
+        }
     }
     
     override fun onCleared() {

@@ -24,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.platform.LocalContext
 import com.perseverance.pvc.ui.components.VideoBackground
 import com.perseverance.pvc.ui.components.StudyTimeChart
 import com.perseverance.pvc.ui.theme.PerseverancePVCTheme
@@ -32,7 +33,12 @@ import com.perseverance.pvc.ui.viewmodel.StudyViewModel
 
 @Composable
 fun Page2Screen() {
-    val studyViewModel: StudyViewModel = viewModel()
+    val context = LocalContext.current
+    val studyViewModel: StudyViewModel = viewModel(
+        factory = androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.getInstance(
+            context.applicationContext as android.app.Application
+        )
+    )
     val uiState by studyViewModel.uiState.collectAsState()
     
     Box(
