@@ -1,9 +1,12 @@
 package com.perseverance.pvc.ui.screens
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.Stop
@@ -17,6 +20,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -177,12 +182,12 @@ fun Page2Screen() {
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Study Time Chart
+            // Study Time Chart (fixed - non-scrollable part)
             if (uiState.isLoading) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(300.dp),
+                        .weight(1f),
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator(
@@ -191,13 +196,15 @@ fun Page2Screen() {
                     )
                 }
             } else {
-                StudyTimeChart(
+                StudyTimeChartWithScrollableLegend(
                     chartData = uiState.chartData,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
                 )
             }
             
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(16.dp))
             
             // Bottom navigation
             Row(
@@ -246,6 +253,170 @@ fun Page2Screen() {
                         text = "More",
                         fontSize = 12.sp,
                         color = Color.White.copy(alpha = 0.5f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun StudyTimeChartWithScrollableLegend(
+    chartData: com.perseverance.pvc.data.StudyChartData,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = Color.Black.copy(alpha = 0.7f)
+        ),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // Fixed header and chart (non-scrollable)
+            Column(
+                modifier = Modifier.padding(20.dp)
+            ) {
+                Text(
+                    text = "Daily Study Time",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                if (chartData.dailyData.isNotEmpty()) {
+                    val latestDay = chartData.dailyData.last()
+                    
+                    // Bar chart (fixed)
+                    StudyTimeBarChartOnly(
+                        subjects = latestDay.subjects,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No study data available",
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 16.sp
+                        )
+                    }
+                }
+            }
+            
+            // Scrollable legend
+            if (chartData.dailyData.isNotEmpty()) {
+                val latestDay = chartData.dailyData.last()
+                val scrollState = rememberScrollState()
+                
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .verticalScroll(scrollState)
+                        .padding(horizontal = 20.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    val colors = listOf(
+                        Color(0xFFFF6B6B), Color(0xFF4ECDC4), Color(0xFF45B7D1),
+                        Color(0xFF96CEB4), Color(0xFFFECA57), Color(0xFFFF9FF3),
+                        Color(0xFF54A0FF), Color(0xFF5F27CD)
+                    )
+                    
+                    latestDay.subjects.forEachIndexed { index, subject ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(12.dp)
+                                        .background(
+                                            color = colors[index % colors.size],
+                                            shape = RoundedCornerShape(2.dp)
+                                        )
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = subject.subject,
+                                    color = Color.White,
+                                    fontSize = 14.sp
+                                )
+                            }
+                            Text(
+                                text = "${subject.totalMinutes}m",
+                                color = Color.White.copy(alpha = 0.8f),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StudyTimeBarChartOnly(
+    subjects: List<com.perseverance.pvc.data.SubjectStudyTime>,
+    modifier: Modifier = Modifier
+) {
+    val maxTime = subjects.maxOfOrNull { it.totalMinutes } ?: 1
+    val colors = listOf(
+        Color(0xFFFF6B6B), Color(0xFF4ECDC4), Color(0xFF45B7D1),
+        Color(0xFF96CEB4), Color(0xFFFECA57), Color(0xFFFF9FF3),
+        Color(0xFF54A0FF), Color(0xFF5F27CD)
+    )
+    
+    Box(modifier = modifier) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val barWidth = size.width / subjects.size * 0.8f
+            val spacing = size.width / subjects.size * 0.2f
+            val maxHeight = size.height * 0.8f
+            
+            subjects.forEachIndexed { index, subject ->
+                val x = index * (barWidth + spacing) + spacing / 2
+                val barHeight = (subject.totalMinutes.toFloat() / maxTime) * maxHeight
+                val y = size.height - barHeight
+                
+                drawRect(
+                    color = colors[index % colors.size],
+                    topLeft = Offset(x, y),
+                    size = Size(barWidth, barHeight)
+                )
+            }
+        }
+        
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            subjects.forEachIndexed { index, subject ->
+                Box(
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    contentAlignment = Alignment.TopCenter
+                ) {
+                    Text(
+                        text = "${subject.totalMinutes}m",
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 8.dp)
                     )
                 }
             }

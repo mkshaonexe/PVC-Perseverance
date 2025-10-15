@@ -162,20 +162,20 @@ private fun RadarChartCanvas(
         // Fill
         drawPath(
             path = dataPath,
-            color = Color(0xFF9370DB).copy(alpha = 0.4f)
+            color = Color(0xFFFF8C42).copy(alpha = 0.4f)  // Orange
         )
         
         // Outline
         drawPath(
             path = dataPath,
-            color = Color(0xFF9370DB),
+            color = Color(0xFFFF8C42),  // Orange
             style = Stroke(width = 3f)
         )
         
         // Points
         points.forEach { point ->
             drawCircle(
-                color = Color(0xFF9370DB),
+                color = Color(0xFFFF8C42),  // Orange
                 radius = 6f,
                 center = point
             )
