@@ -134,7 +134,7 @@ fun PomodoroScreen() {
             Spacer(modifier = Modifier.height(60.dp))
             
             // Cat illustration placeholder (simplified version)
-            CatIllustration()
+            CatIllustration(isPlaying = uiState.isPlaying)
             
             Spacer(modifier = Modifier.height(24.dp))
             
@@ -238,45 +238,49 @@ fun PomodoroScreen() {
             
             Spacer(modifier = Modifier.weight(1f))
             
-            // Bottom navigation
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                Text(
-                    text = "⏰",
-                    fontSize = 24.sp,
-                    color = Color.White
-                )
-                Text(
-                    text = "📅",
-                    fontSize = 24.sp,
-                    color = Color.White
-                )
-                Text(
-                    text = "👤",
-                    fontSize = 24.sp,
-                    color = Color.White
-                )
+            // Bottom navigation - only show when timer is not running
+            if (!uiState.isPlaying) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    Text(
+                        text = "⏰",
+                        fontSize = 24.sp,
+                        color = Color.White
+                    )
+                    Text(
+                        text = "📅",
+                        fontSize = 24.sp,
+                        color = Color.White
+                    )
+                    Text(
+                        text = "👤",
+                        fontSize = 24.sp,
+                        color = Color.White
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-fun CatIllustration() {
-    // Sleep illustration
+fun CatIllustration(isPlaying: Boolean) {
+    // Study illustration - changes based on timer state
     Box(
         modifier = Modifier.size(200.dp),
         contentAlignment = Alignment.Center
     ) {
         Image(
-            painter = painterResource(id = R.drawable.sleep_illustration),
-            contentDescription = "Sleep illustration",
-            modifier = Modifier.size(180.dp),
-            colorFilter = ColorFilter.tint(Color(0xFFFF8C42))
+            painter = painterResource(
+                id = if (isPlaying) R.drawable.study else R.drawable.home
+            ),
+            contentDescription = if (isPlaying) "Studying" else "Ready to study",
+            modifier = Modifier.size(180.dp)
+            // No color filter - using original PNG colors
         )
     }
 }
