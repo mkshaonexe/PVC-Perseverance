@@ -2,10 +2,15 @@ package com.perseverance.pvc.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import com.perseverance.pvc.R
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -14,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.perseverance.pvc.ui.components.VideoBackground
 import com.perseverance.pvc.ui.theme.PerseverancePVCTheme
+import com.perseverance.pvc.ui.components.AnalogClock
 
 @Composable
 fun Page2Screen() {
@@ -38,25 +44,168 @@ fun Page2Screen() {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "Hello World 2",
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                textAlign = TextAlign.Center
-            )
+            // Hamburger menu (3 lines) in top left
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Column(
+                    modifier = Modifier.padding(start = 0.dp, top = 8.dp)
+                ) {
+                    // First line
+                    Box(
+                        modifier = Modifier
+                            .width(24.dp)
+                            .height(3.dp)
+                            .background(Color.White)
+                    )
+                    Spacer(modifier = Modifier.height(5.dp))
+                    // Second line
+                    Box(
+                        modifier = Modifier
+                            .width(24.dp)
+                            .height(3.dp)
+                            .background(Color.White)
+                    )
+                    Spacer(modifier = Modifier.height(5.dp))
+                    // Third line
+                    Box(
+                        modifier = Modifier
+                            .width(24.dp)
+                            .height(3.dp)
+                            .background(Color.White)
+                    )
+                }
+            }
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(40.dp))
             
-            Text(
-                text = "Swipe left to go back to Pomodoro timer",
-                fontSize = 16.sp,
-                color = Color.White.copy(alpha = 0.8f),
-                textAlign = TextAlign.Center
-            )
+            // Timer section with circular clock and remaining time
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Analog clock drawn in code
+                AnalogClock(
+                    modifier = Modifier.size(100.dp)
+                )
+                
+                // Remaining time display
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Remaining time",
+                        fontSize = 14.sp,
+                        color = Color.White.copy(alpha = 0.7f)
+                    )
+                    Text(
+                        text = "0:50",
+                        fontSize = 40.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+                
+                // Reference image on the right
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.hello_world_2_ref),
+                        contentDescription = "Reference icon",
+                        modifier = Modifier.size(48.dp)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "0:00:09",
+                        fontSize = 12.sp,
+                        color = Color(0xFFFF8C42)
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(20.dp))
+            
+            // Pause and Stop buttons
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Button(
+                    onClick = { },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.DarkGray
+                    ),
+                    modifier = Modifier.size(50.dp)
+                ) {
+                    Text("⏸", fontSize = 20.sp)
+                }
+                Button(
+                    onClick = { },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.DarkGray
+                    ),
+                    modifier = Modifier.size(50.dp)
+                ) {
+                    Text("⏹", fontSize = 20.sp)
+                }
+            }
+            
+            Spacer(modifier = Modifier.weight(1f))
+            
+            // Bottom navigation
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "📊",
+                        fontSize = 24.sp,
+                        color = Color.White
+                    )
+                    Text(
+                        text = "Home",
+                        fontSize = 12.sp,
+                        color = Color.White
+                    )
+                }
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "📚",
+                        fontSize = 24.sp,
+                        color = Color.White.copy(alpha = 0.5f)
+                    )
+                    Text(
+                        text = "Books",
+                        fontSize = 12.sp,
+                        color = Color.White.copy(alpha = 0.5f)
+                    )
+                }
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "⋯",
+                        fontSize = 24.sp,
+                        color = Color.White.copy(alpha = 0.5f)
+                    )
+                    Text(
+                        text = "More",
+                        fontSize = 12.sp,
+                        color = Color.White.copy(alpha = 0.5f)
+                    )
+                }
+            }
         }
     }
 }
