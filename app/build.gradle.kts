@@ -59,6 +59,10 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
     implementation("androidx.compose.runtime:runtime-livedata:1.5.8")
     
+    // ViewPager for swipe navigation
+    implementation("androidx.compose.foundation:foundation:1.5.8")
+    implementation("com.google.accompanist:accompanist-pager:0.32.0")
+    
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
