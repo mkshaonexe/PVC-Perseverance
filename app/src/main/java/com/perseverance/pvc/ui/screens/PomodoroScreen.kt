@@ -246,32 +246,6 @@ fun PomodoroScreen() {
             }
             
             Spacer(modifier = Modifier.weight(1f))
-            
-            // Bottom navigation - only show when timer is not running
-            if (!uiState.isPlaying) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    Text(
-                        text = "⏰",
-                        fontSize = 24.sp,
-                        color = Color.White
-                    )
-                    Text(
-                        text = "📅",
-                        fontSize = 24.sp,
-                        color = Color.White
-                    )
-                    Text(
-                        text = "👤",
-                        fontSize = 24.sp,
-                        color = Color.White
-                    )
-                }
-            }
         }
     }
 }

@@ -205,57 +205,6 @@ fun Page2Screen() {
             }
             
             Spacer(modifier = Modifier.height(16.dp))
-            
-            // Bottom navigation
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "📊",
-                        fontSize = 24.sp,
-                        color = Color.White
-                    )
-                    Text(
-                        text = "Home",
-                        fontSize = 12.sp,
-                        color = Color.White
-                    )
-                }
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "📚",
-                        fontSize = 24.sp,
-                        color = Color.White.copy(alpha = 0.5f)
-                    )
-                    Text(
-                        text = "Books",
-                        fontSize = 12.sp,
-                        color = Color.White.copy(alpha = 0.5f)
-                    )
-                }
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "⋯",
-                        fontSize = 24.sp,
-                        color = Color.White.copy(alpha = 0.5f)
-                    )
-                    Text(
-                        text = "More",
-                        fontSize = 12.sp,
-                        color = Color.White.copy(alpha = 0.5f)
-                    )
-                }
-            }
         }
     }
 }
