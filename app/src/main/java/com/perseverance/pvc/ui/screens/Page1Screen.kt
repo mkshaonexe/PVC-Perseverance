@@ -2,6 +2,7 @@ package com.perseverance.pvc.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -17,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -25,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.perseverance.pvc.ui.components.VideoBackground
+import com.perseverance.pvc.ui.components.RadarChart
 import com.perseverance.pvc.ui.theme.PerseverancePVCTheme
 import com.perseverance.pvc.ui.viewmodel.InsightsViewModel
 import com.perseverance.pvc.ui.viewmodel.PeriodType
@@ -42,6 +45,7 @@ fun Page1Screen() {
         )
     )
     val uiState by viewModel.uiState.collectAsState()
+    var showRadarChart by remember { mutableStateOf(false) }
     
     Box(
         modifier = Modifier
@@ -94,11 +98,61 @@ fun Page1Screen() {
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Selected Day Details
-            DayDetailsSection(
-                selectedDate = uiState.selectedDate,
-                dayData = uiState.selectedDayData
-            )
+            // Swipeable content area
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .pointerInput(Unit) {
+                        detectHorizontalDragGestures { _, dragAmount ->
+                            if (dragAmount < -50) {
+                                showRadarChart = true
+                            } else if (dragAmount > 50) {
+                                showRadarChart = false
+                            }
+                        }
+                    }
+            ) {
+                // Show either Day Details or Radar Chart based on swipe
+                if (showRadarChart) {
+                    RadarChart(
+                        subjects = uiState.topSubjects,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                } else {
+                    DayDetailsSection(
+                        selectedDate = uiState.selectedDate,
+                        dayData = uiState.selectedDayData
+                    )
+                }
+            }
+            
+            // Swipe indicator
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .background(
+                            if (!showRadarChart) Color(0xFFFF8C42) else Color.Gray,
+                            CircleShape
+                        )
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .background(
+                            if (showRadarChart) Color(0xFFFF8C42) else Color.Gray,
+                            CircleShape
+                        )
+                )
+            }
         }
     }
 }

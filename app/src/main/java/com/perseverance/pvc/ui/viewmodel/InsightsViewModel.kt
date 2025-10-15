@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.perseverance.pvc.data.StudyRepository
+import com.perseverance.pvc.ui.components.SubjectRadarData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,6 +32,7 @@ data class InsightsUiState(
     val selectedDate: LocalDate = LocalDate.now(),
     val monthDays: Map<LocalDate, DayStudyData> = emptyMap(),
     val selectedDayData: DayStudyData? = null,
+    val topSubjects: List<SubjectRadarData> = emptyList(),
     val isLoading: Boolean = false
 )
 
@@ -109,6 +111,28 @@ class InsightsViewModel(application: Application) : AndroidViewModel(application
     private fun loadDayDetails(date: LocalDate) {
         val dayData = _uiState.value.monthDays[date]
         _uiState.value = _uiState.value.copy(selectedDayData = dayData)
+        
+        // Load top subjects for selected day
+        loadTopSubjects(date)
+    }
+    
+    private fun loadTopSubjects(date: LocalDate) {
+        viewModelScope.launch {
+            repository.getStudySessionsByDate(date).collect { sessions ->
+                val subjectMinutes = sessions
+                    .groupBy { it.subject }
+                    .map { (subject, subjectSessions) ->
+                        SubjectRadarData(
+                            subject = subject,
+                            minutes = subjectSessions.sumOf { it.durationSeconds } / 60
+                        )
+                    }
+                    .sortedByDescending { it.minutes }
+                    .take(6)
+                
+                _uiState.value = _uiState.value.copy(topSubjects = subjectMinutes)
+            }
+        }
     }
     
     private fun formatTime(hour: Int, minute: Int): String {

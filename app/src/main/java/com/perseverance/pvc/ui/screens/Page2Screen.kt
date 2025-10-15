@@ -170,6 +170,13 @@ fun Page2Screen() {
             
             Spacer(modifier = Modifier.height(24.dp))
             
+            // Today's Total Study Time - Green marked box
+            TodayTotalStudyTimeBox(
+                totalStudyTime = uiState.totalStudyTimeDisplay
+            )
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
             // Study Time Chart
             if (uiState.isLoading) {
                 Box(
@@ -241,6 +248,72 @@ fun Page2Screen() {
                         color = Color.White.copy(alpha = 0.5f)
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun TodayTotalStudyTimeBox(
+    totalStudyTime: String
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = Color(0xFF4CAF50).copy(alpha = 0.2f) // Green background with transparency
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Study session icon
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(Color(0xFF4CAF50), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "📚",
+                    fontSize = 24.sp
+                )
+            }
+            
+            // Study time display
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Today's Total Study Time",
+                    fontSize = 14.sp,
+                    color = Color.White.copy(alpha = 0.8f),
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = totalStudyTime,
+                    fontSize = 24.sp,
+                    color = Color(0xFF4CAF50),
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                )
+            }
+            
+            // Green arrow pointing to the time
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .background(Color(0xFF4CAF50), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "→",
+                    fontSize = 16.sp,
+                    color = Color.White
+                )
             }
         }
     }

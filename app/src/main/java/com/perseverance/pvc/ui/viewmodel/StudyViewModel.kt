@@ -23,7 +23,8 @@ data class StudyUiState(
     val timerDisplay: String = "25:00",
     val isTimerRunning: Boolean = false,
     val remainingSeconds: Int = 25 * 60, // 25 minutes in seconds
-    val completedSessions: Int = 0
+    val completedSessions: Int = 0,
+    val totalStudyTimeDisplay: String = "00:00:00"  // HH:MM:SS format
 )
 
 class StudyViewModel(application: Application) : AndroidViewModel(application) {
@@ -36,6 +37,7 @@ class StudyViewModel(application: Application) : AndroidViewModel(application) {
     
     init {
         loadStudyData()
+        loadTodayTotalStudyTime()
     }
     
     private fun loadStudyData() {
@@ -108,6 +110,22 @@ class StudyViewModel(application: Application) : AndroidViewModel(application) {
     
     fun refreshData() {
         loadStudyData()
+        loadTodayTotalStudyTime()
+    }
+    
+    private fun loadTodayTotalStudyTime() {
+        viewModelScope.launch {
+            repository.getTodayTotalSeconds().collect { totalSeconds ->
+                val hours = totalSeconds / 3600
+                val minutes = (totalSeconds % 3600) / 60
+                val seconds = totalSeconds % 60
+                val timeDisplay = String.format("%02d:%02d:%02d", hours, minutes, seconds)
+                
+                _uiState.value = _uiState.value.copy(
+                    totalStudyTimeDisplay = timeDisplay
+                )
+            }
+        }
     }
     
     // Helper function to add test data (for development/testing)
