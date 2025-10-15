@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_container"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/widget_pomodoro_background"
+    android:orientation="horizontal"
+    android:padding="20dp"
+    android:gravity="center_vertical">
+
+    <!-- Left - Analog Timer -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <ImageView
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:src="@drawable/ic_analog_timer_detailed"
+            android:scaleType="centerInside" />
+
+    </LinearLayout>
+
+    <!-- Center - Digital Timer and Controls -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layout_marginHorizontal="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Remaining time"
+            android:textColor="#B0B0B0"
+            android:textSize="12sp"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/widget_timer_display"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="25:00"
+            android:textColor="#FFFFFF"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:layout_marginVertical="6dp" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp">
+
+            <ImageView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="@drawable/widget_button_background"
+                android:src="@drawable/ic_play"
+                android:scaleType="centerInside"
+                android:padding="8dp"
+                android:layout_marginEnd="6dp" />
+
+            <ImageView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="@drawable/widget_button_background"
+                android:src="@drawable/ic_stop"
+                android:scaleType="centerInside"
+                android:padding="8dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Right - Sleep/Rest Icon and Time -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <ImageView
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:src="@drawable/home"
+            android:scaleType="centerInside" />
+
+        <TextView
+            android:id="@+id/widget_session_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0:00:00"
+            android:textColor="#FF8C42"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:layout_marginTop="6dp" />
+
+    </LinearLayout>
+
+</LinearLayout>
