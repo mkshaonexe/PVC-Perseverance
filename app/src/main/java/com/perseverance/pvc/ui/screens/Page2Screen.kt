@@ -3,6 +3,11 @@ package com.perseverance.pvc.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
 import com.perseverance.pvc.R
@@ -130,28 +135,13 @@ fun Page2Screen() {
             
             Spacer(modifier = Modifier.height(20.dp))
             
-            // Pause and Stop buttons
+            // Pause and Stop buttons (rounded square, like reference)
             Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Button(
-                    onClick = { },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.DarkGray
-                    ),
-                    modifier = Modifier.size(50.dp)
-                ) {
-                    Text("⏸", fontSize = 20.sp)
-                }
-                Button(
-                    onClick = { },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.DarkGray
-                    ),
-                    modifier = Modifier.size(50.dp)
-                ) {
-                    Text("⏹", fontSize = 20.sp)
-                }
+                ControlIconButton(icon = Icons.Filled.Pause)
+                ControlIconButton(icon = Icons.Filled.Stop)
             }
             
             Spacer(modifier = Modifier.weight(1f))
@@ -206,6 +196,27 @@ fun Page2Screen() {
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ControlIconButton(icon: ImageVector) {
+    Surface(
+        color = Color(0xFF2B2B2B),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = Color(0xFFFFA000),
+                modifier = Modifier.size(18.dp)
+            )
         }
     }
 }

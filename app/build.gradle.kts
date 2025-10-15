@@ -49,6 +49,8 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    // Material icons (for pause/stop icons)
+    implementation("androidx.compose.material:material-icons-extended")
     
     // ExoPlayer for video playback
     implementation("androidx.media3:media3-exoplayer:1.2.1")
