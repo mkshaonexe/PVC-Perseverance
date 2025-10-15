@@ -15,6 +15,7 @@ import java.time.LocalDateTime
 data class PomodoroUiState(
     val timeDisplay: String = "25:00",
     val isPlaying: Boolean = false,
+    val isPaused: Boolean = false,
     val completedSessions: Int = 0,
     val currentSessionType: SessionType = SessionType.WORK,
     val selectedSubject: String = "pomodoro",
@@ -102,11 +103,12 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
             sessionInitialDuration = remainingTimeInSeconds
         }
         
-        _uiState.value = _uiState.value.copy(isPlaying = true)
+        _uiState.value = _uiState.value.copy(isPlaying = true, isPaused = false)
         
         timerJob = viewModelScope.launch {
             while (remainingTimeInSeconds > 0 && _uiState.value.isPlaying) {
                 delay(1000)
+                if (!_uiState.value.isPlaying) break
                 remainingTimeInSeconds--
                 updateTimeDisplay()
                 
@@ -115,33 +117,67 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
                 updateTotalStudyTimeDisplay(savedSeconds)
             }
             
-            if (remainingTimeInSeconds <= 0) {
+            // Only complete automatically if still in playing state
+            if (remainingTimeInSeconds <= 0 && _uiState.value.isPlaying) {
                 onTimerComplete()
             }
         }
     }
     
     fun pauseTimer() {
-        _uiState.value = _uiState.value.copy(isPlaying = false)
+        // Set isPlaying to false FIRST so the while loop in startTimer stops naturally
+        _uiState.value = _uiState.value.copy(isPlaying = false, isPaused = true)
+        
+        // Then cancel the job
         timerJob?.cancel()
+        timerJob = null
         
-        // Save partial session when paused (only for work sessions)
-        if (_uiState.value.currentSessionType == SessionType.WORK && sessionStartTime != null) {
-            saveCurrentSession()
+        // Don't save the session when pausing - wait until user clicks "Done" or timer completes
+        // Just refresh the display
+        viewModelScope.launch {
+            val savedSeconds = repository.getTodayTotalSecondsOnce()
+            updateTotalStudyTimeDisplay(savedSeconds)
         }
+    }
+    
+    fun completeSession() {
+        // Stop the timer
+        timerJob?.cancel()
+        timerJob = null
+        _uiState.value = _uiState.value.copy(isPlaying = false, isPaused = false)
         
-        // Refresh total time display after pausing
-        loadTodayTotalStudyTime()
+        // Save the session (only for work sessions)
+        if (_uiState.value.currentSessionType == SessionType.WORK && sessionStartTime != null) {
+            viewModelScope.launch {
+                saveCurrentSession()
+                // Reset timer to initial state
+                remainingTimeInSeconds = workDuration
+                updateTimeDisplay()
+                loadTodayTotalStudyTime()
+            }
+        } else {
+            // For break sessions, just reset
+            resetTimer()
+        }
     }
     
     fun resetTimer() {
-        pauseTimer()
+        timerJob?.cancel()
+        timerJob = null
+        _uiState.value = _uiState.value.copy(isPlaying = false, isPaused = false)
+        
         remainingTimeInSeconds = when (_uiState.value.currentSessionType) {
             SessionType.WORK -> workDuration
             SessionType.SHORT_BREAK -> shortBreakDuration
             SessionType.LONG_BREAK -> longBreakDuration
         }
+        
+        // Reset session tracking
+        sessionStartTime = null
+        sessionInitialDuration = 0
+        
         updateTimeDisplay()
+        loadTodayTotalStudyTime()
     }
     
     private fun updateTimeDisplay() {
@@ -153,7 +189,7 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
     }
     
     private fun onTimerComplete() {
-        _uiState.value = _uiState.value.copy(isPlaying = false)
+        _uiState.value = _uiState.value.copy(isPlaying = false, isPaused = false)
         
         when (_uiState.value.currentSessionType) {
             SessionType.WORK -> {

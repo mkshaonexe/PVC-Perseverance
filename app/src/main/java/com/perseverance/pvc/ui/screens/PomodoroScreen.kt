@@ -11,6 +11,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -163,17 +165,19 @@ fun PomodoroScreen() {
             
             Spacer(modifier = Modifier.height(40.dp))
             
-            // Button(s) - Single Start button OR Pause + Done buttons
-            if (uiState.isPlaying) {
-                // Show Pause and Done buttons when timer is running
+            // Buttons
+            if (uiState.isPlaying || uiState.isPaused) {
+                // Show Pause/Resume and Done while playing or paused
                 Row(
                     modifier = Modifier
                         .padding(horizontal = 80.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // Pause Button
+                    // Pause/Resume Button
                     Button(
-                        onClick = { viewModel.pauseTimer() },
+                        onClick = {
+                            if (uiState.isPlaying) viewModel.pauseTimer() else viewModel.startTimer()
+                        },
                         modifier = Modifier
                             .weight(1f)
                             .height(44.dp),
@@ -183,9 +187,15 @@ fun PomodoroScreen() {
                             contentColor = Color.Black
                         ),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-                    ) {
+                        ) {
+                        Icon(
+                            imageVector = if (uiState.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                            contentDescription = if (uiState.isPlaying) "Pause" else "Resume",
+                            tint = Color.Black
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "⏸ Pause",
+                            text = if (uiState.isPlaying) "Pause" else "Resume",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -194,8 +204,7 @@ fun PomodoroScreen() {
                     // Done Button
                     Button(
                         onClick = { 
-                            viewModel.pauseTimer()
-                            viewModel.resetTimer()
+                            viewModel.completeSession()
                         },
                         modifier = Modifier
                             .weight(1f)
