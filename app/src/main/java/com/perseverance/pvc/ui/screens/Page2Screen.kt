@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
@@ -22,19 +23,25 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.perseverance.pvc.ui.components.VideoBackground
+import com.perseverance.pvc.ui.components.StudyTimeChart
 import com.perseverance.pvc.ui.theme.PerseverancePVCTheme
 import com.perseverance.pvc.ui.components.AnalogClock
+import com.perseverance.pvc.ui.viewmodel.StudyViewModel
 
 @Composable
 fun Page2Screen() {
+    val studyViewModel: StudyViewModel = viewModel()
+    val uiState by studyViewModel.uiState.collectAsState()
+    
     Box(
         modifier = Modifier
             .fillMaxSize()
     ) {
         // Video background
         VideoBackground(
-            isPlaying = false,
+            isPlaying = uiState.isTimerRunning,
             modifier = Modifier.fillMaxSize()
         )
         
@@ -108,11 +115,33 @@ fun Page2Screen() {
                         color = Color.White.copy(alpha = 0.7f)
                     )
                     Text(
-                        text = "0:50",
+                        text = uiState.timerDisplay,
                         fontSize = 40.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    // Inline controls directly under time to match reference
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (uiState.isTimerRunning) {
+                            ControlIconButton(
+                                icon = Icons.Filled.Pause,
+                                onClick = { studyViewModel.pauseTimer() }
+                            )
+                        } else {
+                            ControlIconButton(
+                                icon = Icons.Filled.PlayArrow,
+                                onClick = { studyViewModel.startTimer() }
+                            )
+                        }
+                        ControlIconButton(
+                            icon = Icons.Filled.Stop,
+                            onClick = { studyViewModel.resetTimer() }
+                        )
+                    }
                 }
                 
                 // Reference image on the right
@@ -126,22 +155,33 @@ fun Page2Screen() {
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "0:00:09",
+                        text = "${uiState.completedSessions}:00:00",
                         fontSize = 16.sp,
                         color = Color(0xFFFF8C42)
                     )
                 }
             }
             
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             
-            // Pause and Stop buttons (rounded square, like reference)
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                ControlIconButton(icon = Icons.Filled.Pause)
-                ControlIconButton(icon = Icons.Filled.Stop)
+            // Study Time Chart
+            if (uiState.isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.size(48.dp)
+                    )
+                }
+            } else {
+                StudyTimeChart(
+                    chartData = uiState.chartData,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
             
             Spacer(modifier = Modifier.weight(1f))
@@ -201,10 +241,14 @@ fun Page2Screen() {
 }
 
 @Composable
-private fun ControlIconButton(icon: ImageVector) {
+private fun ControlIconButton(
+    icon: ImageVector,
+    onClick: () -> Unit = {}
+) {
     Surface(
         color = Color(0xFF2B2B2B),
-        shape = RoundedCornerShape(8.dp)
+        shape = RoundedCornerShape(8.dp),
+        onClick = onClick
     ) {
         Box(
             modifier = Modifier
