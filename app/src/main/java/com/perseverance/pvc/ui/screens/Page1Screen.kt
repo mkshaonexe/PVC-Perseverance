@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.perseverance.pvc.ui.components.VideoBackground
 import com.perseverance.pvc.ui.components.RadarChart
+import com.perseverance.pvc.ui.components.TopHeader
 import com.perseverance.pvc.ui.theme.PerseverancePVCTheme
 import com.perseverance.pvc.ui.viewmodel.InsightsViewModel
 import com.perseverance.pvc.ui.viewmodel.PeriodType
@@ -37,7 +38,10 @@ import java.time.format.TextStyle
 import java.util.Locale
 
 @Composable
-fun Page1Screen() {
+fun Page1Screen(
+    onNavigateToSettings: () -> Unit = {},
+    onNavigateToInsights: () -> Unit = {}
+) {
     val context = LocalContext.current
     val viewModel: InsightsViewModel = viewModel(
         factory = androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.getInstance(
@@ -67,17 +71,29 @@ fun Page1Screen() {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(scrollState)
-                .padding(horizontal = 16.dp, vertical = 24.dp)
         ) {
-            // Title
-            Text(
-                text = "Insights",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                modifier = Modifier.padding(bottom = 16.dp)
+            // Top header with hamburger menu and settings/insights icons
+            TopHeader(
+                onNavigateToSettings = onNavigateToSettings,
+                onNavigateToInsights = onNavigateToInsights,
+                onHamburgerClick = { /* Handle hamburger menu click */ }
             )
+            
+            // Main content with padding
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(scrollState)
+                    .padding(horizontal = 16.dp, vertical = 24.dp)
+            ) {
+                // Title
+                Text(
+                    text = "Insights",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
             
             // Period selection buttons
             PeriodSelector(
@@ -114,6 +130,7 @@ fun Page1Screen() {
             )
             
             Spacer(modifier = Modifier.height(16.dp))
+            }
         }
     }
 }

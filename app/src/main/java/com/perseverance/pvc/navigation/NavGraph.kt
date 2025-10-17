@@ -9,6 +9,7 @@ sealed class Screen(val route: String, val icon: ImageVector) {
     object Home : Screen("home", Icons.Filled.Home)
     object Group : Screen("group", Icons.Filled.Group)
     object Settings : Screen("settings", Icons.Filled.Settings)
+    object Insights : Screen("insights", Icons.Filled.Insights)
 }
 
 val bottomNavItems = listOf(

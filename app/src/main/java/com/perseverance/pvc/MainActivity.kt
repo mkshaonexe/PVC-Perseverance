@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -49,26 +50,48 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppNavigation() {
     var currentRoute by remember { mutableStateOf(Screen.Home.route) }
+    var showBottomBar by remember { mutableStateOf(true) }
     
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
-            BottomNavigationBar(
-                currentRoute = currentRoute,
-                onNavigate = { route -> currentRoute = route }
-            )
+            if (showBottomBar) {
+                BottomNavigationBar(
+                    currentRoute = currentRoute,
+                    onNavigate = { route -> currentRoute = route }
+                )
+            }
         }
     ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(if (showBottomBar) paddingValues else PaddingValues(0.dp))
         ) {
             when (currentRoute) {
-                Screen.Dashboard.route -> Page2Screen() // Dashboard = Page2Screen (study stats)
-                Screen.Home.route -> PomodoroScreen() // Home = Pomodoro timer
-                Screen.Group.route -> Page1Screen() // Group = Page1Screen
-                Screen.Settings.route -> SettingsScreen()
+                Screen.Dashboard.route -> Page2Screen(
+                    onNavigateToSettings = { currentRoute = Screen.Settings.route },
+                    onNavigateToInsights = { currentRoute = Screen.Insights.route }
+                ) // Dashboard = Page2Screen (study stats)
+                Screen.Home.route -> PomodoroScreen(
+                    onNavigateToSettings = { currentRoute = Screen.Settings.route },
+                    onNavigateToInsights = { currentRoute = Screen.Insights.route },
+                    onTimerStateChanged = { isPlaying -> 
+                        showBottomBar = !isPlaying 
+                    }
+                ) // Home = Pomodoro timer
+                Screen.Group.route -> GroupScreen(
+                    onNavigateToSettings = { currentRoute = Screen.Settings.route },
+                    onNavigateToInsights = { currentRoute = Screen.Insights.route }
+                ) // Group = GroupScreen (Study Groups)
+                Screen.Settings.route -> SettingsScreen(
+                    onNavigateToSettings = { currentRoute = Screen.Settings.route },
+                    onNavigateToInsights = { currentRoute = Screen.Insights.route }
+                )
+                Screen.Insights.route -> Page1Screen(
+                    onNavigateToSettings = { currentRoute = Screen.Settings.route },
+                    onNavigateToInsights = { currentRoute = Screen.Insights.route }
+                ) // Insights = Page1Screen (accessible via top icon)
             }
         }
     }

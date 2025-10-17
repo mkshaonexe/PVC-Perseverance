@@ -2,6 +2,7 @@ package com.perseverance.pvc.ui.screens
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -11,6 +12,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Insights
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
@@ -34,10 +37,14 @@ import com.perseverance.pvc.ui.components.VideoBackground
 import com.perseverance.pvc.ui.components.StudyTimeChart
 import com.perseverance.pvc.ui.theme.PerseverancePVCTheme
 import com.perseverance.pvc.ui.components.AnalogClock
+import com.perseverance.pvc.ui.components.TopHeader
 import com.perseverance.pvc.ui.viewmodel.StudyViewModel
 
 @Composable
-fun Page2Screen() {
+fun Page2Screen(
+    onNavigateToSettings: () -> Unit = {},
+    onNavigateToInsights: () -> Unit = {}
+) {
     val context = LocalContext.current
     val studyViewModel: StudyViewModel = viewModel(
         factory = androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.getInstance(
@@ -65,47 +72,26 @@ fun Page2Screen() {
         
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp),
+                .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Hamburger menu (3 lines) in top left
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Start
+            // Top header with hamburger menu and settings/insights icons
+            TopHeader(
+                onNavigateToSettings = onNavigateToSettings,
+                onNavigateToInsights = onNavigateToInsights,
+                onHamburgerClick = { /* Handle hamburger menu click */ }
+            )
+            
+            // Main content with padding
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Column(
-                    modifier = Modifier.padding(start = 0.dp, top = 8.dp)
-                ) {
-                    // First line
-                    Box(
-                        modifier = Modifier
-                            .width(24.dp)
-                            .height(3.dp)
-                            .background(Color.White)
-                    )
-                    Spacer(modifier = Modifier.height(5.dp))
-                    // Second line
-                    Box(
-                        modifier = Modifier
-                            .width(24.dp)
-                            .height(3.dp)
-                            .background(Color.White)
-                    )
-                    Spacer(modifier = Modifier.height(5.dp))
-                    // Third line
-                    Box(
-                        modifier = Modifier
-                            .width(24.dp)
-                            .height(3.dp)
-                            .background(Color.White)
-                    )
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(40.dp))
-            
-            // Timer section with circular clock and remaining time
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                // Timer section with circular clock and remaining time
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
@@ -205,6 +191,7 @@ fun Page2Screen() {
             }
             
             Spacer(modifier = Modifier.height(16.dp))
+            }
         }
     }
 }

@@ -18,9 +18,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.perseverance.pvc.ui.components.TopHeader
 
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(
+    onNavigateToSettings: () -> Unit = {},
+    onNavigateToInsights: () -> Unit = {}
+) {
     var darkMode by remember { mutableStateOf("Dark") }
     var useTimerInBackground by remember { mutableStateOf(true) }
     var resetSessionEveryDay by remember { mutableStateOf(false) }
@@ -50,31 +54,30 @@ fun SettingsScreen() {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
         ) {
-            // Header - Start from below camera area
-            Row(
+            // Top header with hamburger menu and settings/insights icons
+            TopHeader(
+                onNavigateToSettings = onNavigateToSettings,
+                onNavigateToInsights = onNavigateToInsights,
+                onHamburgerClick = { /* Handle hamburger menu click */ }
+            )
+            
+            // Main content with scroll
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 60.dp, start = 16.dp, end = 16.dp, bottom = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
             ) {
-                Icon(
-                    imageVector = Icons.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Color.White,
-                    modifier = Modifier
-                        .size(20.dp)
-                        .clickable { /* Handle back navigation */ }
-                )
-                Spacer(modifier = Modifier.width(12.dp))
+                // Settings title
                 Text(
                     text = "App Settings",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = Color.White,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
                 )
-            }
 
             // Settings Items
             Column(
@@ -188,6 +191,7 @@ fun SettingsScreen() {
                 )
 
                 Spacer(modifier = Modifier.height(80.dp)) // Space for bottom navigation
+            }
             }
         }
     }

@@ -8,6 +8,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
@@ -34,11 +36,16 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.platform.LocalContext
 import com.perseverance.pvc.R
 import com.perseverance.pvc.ui.components.VideoBackground
+import com.perseverance.pvc.ui.components.TopHeader
 import com.perseverance.pvc.ui.theme.PerseverancePVCTheme
 import com.perseverance.pvc.ui.viewmodel.PomodoroViewModel
 
 @Composable
-fun PomodoroScreen() {
+fun PomodoroScreen(
+    onNavigateToSettings: () -> Unit = {},
+    onNavigateToInsights: () -> Unit = {},
+    onTimerStateChanged: (Boolean) -> Unit = {}
+) {
     val context = LocalContext.current
     val viewModel: PomodoroViewModel = viewModel(
         factory = androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.getInstance(
@@ -46,6 +53,11 @@ fun PomodoroScreen() {
         )
     )
     val uiState by viewModel.uiState.collectAsState()
+    
+    // Notify parent about timer state changes
+    androidx.compose.runtime.LaunchedEffect(uiState.isPlaying) {
+        onTimerStateChanged(uiState.isPlaying)
+    }
     
     Box(
         modifier = Modifier
@@ -67,10 +79,26 @@ fun PomodoroScreen() {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(ResponsivePadding.screen()),
+                .windowInsetsPadding(WindowInsets(0.dp, 0.dp, 0.dp, 0.dp)),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(ResponsiveSpacing.extraLarge()))
+            // Top header - only show when timer is not playing
+            if (!uiState.isPlaying) {
+                TopHeader(
+                    onNavigateToSettings = onNavigateToSettings,
+                    onNavigateToInsights = onNavigateToInsights,
+                    onHamburgerClick = { /* Handle hamburger menu click */ }
+                )
+            }
+            
+            // Main content with padding
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(ResponsivePadding.screen()),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(modifier = Modifier.height(if (uiState.isPlaying) ResponsiveSpacing.extraLarge() * 3 else ResponsiveSpacing.extraLarge()))
             
             // Status indicator (clickable)
             Row(
@@ -249,6 +277,7 @@ fun PomodoroScreen() {
             }
             
             Spacer(modifier = Modifier.weight(1f))
+            }
         }
     }
 }
