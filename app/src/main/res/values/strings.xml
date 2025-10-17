@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Perseverance - PVC</string>
+    <string name="widget_study_time_description">Today\'s Total Study Time Widget</string>
+    <string name="widget_pomodoro_timer_description">Pomodoro Timer Widget</string>
+</resources>
