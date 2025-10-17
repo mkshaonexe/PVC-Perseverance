@@ -32,6 +32,7 @@ import com.perseverance.pvc.ui.utils.ResponsiveTextSizes
 import com.perseverance.pvc.ui.utils.ResponsiveSpacing
 import com.perseverance.pvc.ui.utils.ResponsivePadding
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.graphics.luminance
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.platform.LocalContext
 import com.perseverance.pvc.R
@@ -73,7 +74,12 @@ fun PomodoroScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.3f))
+                .background(
+                    if (MaterialTheme.colorScheme.background.luminance() < 0.5f)
+                        Color.Black.copy(alpha = 0.3f)
+                    else
+                        Color.Transparent
+                )
         )
         
         Column(
@@ -116,7 +122,7 @@ fun PomodoroScreen(
                 Text(
                     text = uiState.selectedSubject,
                     fontSize = ResponsiveTextSizes.subjectText().sp,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontWeight = FontWeight.Normal
                 )
             }
@@ -139,7 +145,7 @@ fun PomodoroScreen(
                 text = uiState.timeDisplay,
                 fontSize = ResponsiveTextSizes.timerDisplay().sp,
                 fontWeight = FontWeight.Light,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onBackground,
                 textAlign = TextAlign.Center
             )
             
@@ -181,7 +187,7 @@ fun PomodoroScreen(
                 Text(
                     text = "Today's Total Study Time",
                     fontSize = ResponsiveTextSizes.labelText().sp,
-                    color = Color.White.copy(alpha = 0.7f),
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                     fontWeight = FontWeight.Normal
                 )
                 Spacer(modifier = Modifier.height(ResponsiveSpacing.small()))

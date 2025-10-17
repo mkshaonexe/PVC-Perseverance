@@ -9,13 +9,15 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.unit.dp
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.graphics.luminance
 import kotlinx.coroutines.delay
 
 @Composable
 fun AnalogClock(
     modifier: Modifier = Modifier,
-    tickColor: Color = Color.White.copy(alpha = 0.6f),
-    handColor: Color = Color(0xFFFFA000) // amber-like
+    tickColor: Color = Color.Unspecified,
+    handColor: Color = Color.Unspecified // default from theme
 ) {
     var seconds by remember { mutableStateOf(0) }
 
@@ -28,13 +30,20 @@ fun AnalogClock(
         }
     }
 
+    val isLightTheme = MaterialTheme.colorScheme.background.luminance() >= 0.5f
+    val effectiveTick = if (tickColor == Color.Unspecified) {
+        if (isLightTheme) Color(0xFF9E9E9E) else Color.White.copy(alpha = 0.6f)
+    } else tickColor
+    val ringColor = if (isLightTheme) Color(0xFFBDBDBD) else Color.White.copy(alpha = 0.25f)
+    val effectiveHand = if (handColor == Color.Unspecified) Color(0xFFFFA000) else handColor
+
     Canvas(modifier = modifier) {
         val diameter = size.minDimension
         val radius = diameter / 2f
 
         // Outer circle
         drawCircle(
-            color = Color.White.copy(alpha = 0.25f),
+            color = ringColor,
             radius = radius,
             style = Stroke(width = 3.dp.toPx())
         )
@@ -57,7 +66,7 @@ fun AnalogClock(
             )
             rotate(degrees = angle, pivot = center) {
                 drawLine(
-                    color = tickColor,
+                    color = effectiveTick,
                     start = start,
                     end = end,
                     strokeWidth = strokeWidth,
@@ -74,7 +83,7 @@ fun AnalogClock(
         )
         rotate(degrees = secondAngle, pivot = center) {
             drawLine(
-                color = handColor,
+                color = effectiveHand,
                 start = center,
                 end = handEnd,
                 strokeWidth = 4.dp.toPx(),
@@ -84,7 +93,7 @@ fun AnalogClock(
 
         // Center dot
         drawCircle(
-            color = handColor,
+            color = effectiveHand,
             radius = 3.dp.toPx(),
             center = center
         )

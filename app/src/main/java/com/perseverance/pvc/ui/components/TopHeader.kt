@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.luminance
 
 @Composable
 fun TopHeader(
@@ -35,7 +36,7 @@ fun TopHeader(
                 modifier = Modifier
                     .width(24.dp)
                     .height(3.dp)
-                    .background(Color.White)
+                    .background(MaterialTheme.colorScheme.onBackground)
             )
             Spacer(modifier = Modifier.height(5.dp))
             // Second line
@@ -43,7 +44,7 @@ fun TopHeader(
                 modifier = Modifier
                     .width(24.dp)
                     .height(3.dp)
-                    .background(Color.White)
+                    .background(MaterialTheme.colorScheme.onBackground)
             )
             Spacer(modifier = Modifier.height(5.dp))
             // Third line
@@ -51,7 +52,7 @@ fun TopHeader(
                 modifier = Modifier
                     .width(24.dp)
                     .height(3.dp)
-                    .background(Color.White)
+                    .background(MaterialTheme.colorScheme.onBackground)
             )
         }
         
@@ -64,7 +65,7 @@ fun TopHeader(
             Icon(
                 imageVector = Icons.Filled.Insights,
                 contentDescription = "Insights",
-                tint = Color.White,
+                tint = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier
                     .size(24.dp)
                     .clickable { onNavigateToInsights() }
@@ -74,7 +75,7 @@ fun TopHeader(
             Icon(
                 imageVector = Icons.Filled.Settings,
                 contentDescription = "Settings",
-                tint = Color.White,
+                tint = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier
                     .size(24.dp)
                     .clickable { onNavigateToSettings() }

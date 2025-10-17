@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -65,7 +66,12 @@ fun Page1Screen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.5f))
+                .background(
+                    if (MaterialTheme.colorScheme.background.luminance() < 0.5f)
+                        Color.Black.copy(alpha = 0.5f)
+                    else
+                        Color.Transparent
+                )
         )
         
         Column(
@@ -80,6 +86,8 @@ fun Page1Screen(
             )
             
             // Main content with padding
+            val isLightTheme = MaterialTheme.colorScheme.background.luminance() >= 0.5f
+            
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -91,7 +99,7 @@ fun Page1Screen(
                     text = "Insights",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
             
@@ -140,6 +148,8 @@ fun PeriodSelector(
     selectedPeriod: PeriodType,
     onPeriodSelected: (PeriodType) -> Unit
 ) {
+    val isLightTheme = MaterialTheme.colorScheme.background.luminance() >= 0.5f
+    
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -151,14 +161,17 @@ fun PeriodSelector(
             Button(
                 onClick = { onPeriodSelected(period) },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isSelected) Color(0xFFFF8C42) else Color(0xFF2C2C2C),
-                    contentColor = Color.White
+                    containerColor = if (isSelected) Color(0xFFFF8C42) else MaterialTheme.colorScheme.surfaceVariant,
+                    contentColor = if (isSelected) Color.Black else MaterialTheme.colorScheme.onSurfaceVariant
                 ),
                 shape = RoundedCornerShape(20.dp),
                 modifier = Modifier
                     .weight(1f)
                     .height(40.dp),
-                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
+                elevation = ButtonDefaults.buttonElevation(
+                    defaultElevation = if (isLightTheme && !isSelected) 1.dp else 0.dp
+                )
             ) {
                 Text(
                     text = period.name.lowercase().replaceFirstChar { it.uppercase() },
@@ -179,10 +192,17 @@ fun CalendarView(
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit
 ) {
-    Surface(
+    val isLightTheme = MaterialTheme.colorScheme.background.luminance() >= 0.5f
+    
+    Card(
         modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
         shape = RoundedCornerShape(16.dp),
-        color = Color(0xFF2C2C2C)
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isLightTheme) 2.dp else 0.dp
+        )
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
@@ -197,7 +217,7 @@ fun CalendarView(
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowLeft,
                         contentDescription = "Previous month",
-                        tint = Color.White
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
                 
@@ -205,14 +225,14 @@ fun CalendarView(
                     text = currentMonth.month.getDisplayName(TextStyle.SHORT, Locale.getDefault()),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 
                 IconButton(onClick = onNextMonth) {
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowRight,
                         contentDescription = "Next month",
-                        tint = Color.White
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -228,7 +248,7 @@ fun CalendarView(
                     Text(
                         text = day,
                         fontSize = 12.sp,
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         modifier = Modifier.weight(1f),
                         textAlign = TextAlign.Center
                     )
@@ -273,7 +293,7 @@ fun CalendarView(
                         Text(
                             text = label,
                             fontSize = 10.sp,
-                            color = Color.Gray
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
                     }
                 }
@@ -335,6 +355,8 @@ fun CalendarDayCell(
     onSelected: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isLightTheme = MaterialTheme.colorScheme.background.luminance() >= 0.5f
+    
     val backgroundColor = when {
         isSelected -> Color(0xFF8B5A3C)
         studyData != null -> {
@@ -344,10 +366,19 @@ fun CalendarDayCell(
                 minutes >= 10 -> Color(0xFFB87333)
                 minutes >= 7 -> Color(0xFF8B5A3C)
                 minutes >= 4 -> Color(0xFF6B4E3D)
-                else -> Color(0xFF4A4A4A)
+                else -> if (isLightTheme) Color(0xFFE0E0E0) else Color(0xFF4A4A4A)
             }
         }
-        else -> Color.Transparent
+        else -> if (isLightTheme) Color(0xFFF5F5F5) else Color.Transparent
+    }
+    
+    val textColor = when {
+        isSelected -> Color.White
+        studyData != null -> {
+            val minutes = studyData.totalSeconds / 60
+            if (minutes >= 4 || !isLightTheme) Color.White else Color.Black
+        }
+        else -> MaterialTheme.colorScheme.onSurface
     }
     
     Column(
@@ -362,7 +393,7 @@ fun CalendarDayCell(
         Text(
             text = day.toString(),
             fontSize = 14.sp,
-            color = Color.White,
+            color = textColor,
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
         )
         if (studyData != null) {
@@ -372,7 +403,7 @@ fun CalendarDayCell(
             Text(
                 text = timeText,
                 fontSize = 9.sp,
-                color = Color.White.copy(alpha = 0.8f)
+                color = textColor.copy(alpha = 0.8f)
             )
         }
     }
@@ -383,10 +414,17 @@ fun DayDetailsSection(
     selectedDate: LocalDate,
     dayData: com.perseverance.pvc.ui.viewmodel.DayStudyData?
 ) {
-    Surface(
+    val isLightTheme = MaterialTheme.colorScheme.background.luminance() >= 0.5f
+    
+    Card(
         modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
         shape = RoundedCornerShape(16.dp),
-        color = Color(0xFF2C2C2C)
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isLightTheme) 2.dp else 0.dp
+        )
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
@@ -395,7 +433,7 @@ fun DayDetailsSection(
             Text(
                 text = "${selectedDate.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${selectedDate.month.getDisplayName(TextStyle.SHORT, Locale.getDefault())} ${selectedDate.dayOfMonth}",
                 fontSize = 16.sp,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Medium
             )
             
@@ -416,7 +454,7 @@ fun DayDetailsSection(
                     Text(
                         text = formatSecondsToHMS(dayData?.totalSeconds ?: 0),
                         fontSize = 24.sp,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -432,7 +470,7 @@ fun DayDetailsSection(
                     Text(
                         text = formatSecondsToHMS(dayData?.maxFocusSeconds ?: 0),
                         fontSize = 24.sp,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -449,7 +487,7 @@ fun DayDetailsSection(
                     Text(
                         text = "Started",
                         fontSize = 14.sp,
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         fontWeight = FontWeight.Medium
                     )
                     Text(
@@ -464,7 +502,7 @@ fun DayDetailsSection(
                     Text(
                         text = "Finished",
                         fontSize = 14.sp,
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         fontWeight = FontWeight.Medium
                     )
                     Text(
@@ -492,3 +530,4 @@ fun Page1ScreenPreview() {
         Page1Screen()
     }
 }
+

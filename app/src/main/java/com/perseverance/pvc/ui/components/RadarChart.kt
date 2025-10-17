@@ -3,7 +3,9 @@ package com.perseverance.pvc.ui.components
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Surface
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -12,7 +14,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -30,10 +34,17 @@ fun RadarChart(
     subjects: List<SubjectRadarData>,
     modifier: Modifier = Modifier
 ) {
-    Surface(
+    val isLightTheme = MaterialTheme.colorScheme.background.luminance() >= 0.5f
+    
+    Card(
         modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
         shape = RoundedCornerShape(16.dp),
-        color = Color(0xFF1E1E1E)
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isLightTheme) 2.dp else 0.dp
+        )
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
@@ -43,7 +54,7 @@ fun RadarChart(
                 text = "Top Subjects",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = MaterialTheme.colorScheme.onSurface
             )
             
             Spacer(modifier = Modifier.height(16.dp))
@@ -57,7 +68,7 @@ fun RadarChart(
                 ) {
                     Text(
                         text = "No study data",
-                        color = Color.White.copy(alpha = 0.5f),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                         fontSize = 14.sp
                     )
                 }
@@ -69,6 +80,8 @@ fun RadarChart(
                 ) {
                     RadarChartCanvas(
                         subjects = subjects,
+                        isLightTheme = isLightTheme,
+                        textColor = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.fillMaxSize()
                     )
                 }
@@ -80,6 +93,8 @@ fun RadarChart(
 @Composable
 private fun RadarChartCanvas(
     subjects: List<SubjectRadarData>,
+    isLightTheme: Boolean,
+    textColor: Color,
     modifier: Modifier = Modifier
 ) {
     Canvas(modifier = modifier) {
@@ -117,7 +132,7 @@ private fun RadarChartCanvas(
             
             drawPath(
                 path = gridPath,
-                color = Color.White.copy(alpha = 0.1f),
+                color = if (isLightTheme) Color.Gray.copy(alpha = 0.3f) else Color.White.copy(alpha = 0.1f),
                 style = Stroke(width = 1f)
             )
         }
@@ -129,7 +144,7 @@ private fun RadarChartCanvas(
             val endY = centerY - radius * sin(angle)
             
             drawLine(
-                color = Color.White.copy(alpha = 0.15f),
+                color = if (isLightTheme) Color.Gray.copy(alpha = 0.4f) else Color.White.copy(alpha = 0.15f),
                 start = Offset(centerX, centerY),
                 end = Offset(endX, endY),
                 strokeWidth = 1f
@@ -183,14 +198,14 @@ private fun RadarChartCanvas(
         
         // Labels using native canvas
         val textPaint = android.graphics.Paint().apply {
-            color = android.graphics.Color.WHITE
+            color = textColor.toArgb()
             textSize = 30f
             textAlign = android.graphics.Paint.Align.CENTER
             isAntiAlias = true
         }
         
         val minutesPaint = android.graphics.Paint().apply {
-            color = android.graphics.Color.argb(153, 255, 255, 255)
+            color = textColor.copy(alpha = 0.6f).toArgb()
             textSize = 24f
             textAlign = android.graphics.Paint.Align.CENTER
             isAntiAlias = true

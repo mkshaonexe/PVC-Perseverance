@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -40,7 +41,12 @@ fun GroupScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.5f))
+                .background(
+                    if (MaterialTheme.colorScheme.background.luminance() < 0.5f)
+                        Color.Black.copy(alpha = 0.5f)
+                    else
+                        Color.Transparent
+                )
         )
         
         // Content
@@ -55,6 +61,8 @@ fun GroupScreen(
             )
             
             // Main content with padding and scroll
+            val isLightTheme = MaterialTheme.colorScheme.background.luminance() >= 0.5f
+            
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -83,7 +91,7 @@ fun GroupScreen(
                     text = "Study Groups",
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onBackground
                 )
                 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -91,7 +99,7 @@ fun GroupScreen(
                 Text(
                     text = "Study together with friends and stay motivated",
                     fontSize = 14.sp,
-                    color = Color.White.copy(alpha = 0.7f),
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                     textAlign = TextAlign.Center
                 )
                 
@@ -101,9 +109,12 @@ fun GroupScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFF2C2C2C)
+                        containerColor = MaterialTheme.colorScheme.surface
                     ),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = CardDefaults.cardElevation(
+                        defaultElevation = if (isLightTheme) 2.dp else 0.dp
+                    )
                 ) {
                     Column(
                         modifier = Modifier
@@ -124,7 +135,7 @@ fun GroupScreen(
                             text = "Join Study Groups",
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         
                         Spacer(modifier = Modifier.height(8.dp))
@@ -132,7 +143,7 @@ fun GroupScreen(
                         Text(
                             text = "Connect with other students, share progress, and motivate each other to achieve your goals.",
                             fontSize = 14.sp,
-                            color = Color.White.copy(alpha = 0.7f),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                             textAlign = TextAlign.Center
                         )
                         
@@ -172,11 +183,11 @@ fun GroupScreen(
                                 .fillMaxWidth()
                                 .height(50.dp),
                             colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = Color.White
+                                contentColor = MaterialTheme.colorScheme.onSurface
                             ),
                             border = androidx.compose.foundation.BorderStroke(
                                 1.dp,
-                                Color.White.copy(alpha = 0.5f)
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                             ),
                             shape = RoundedCornerShape(12.dp)
                         ) {
@@ -201,9 +212,12 @@ fun GroupScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFF2C2C2C)
+                        containerColor = MaterialTheme.colorScheme.surface
                     ),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = CardDefaults.cardElevation(
+                        defaultElevation = if (isLightTheme) 2.dp else 0.dp
+                    )
                 ) {
                     Column(
                         modifier = Modifier
@@ -214,7 +228,7 @@ fun GroupScreen(
                             text = "Benefits of Study Groups",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.padding(bottom = 16.dp)
                         )
                         
@@ -306,13 +320,13 @@ fun BenefitItem(
                 text = title,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = description,
                 fontSize = 14.sp,
-                color = Color.White.copy(alpha = 0.7f)
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
             )
         }
     }

@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.luminance
 import com.perseverance.pvc.ui.components.VideoBackground
 import com.perseverance.pvc.ui.components.StudyTimeChart
 import com.perseverance.pvc.ui.theme.PerseverancePVCTheme
@@ -67,7 +68,12 @@ fun Page2Screen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.3f))
+                .background(
+                    if (MaterialTheme.colorScheme.background.luminance() < 0.5f)
+                        Color.Black.copy(alpha = 0.3f)
+                    else
+                        Color.Transparent
+                )
         )
         
         Column(
@@ -92,72 +98,87 @@ fun Page2Screen(
                 Spacer(modifier = Modifier.height(24.dp))
                 
                 // Timer section with circular clock and remaining time
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Analog clock drawn in code
-                AnalogClock(
-                    modifier = Modifier.size(100.dp)
-                )
+                val isLightTheme = MaterialTheme.colorScheme.background.luminance() >= 0.5f
                 
-                // Remaining time display
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = CardDefaults.cardElevation(
+                        defaultElevation = if (isLightTheme) 2.dp else 0.dp
+                    )
                 ) {
-                    Text(
-                        text = "Remaining time",
-                        fontSize = 14.sp,
-                        color = Color.White.copy(alpha = 0.7f)
-                    )
-                    Text(
-                        text = uiState.timerDisplay,
-                        fontSize = 40.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    // Inline controls directly under time to match reference
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        if (uiState.isTimerRunning) {
-                            ControlIconButton(
-                                icon = Icons.Filled.Pause,
-                                onClick = { studyViewModel.pauseTimer() }
+                        // Analog clock drawn in code
+                        AnalogClock(
+                            modifier = Modifier.size(100.dp)
+                        )
+                        
+                        // Remaining time display
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "Remaining time",
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                             )
-                        } else {
-                            ControlIconButton(
-                                icon = Icons.Filled.PlayArrow,
-                                onClick = { studyViewModel.startTimer() }
+                            Text(
+                                text = uiState.timerDisplay,
+                                fontSize = 40.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            // Inline controls directly under time to match reference
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                if (uiState.isTimerRunning) {
+                                    ControlIconButton(
+                                        icon = Icons.Filled.Pause,
+                                        onClick = { studyViewModel.pauseTimer() }
+                                    )
+                                } else {
+                                    ControlIconButton(
+                                        icon = Icons.Filled.PlayArrow,
+                                        onClick = { studyViewModel.startTimer() }
+                                    )
+                                }
+                                ControlIconButton(
+                                    icon = Icons.Filled.Stop,
+                                    onClick = { studyViewModel.resetTimer() }
+                                )
+                            }
+                        }
+                        
+                        // Reference image on the right
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.hello_world_2_ref),
+                                contentDescription = "Reference icon",
+                                modifier = Modifier.size(72.dp)
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = "${uiState.completedSessions}:00:00",
+                                fontSize = 16.sp,
+                                color = Color(0xFFFF8C42)
                             )
                         }
-                        ControlIconButton(
-                            icon = Icons.Filled.Stop,
-                            onClick = { studyViewModel.resetTimer() }
-                        )
                     }
                 }
-                
-                // Reference image on the right
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.hello_world_2_ref),
-                        contentDescription = "Reference icon",
-                        modifier = Modifier.size(72.dp)
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = "${uiState.completedSessions}:00:00",
-                        fontSize = 16.sp,
-                        color = Color(0xFFFF8C42)
-                    )
-                }
-            }
             
             Spacer(modifier = Modifier.height(24.dp))
             
@@ -177,7 +198,7 @@ fun Page2Screen(
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator(
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(48.dp)
                     )
                 }
@@ -201,12 +222,20 @@ fun StudyTimeChartWithScrollableLegend(
     chartData: com.perseverance.pvc.data.StudyChartData,
     modifier: Modifier = Modifier
 ) {
+    val isLightTheme = MaterialTheme.colorScheme.background.luminance() >= 0.5f
+    
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(
-            containerColor = Color.Black.copy(alpha = 0.7f)
+            containerColor = if (isLightTheme) 
+                MaterialTheme.colorScheme.surface 
+            else 
+                MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
         ),
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isLightTheme) 2.dp else 0.dp
+        )
     ) {
         Column(
             modifier = Modifier.fillMaxSize()
@@ -219,7 +248,7 @@ fun StudyTimeChartWithScrollableLegend(
                     text = "Daily Study Time",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center
                 )
@@ -245,7 +274,7 @@ fun StudyTimeChartWithScrollableLegend(
                     ) {
                         Text(
                             text = "No study data available",
-                            color = Color.White.copy(alpha = 0.7f),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                             fontSize = 16.sp
                         )
                     }
@@ -289,13 +318,13 @@ fun StudyTimeChartWithScrollableLegend(
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = subject.subject,
-                                    color = Color.White,
+                                color = MaterialTheme.colorScheme.onSurface,
                                     fontSize = 14.sp
                                 )
                             }
                             Text(
                                 text = "${subject.totalMinutes}m",
-                                color = Color.White.copy(alpha = 0.8f),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Medium
                             )
@@ -349,7 +378,7 @@ private fun StudyTimeBarChartOnly(
                 ) {
                     Text(
                         text = "${subject.totalMinutes}m",
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(top = 8.dp)
@@ -396,7 +425,7 @@ fun TodayTotalStudyTimeBox(
                 Text(
                     text = "Today's Total Study Time",
                     fontSize = 14.sp,
-                    color = Color.White.copy(alpha = 0.8f),
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
                     fontWeight = FontWeight.Medium
                 )
                 Spacer(modifier = Modifier.height(4.dp))
@@ -432,7 +461,7 @@ private fun ControlIconButton(
     onClick: () -> Unit = {}
 ) {
     Surface(
-        color = Color(0xFF2B2B2B),
+        color = MaterialTheme.colorScheme.surfaceVariant,
         shape = RoundedCornerShape(8.dp),
         onClick = onClick
     ) {

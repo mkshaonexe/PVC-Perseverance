@@ -8,16 +8,21 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.perseverance.pvc.navigation.Screen
 import com.perseverance.pvc.ui.components.BottomNavigationBar
 import com.perseverance.pvc.ui.screens.*
 import com.perseverance.pvc.ui.theme.PerseverancePVCTheme
+import com.perseverance.pvc.ui.viewmodel.SettingsViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,7 +40,21 @@ class MainActivity : ComponentActivity() {
         }
         
         setContent {
-            PerseverancePVCTheme {
+            // Observe user's theme preference from settings
+            val context = LocalContext.current
+            val settingsViewModel: SettingsViewModel = viewModel(
+                factory = ViewModelProvider.AndroidViewModelFactory.getInstance(
+                    context.applicationContext as android.app.Application
+                )
+            )
+            val darkMode by settingsViewModel.darkMode.collectAsState()
+            val useDarkTheme = when (darkMode) {
+                "Dark" -> true
+                "Light" -> false
+                else -> isSystemInDarkTheme() // "System"
+            }
+
+            PerseverancePVCTheme(darkTheme = useDarkTheme) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
