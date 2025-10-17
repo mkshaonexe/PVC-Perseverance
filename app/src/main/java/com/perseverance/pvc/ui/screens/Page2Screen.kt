@@ -172,7 +172,7 @@ fun Page2Screen(
                             )
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                text = "${uiState.completedSessions}:00:00",
+							text = uiState.totalStudyTimeDisplay,
                                 fontSize = 16.sp,
                                 color = Color(0xFFFF8C42)
                             )
