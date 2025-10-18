@@ -116,6 +116,21 @@ class MainActivity : ComponentActivity() {
 fun AppNavigation(
     onPomodoroViewModelCreated: (PomodoroViewModel) -> Unit = {}
 ) {
+    val context = LocalContext.current
+    val settingsViewModel: SettingsViewModel = viewModel(
+        factory = ViewModelProvider.AndroidViewModelFactory.getInstance(
+            context.applicationContext as android.app.Application
+        )
+    )
+    
+    val onboardingCompleted by settingsViewModel.onboardingCompleted.collectAsState()
+    var showOnboarding by remember { mutableStateOf(false) }
+    
+    // Check if onboarding should be shown
+    LaunchedEffect(onboardingCompleted) {
+        showOnboarding = !onboardingCompleted
+    }
+    
     var currentRoute by remember { mutableStateOf(Screen.Home.route) }
     var previousRoute by remember { mutableStateOf(Screen.Home.route) }
     var showBottomBar by remember { mutableStateOf(true) }
@@ -131,6 +146,17 @@ fun AppNavigation(
     // Function to go back to previous route
     fun goBack() {
         currentRoute = previousRoute
+    }
+    
+    // Show onboarding screen if not completed
+    if (showOnboarding) {
+        OnboardingScreen(
+            onComplete = {
+                settingsViewModel.completeOnboarding()
+                showOnboarding = false
+            }
+        )
+        return
     }
     
     Scaffold(

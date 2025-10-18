@@ -253,13 +253,13 @@ fun SettingsScreen(
                         SettingsInfoItem(
                             icon = Icons.Filled.Info,
                             title = "App Version",
-                            value = "0.1.7 Beta"
+                            value = "0.1.9 Beta"
                         )
                         
                         SettingsInfoItem(
                             icon = Icons.Filled.Update,
                             title = "Last Update",
-                            value = "2025 Oct 18, 1:31 PM"
+                            value = "8 Oct 2:13 PM"
                         )
                     }
                 )

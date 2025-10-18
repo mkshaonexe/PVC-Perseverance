@@ -12,8 +12,8 @@ android {
         applicationId = "com.perseverance.pvc"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 9
+        versionName = "0.1.9-beta"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -61,6 +61,7 @@ dependencies {
     // ViewPager for swipe navigation
     implementation("androidx.compose.foundation:foundation:1.5.8")
     implementation("com.google.accompanist:accompanist-pager:0.32.0")
+    implementation("com.google.accompanist:accompanist-pager-indicators:0.32.0")
     
     // DataStore for offline storage
     implementation("androidx.datastore:datastore-preferences:1.0.0")
