@@ -148,7 +148,7 @@ fun SettingsScreen(
                         SettingsDropdownItem(
                             icon = Icons.Filled.Timer,
                             title = "Pomodoro Timer Duration",
-                            value = "${timerDuration} minutes",
+                            value = if (timerDuration == "Custom") "Custom" else "${timerDuration} min",
                             options = generateTimerDurationOptions(),
                             onValueChange = { viewModel.updateTimerDuration(it) }
                         )
@@ -399,6 +399,7 @@ fun SettingsDropdownItem(
     onValueChange: (String) -> Unit
 ) {
     var showDialog by remember { mutableStateOf(false) }
+    var showCustomDialog by remember { mutableStateOf(false) }
     
     Row(
         modifier = Modifier
@@ -469,8 +470,13 @@ fun SettingsDropdownItem(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable {
-                                        onValueChange(option)
-                                        showDialog = false
+                                        if (option == "Custom") {
+                                            showDialog = false
+                                            showCustomDialog = true
+                                        } else {
+                                            onValueChange(option)
+                                            showDialog = false
+                                        }
                                     }
                                     .padding(vertical = 12.dp, horizontal = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically
@@ -478,8 +484,13 @@ fun SettingsDropdownItem(
                                 RadioButton(
                                     selected = option == value,
                                     onClick = {
-                                        onValueChange(option)
-                                        showDialog = false
+                                        if (option == "Custom") {
+                                            showDialog = false
+                                            showCustomDialog = true
+                                        } else {
+                                            onValueChange(option)
+                                            showDialog = false
+                                        }
                                     },
                                     colors = RadioButtonDefaults.colors(
                                         selectedColor = Color(0xFF4CAF50),
@@ -488,12 +499,119 @@ fun SettingsDropdownItem(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = option,
+                                    text = if (option == "Custom") option else "${option} min",
                                     fontSize = 16.sp,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                             }
                         }
+                    }
+                }
+            }
+        }
+    }
+    
+    // Custom Timer Input Dialog
+    if (showCustomDialog) {
+        CustomTimerInputDialog(
+            onDismiss = { showCustomDialog = false },
+            onConfirm = { customMinutes ->
+                onValueChange(customMinutes)
+                showCustomDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+fun CustomTimerInputDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var customMinutes by remember { mutableStateOf("") }
+    var isValid by remember { mutableStateOf(false) }
+    
+    // Validate input
+    LaunchedEffect(customMinutes) {
+        val minutes = customMinutes.toIntOrNull()
+        isValid = minutes != null && minutes > 0 && minutes <= 999
+    }
+    
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp)
+            ) {
+                Text(
+                    text = "Custom Timer Duration",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
+                Text(
+                    text = "Enter timer duration in minutes (1-999):",
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
+                OutlinedTextField(
+                    value = customMinutes,
+                    onValueChange = { 
+                        // Only allow numbers
+                        if (it.all { char -> char.isDigit() }) {
+                            customMinutes = it
+                        }
+                    },
+                    label = { Text("Minutes") },
+                    placeholder = { Text("e.g., 75") },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 24.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF4CAF50),
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    )
+                )
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(
+                        onClick = onDismiss,
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+                    ) {
+                        Text("Cancel")
+                    }
+                    
+                    Spacer(modifier = Modifier.width(8.dp))
+                    
+                    Button(
+                        onClick = { onConfirm(customMinutes) },
+                        enabled = isValid,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF4CAF50),
+                            contentColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("Set Timer")
                     }
                 }
             }
@@ -520,7 +638,7 @@ private fun generateTimeOptions(): List<String> {
 
 // Helper function to generate timer duration options
 private fun generateTimerDurationOptions(): List<String> {
-    return listOf("15", "20", "25", "30", "35", "40", "45", "50", "55", "60")
+    return listOf("15", "20", "25", "30", "35", "40", "45", "50", "Custom")
 }
 
 @Composable
