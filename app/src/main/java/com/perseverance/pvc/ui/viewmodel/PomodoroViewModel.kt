@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.perseverance.pvc.data.StudyRepository
 import com.perseverance.pvc.data.PomodoroTimerState
 import com.perseverance.pvc.data.SettingsRepository
+import com.perseverance.pvc.services.TimerNotificationService
+import com.perseverance.pvc.utils.PermissionManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,8 +44,12 @@ enum class SessionType {
 class PomodoroViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = StudyRepository(application.applicationContext)
     private val settingsRepository = SettingsRepository(application)
+    private val notificationService = TimerNotificationService(application.applicationContext)
     private val _uiState = MutableStateFlow(PomodoroUiState())
     val uiState: StateFlow<PomodoroUiState> = _uiState.asStateFlow()
+    
+    // Track notification setting
+    private var enableNotifications = true
     
     private var timerJob: Job? = null
     private var remainingTimeInSeconds = 50 * 60 // Default 50 minutes in seconds
@@ -57,6 +63,7 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
     
     init {
         loadTimerDuration()
+        loadNotificationSetting()
         updateTimeDisplay()
         loadSavedSubjects()
         loadTodayTotalStudyTime()
@@ -73,6 +80,14 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
                     remainingTimeInSeconds = workDuration
                     updateTimeDisplay()
                 }
+            }
+        }
+    }
+    
+    private fun loadNotificationSetting() {
+        viewModelScope.launch {
+            settingsRepository.getEnableTimerNotifications().collect { enabled ->
+                enableNotifications = enabled
             }
         }
     }
@@ -199,6 +214,9 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         timerJob = null
         _uiState.value = _uiState.value.copy(isPlaying = false, isPaused = false)
         
+        // Clear any existing notifications
+        notificationService.cancelAllNotifications()
+        
         remainingTimeInSeconds = when (_uiState.value.currentSessionType) {
             SessionType.WORK -> workDuration
             SessionType.SHORT_BREAK -> shortBreakDuration
@@ -234,6 +252,11 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
                 // Save completed work session
                 saveCurrentSession()
                 
+                // Show work session complete notification
+                if (enableNotifications && PermissionManager.hasNotificationPermission(getApplication())) {
+                    notificationService.showWorkSessionCompleteNotification()
+                }
+                
                 val newCompletedSessions = _uiState.value.completedSessions + 1
                 _uiState.value = _uiState.value.copy(
                     completedSessions = newCompletedSessions,
@@ -247,6 +270,11 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
                 }
             }
             SessionType.SHORT_BREAK, SessionType.LONG_BREAK -> {
+                // Show break complete notification
+                if (enableNotifications && PermissionManager.hasNotificationPermission(getApplication())) {
+                    notificationService.showBreakCompleteNotification()
+                }
+                
                 _uiState.value = _uiState.value.copy(currentSessionType = SessionType.WORK)
                 remainingTimeInSeconds = workDuration
             }

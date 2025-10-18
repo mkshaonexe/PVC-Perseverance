@@ -1,10 +1,15 @@
 package com.perseverance.pvc
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,12 +29,27 @@ import com.perseverance.pvc.ui.screens.*
 import com.perseverance.pvc.ui.theme.PerseverancePVCTheme
 import com.perseverance.pvc.ui.viewmodel.SettingsViewModel
 import com.perseverance.pvc.ui.viewmodel.PomodoroViewModel
+import com.perseverance.pvc.utils.PermissionManager
 
 class MainActivity : ComponentActivity() {
     private var pomodoroViewModel: PomodoroViewModel? = null
     
+    // Notification permission launcher
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            // Permission granted, notifications are now enabled
+        } else {
+            // Permission denied, user will need to enable manually in settings
+        }
+    }
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Request notification permission on first launch
+        requestNotificationPermissionIfNeeded()
         
         // Enable full screen mode
         enableEdgeToEdge()
@@ -81,6 +101,14 @@ class MainActivity : ComponentActivity() {
         super.onStop()
         // Additional auto-save when app is stopped
         pomodoroViewModel?.onAppGoingToBackground()
+    }
+    
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (!PermissionManager.hasNotificationPermission(this)) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
     }
 }
 

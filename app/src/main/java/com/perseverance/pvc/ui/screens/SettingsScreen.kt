@@ -49,6 +49,7 @@ fun SettingsScreen(
     val language by viewModel.language.collectAsState()
     val useDoNotDisturbDuringFocus by viewModel.useDNDDuringFocus.collectAsState()
     val timerDuration by viewModel.timerDuration.collectAsState()
+    val enableTimerNotifications by viewModel.enableTimerNotifications.collectAsState()
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -164,6 +165,13 @@ fun SettingsScreen(
                             title = "Reset Session Every Day",
                             checked = resetSessionEveryDay,
                             onCheckedChange = { viewModel.updateResetSessionEveryDay(it) }
+                        )
+
+                        SettingsToggleItem(
+                            icon = Icons.Filled.Notifications,
+                            title = "Timer Notifications",
+                            checked = enableTimerNotifications,
+                            onCheckedChange = { viewModel.updateEnableTimerNotifications(it) }
                         )
                     }
                 )
