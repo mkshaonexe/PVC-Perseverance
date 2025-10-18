@@ -49,6 +49,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _useDNDDuringFocus = MutableStateFlow(false)
     val useDNDDuringFocus: StateFlow<Boolean> = _useDNDDuringFocus.asStateFlow()
     
+    // Timer Duration
+    private val _timerDuration = MutableStateFlow("50")
+    val timerDuration: StateFlow<String> = _timerDuration.asStateFlow()
+    
     init {
         loadSettings()
     }
@@ -80,6 +84,9 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
         viewModelScope.launch {
             repository.getUseDNDDuringFocus().collect { _useDNDDuringFocus.value = it }
+        }
+        viewModelScope.launch {
+            repository.getTimerDuration().collect { _timerDuration.value = it }
         }
     }
     
@@ -144,6 +151,13 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             _useDNDDuringFocus.value = enabled
             repository.setUseDNDDuringFocus(enabled)
+        }
+    }
+    
+    fun updateTimerDuration(duration: String) {
+        viewModelScope.launch {
+            _timerDuration.value = duration
+            repository.setTimerDuration(duration)
         }
     }
 }

@@ -39,7 +39,7 @@ private val LightColorScheme = lightColorScheme(
 
 @Composable
 fun PerseverancePVCTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = true, // Default to dark theme for new users
     content: @Composable () -> Unit
 ) {
     // Dynamic color disabled to ensure consistent reference light theme

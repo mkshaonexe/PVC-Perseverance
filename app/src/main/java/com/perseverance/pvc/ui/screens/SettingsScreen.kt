@@ -33,6 +33,7 @@ import com.perseverance.pvc.ui.viewmodel.SettingsViewModel
 fun SettingsScreen(
     onNavigateToSettings: () -> Unit = {},
     onNavigateToInsights: () -> Unit = {},
+    onBackClick: () -> Unit = {},
     viewModel: SettingsViewModel = viewModel()
 ) {
     val context = LocalContext.current
@@ -47,6 +48,7 @@ fun SettingsScreen(
     val dayStartTime by viewModel.dayStartTime.collectAsState()
     val language by viewModel.language.collectAsState()
     val useDoNotDisturbDuringFocus by viewModel.useDNDDuringFocus.collectAsState()
+    val timerDuration by viewModel.timerDuration.collectAsState()
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -78,7 +80,9 @@ fun SettingsScreen(
             TopHeader(
                 onNavigateToSettings = onNavigateToSettings,
                 onNavigateToInsights = onNavigateToInsights,
-                onHamburgerClick = { /* Handle hamburger menu click */ }
+                onHamburgerClick = { /* Handle hamburger menu click */ },
+                onBackClick = onBackClick,
+                showBackButton = true
             )
             
             // Main content with scroll
@@ -136,10 +140,18 @@ fun SettingsScreen(
                     }
                 )
 
-                // Timer & Display Section
+                // Timer Section
                 SettingsSection(
-                    title = "Timer & Display",
+                    title = "Timer",
                     items = {
+                        SettingsDropdownItem(
+                            icon = Icons.Filled.Timer,
+                            title = "Pomodoro Timer Duration",
+                            value = "${timerDuration} minutes",
+                            options = generateTimerDurationOptions(),
+                            onValueChange = { viewModel.updateTimerDuration(it) }
+                        )
+
                         SettingsToggleItem(
                             icon = Icons.Filled.Timer,
                             title = "Use Timer in Background",
@@ -153,7 +165,13 @@ fun SettingsScreen(
                             checked = resetSessionEveryDay,
                             onCheckedChange = { viewModel.updateResetSessionEveryDay(it) }
                         )
+                    }
+                )
 
+                // Display Section
+                SettingsSection(
+                    title = "Display",
+                    items = {
                         SettingsToggleItem(
                             icon = Icons.Filled.VisibilityOff,
                             title = "Hide Navigation Bar",
@@ -472,5 +490,10 @@ private fun generateTimeOptions(): List<String> {
         }
     }
     return times
+}
+
+// Helper function to generate timer duration options
+private fun generateTimerDurationOptions(): List<String> {
+    return listOf("15", "20", "25", "30", "35", "40", "45", "50", "55", "60")
 }
 

@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.perseverance.pvc.data.*
+import com.perseverance.pvc.data.SettingsRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,24 +21,40 @@ data class StudyUiState(
         mostStudiedSubject = null
     ),
     val isLoading: Boolean = false,
-    val timerDisplay: String = "25:00",
+    val timerDisplay: String = "50:00",
     val isTimerRunning: Boolean = false,
-    val remainingSeconds: Int = 25 * 60, // 25 minutes in seconds
+    val remainingSeconds: Int = 50 * 60, // Default 50 minutes in seconds
     val completedSessions: Int = 0,
     val totalStudyTimeDisplay: String = "00:00:00"  // HH:MM:SS format
 )
 
 class StudyViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = StudyRepository(application.applicationContext)
+    private val settingsRepository = SettingsRepository(application)
     private val _uiState = MutableStateFlow(StudyUiState())
     val uiState: StateFlow<StudyUiState> = _uiState.asStateFlow()
     
     private var timerJob: Job? = null
-    private val workDuration = 25 * 60 // 25 minutes in seconds
+    private var workDuration = 50 * 60 // Default 50 minutes, will be updated from settings
     
     init {
+        loadTimerDuration()
         loadStudyData()
         loadTodayTotalStudyTime()
+    }
+    
+    private fun loadTimerDuration() {
+        viewModelScope.launch {
+            settingsRepository.getTimerDuration().collect { durationString ->
+                val durationMinutes = durationString.toIntOrNull() ?: 50
+                workDuration = durationMinutes * 60
+                // Update remaining time if not currently running
+                if (!_uiState.value.isTimerRunning) {
+                    _uiState.value = _uiState.value.copy(remainingSeconds = workDuration)
+                    updateTimerDisplay()
+                }
+            }
+        }
     }
     
     private fun loadStudyData() {
@@ -80,9 +97,11 @@ class StudyViewModel(application: Application) : AndroidViewModel(application) {
     
     fun resetTimer() {
         pauseTimer()
+        val minutes = workDuration / 60
+        val seconds = workDuration % 60
         _uiState.value = _uiState.value.copy(
             remainingSeconds = workDuration,
-            timerDisplay = "25:00"
+            timerDisplay = String.format("%02d:%02d", minutes, seconds)
         )
     }
     
@@ -102,9 +121,11 @@ class StudyViewModel(application: Application) : AndroidViewModel(application) {
         timerJob?.cancel()
         
         // Reset timer for next session
+        val minutes = workDuration / 60
+        val seconds = workDuration % 60
         _uiState.value = _uiState.value.copy(
             remainingSeconds = workDuration,
-            timerDisplay = "25:00"
+            timerDisplay = String.format("%02d:%02d", minutes, seconds)
         )
     }
     
@@ -135,7 +156,7 @@ class StudyViewModel(application: Application) : AndroidViewModel(application) {
             subjects.forEach { subject ->
                 val session = repository.createStudySession(
                     subject = subject,
-                    durationSeconds = 25 * 60,  // 25 minutes in seconds
+                    durationSeconds = workDuration,  // Use current work duration
                     startTime = LocalDateTime.now().minusHours(1)
                 )
                 repository.saveStudySession(session)

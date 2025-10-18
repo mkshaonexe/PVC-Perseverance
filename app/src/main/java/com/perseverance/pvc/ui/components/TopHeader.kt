@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -18,7 +19,9 @@ import androidx.compose.ui.graphics.luminance
 fun TopHeader(
     onNavigateToSettings: () -> Unit = {},
     onNavigateToInsights: () -> Unit = {},
-    onHamburgerClick: () -> Unit = {}
+    onHamburgerClick: () -> Unit = {},
+    onBackClick: () -> Unit = {},
+    showBackButton: Boolean = false
 ) {
     Row(
         modifier = Modifier
@@ -56,30 +59,43 @@ fun TopHeader(
             )
         }
         
-        // Settings and Insights icons in top right
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Insights icon
+        // Right side icons - either back button or settings/insights
+        if (showBackButton) {
+            // Back button when on settings or insights page
             Icon(
-                imageVector = Icons.Filled.Insights,
-                contentDescription = "Insights",
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Back",
                 tint = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier
                     .size(20.dp)
-                    .clickable { onNavigateToInsights() }
+                    .clickable { onBackClick() }
             )
-            
-            // Settings icon
-            Icon(
-                imageVector = Icons.Filled.Settings,
-                contentDescription = "Settings",
-                tint = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier
-                    .size(20.dp)
-                    .clickable { onNavigateToSettings() }
-            )
+        } else {
+            // Settings and Insights icons when on main pages
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Insights icon
+                Icon(
+                    imageVector = Icons.Filled.Insights,
+                    contentDescription = "Insights",
+                    tint = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier
+                        .size(20.dp)
+                        .clickable { onNavigateToInsights() }
+                )
+                
+                // Settings icon
+                Icon(
+                    imageVector = Icons.Filled.Settings,
+                    contentDescription = "Settings",
+                    tint = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier
+                        .size(20.dp)
+                        .clickable { onNavigateToSettings() }
+                )
+            }
         }
     }
 }

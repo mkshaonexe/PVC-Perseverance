@@ -25,6 +25,7 @@ class SettingsRepository(private val context: Context) {
         private val DAY_START_TIME_KEY = stringPreferencesKey("day_start_time")
         private val LANGUAGE_KEY = stringPreferencesKey("language")
         private val USE_DND_DURING_FOCUS_KEY = booleanPreferencesKey("use_dnd_during_focus")
+        private val TIMER_DURATION_KEY = stringPreferencesKey("timer_duration")
     }
     
     // Dark Mode
@@ -141,6 +142,19 @@ class SettingsRepository(private val context: Context) {
     fun getUseDNDDuringFocus(): Flow<Boolean> {
         return context.settingsDataStore.data.map { preferences ->
             preferences[USE_DND_DURING_FOCUS_KEY] ?: false
+        }
+    }
+    
+    // Timer Duration
+    suspend fun setTimerDuration(duration: String) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[TIMER_DURATION_KEY] = duration
+        }
+    }
+    
+    fun getTimerDuration(): Flow<String> {
+        return context.settingsDataStore.data.map { preferences ->
+            preferences[TIMER_DURATION_KEY] ?: "50"
         }
     }
 }

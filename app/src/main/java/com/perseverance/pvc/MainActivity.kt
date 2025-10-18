@@ -54,7 +54,8 @@ class MainActivity : ComponentActivity() {
             val useDarkTheme = when (darkMode) {
                 "Dark" -> true
                 "Light" -> false
-                else -> isSystemInDarkTheme() // "System"
+                "System" -> isSystemInDarkTheme()
+                else -> true // Default to dark theme for new users
             }
 
             PerseverancePVCTheme(darkTheme = useDarkTheme) {
@@ -88,7 +89,21 @@ fun AppNavigation(
     onPomodoroViewModelCreated: (PomodoroViewModel) -> Unit = {}
 ) {
     var currentRoute by remember { mutableStateOf(Screen.Home.route) }
+    var previousRoute by remember { mutableStateOf(Screen.Home.route) }
     var showBottomBar by remember { mutableStateOf(true) }
+    
+    // Function to navigate to a route and remember the previous one
+    fun navigateToRoute(route: String) {
+        if (route != currentRoute) {
+            previousRoute = currentRoute
+            currentRoute = route
+        }
+    }
+    
+    // Function to go back to previous route
+    fun goBack() {
+        currentRoute = previousRoute
+    }
     
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -96,7 +111,7 @@ fun AppNavigation(
             if (showBottomBar) {
                 BottomNavigationBar(
                     currentRoute = currentRoute,
-                    onNavigate = { route -> currentRoute = route }
+                    onNavigate = { route -> navigateToRoute(route) }
                 )
             }
         }
@@ -108,28 +123,30 @@ fun AppNavigation(
         ) {
             when (currentRoute) {
                 Screen.Dashboard.route -> Page2Screen(
-                    onNavigateToSettings = { currentRoute = Screen.Settings.route },
-                    onNavigateToInsights = { currentRoute = Screen.Insights.route }
+                    onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
+                    onNavigateToInsights = { navigateToRoute(Screen.Insights.route) }
                 ) // Dashboard = Page2Screen (study stats)
                 Screen.Home.route -> PomodoroScreen(
-                    onNavigateToSettings = { currentRoute = Screen.Settings.route },
-                    onNavigateToInsights = { currentRoute = Screen.Insights.route },
+                    onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
+                    onNavigateToInsights = { navigateToRoute(Screen.Insights.route) },
                     onTimerStateChanged = { isPlaying -> 
                         showBottomBar = !isPlaying 
                     },
                     onViewModelCreated = onPomodoroViewModelCreated
                 ) // Home = Pomodoro timer
                 Screen.Group.route -> GroupScreen(
-                    onNavigateToSettings = { currentRoute = Screen.Settings.route },
-                    onNavigateToInsights = { currentRoute = Screen.Insights.route }
+                    onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
+                    onNavigateToInsights = { navigateToRoute(Screen.Insights.route) }
                 ) // Group = GroupScreen (Study Groups)
                 Screen.Settings.route -> SettingsScreen(
-                    onNavigateToSettings = { currentRoute = Screen.Settings.route },
-                    onNavigateToInsights = { currentRoute = Screen.Insights.route }
+                    onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
+                    onNavigateToInsights = { navigateToRoute(Screen.Insights.route) },
+                    onBackClick = { goBack() }
                 )
                 Screen.Insights.route -> Page1Screen(
-                    onNavigateToSettings = { currentRoute = Screen.Settings.route },
-                    onNavigateToInsights = { currentRoute = Screen.Insights.route }
+                    onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
+                    onNavigateToInsights = { navigateToRoute(Screen.Insights.route) },
+                    onBackClick = { goBack() }
                 ) // Insights = Page1Screen (accessible via top icon)
             }
         }

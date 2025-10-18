@@ -40,7 +40,8 @@ import java.util.Locale
 @Composable
 fun Page1Screen(
     onNavigateToSettings: () -> Unit = {},
-    onNavigateToInsights: () -> Unit = {}
+    onNavigateToInsights: () -> Unit = {},
+    onBackClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val viewModel: InsightsViewModel = viewModel(
@@ -82,7 +83,9 @@ fun Page1Screen(
             TopHeader(
                 onNavigateToSettings = onNavigateToSettings,
                 onNavigateToInsights = onNavigateToInsights,
-                onHamburgerClick = { /* Handle hamburger menu click */ }
+                onHamburgerClick = { /* Handle hamburger menu click */ },
+                onBackClick = onBackClick,
+                showBackButton = true
             )
             
             // Main content with padding

@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.perseverance.pvc.data.StudyRepository
 import com.perseverance.pvc.data.PomodoroTimerState
+import com.perseverance.pvc.data.SettingsRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,7 +15,7 @@ import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 
 data class PomodoroUiState(
-    val timeDisplay: String = "25:00",
+    val timeDisplay: String = "50:00",
     val isPlaying: Boolean = false,
     val isPaused: Boolean = false,
     val completedSessions: Int = 0,
@@ -40,12 +41,13 @@ enum class SessionType {
 
 class PomodoroViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = StudyRepository(application.applicationContext)
+    private val settingsRepository = SettingsRepository(application)
     private val _uiState = MutableStateFlow(PomodoroUiState())
     val uiState: StateFlow<PomodoroUiState> = _uiState.asStateFlow()
     
     private var timerJob: Job? = null
-    private var remainingTimeInSeconds = 25 * 60 // 25 minutes in seconds
-    private val workDuration = 25 * 60 // 25 minutes
+    private var remainingTimeInSeconds = 50 * 60 // Default 50 minutes in seconds
+    private var workDuration = 50 * 60 // Default 50 minutes, will be updated from settings
     private val shortBreakDuration = 5 * 60 // 5 minutes
     private val longBreakDuration = 15 * 60 // 15 minutes
     
@@ -54,10 +56,25 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
     private var sessionInitialDuration: Int = 0
     
     init {
+        loadTimerDuration()
         updateTimeDisplay()
         loadSavedSubjects()
         loadTodayTotalStudyTime()
         restoreTimerState()
+    }
+    
+    private fun loadTimerDuration() {
+        viewModelScope.launch {
+            settingsRepository.getTimerDuration().collect { durationString ->
+                val durationMinutes = durationString.toIntOrNull() ?: 50
+                workDuration = durationMinutes * 60
+                // Update remaining time if it's a work session and not currently running
+                if (_uiState.value.currentSessionType == SessionType.WORK && !_uiState.value.isPlaying) {
+                    remainingTimeInSeconds = workDuration
+                    updateTimeDisplay()
+                }
+            }
+        }
     }
     
     private fun loadSavedSubjects() {
