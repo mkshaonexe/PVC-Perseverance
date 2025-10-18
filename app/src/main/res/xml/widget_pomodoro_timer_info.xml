@@ -8,6 +8,8 @@
     android:targetCellHeight="2"
     android:updatePeriodMillis="60000"
     android:initialLayout="@layout/widget_pomodoro_timer"
+    android:previewLayout="@layout/widget_pomodoro_timer"
+    android:previewImage="@mipmap/ic_launcher"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
     android:description="@string/widget_pomodoro_timer_description" />
