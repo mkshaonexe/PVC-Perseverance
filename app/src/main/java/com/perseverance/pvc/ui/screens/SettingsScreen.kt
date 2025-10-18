@@ -246,6 +246,24 @@ fun SettingsScreen(
                     }
                 )
 
+                // App Info Section
+                SettingsSection(
+                    title = "App Information",
+                    items = {
+                        SettingsInfoItem(
+                            icon = Icons.Filled.Info,
+                            title = "App Version",
+                            value = "0.1.7 Beta"
+                        )
+                        
+                        SettingsInfoItem(
+                            icon = Icons.Filled.Update,
+                            title = "Last Update",
+                            value = "2025 Oct 18, 1:31 PM"
+                        )
+                    }
+                )
+
                 Spacer(modifier = Modifier.height(80.dp)) // Space for bottom navigation
             }
             }
@@ -503,5 +521,38 @@ private fun generateTimeOptions(): List<String> {
 // Helper function to generate timer duration options
 private fun generateTimerDurationOptions(): List<String> {
     return listOf("15", "20", "25", "30", "35", "40", "45", "50", "55", "60")
+}
+
+@Composable
+fun SettingsInfoItem(
+    icon: ImageVector,
+    title: String,
+    value: String
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = title,
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            text = value,
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+        )
+    }
 }
 
