@@ -23,7 +23,7 @@ fun TopHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 16.dp),
+            .padding(horizontal = 20.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -34,31 +34,31 @@ fun TopHeader(
             // First line
             Box(
                 modifier = Modifier
-                    .width(24.dp)
-                    .height(3.dp)
+                    .width(18.dp)
+                    .height(2.dp)
                     .background(MaterialTheme.colorScheme.onBackground)
             )
-            Spacer(modifier = Modifier.height(5.dp))
+            Spacer(modifier = Modifier.height(3.dp))
             // Second line
             Box(
                 modifier = Modifier
-                    .width(24.dp)
-                    .height(3.dp)
+                    .width(18.dp)
+                    .height(2.dp)
                     .background(MaterialTheme.colorScheme.onBackground)
             )
-            Spacer(modifier = Modifier.height(5.dp))
+            Spacer(modifier = Modifier.height(3.dp))
             // Third line
             Box(
                 modifier = Modifier
-                    .width(24.dp)
-                    .height(3.dp)
+                    .width(18.dp)
+                    .height(2.dp)
                     .background(MaterialTheme.colorScheme.onBackground)
             )
         }
         
         // Settings and Insights icons in top right
         Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Insights icon
@@ -67,7 +67,7 @@ fun TopHeader(
                 contentDescription = "Insights",
                 tint = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier
-                    .size(24.dp)
+                    .size(20.dp)
                     .clickable { onNavigateToInsights() }
             )
             
@@ -77,7 +77,7 @@ fun TopHeader(
                 contentDescription = "Settings",
                 tint = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier
-                    .size(24.dp)
+                    .size(20.dp)
                     .clickable { onNavigateToSettings() }
             )
         }

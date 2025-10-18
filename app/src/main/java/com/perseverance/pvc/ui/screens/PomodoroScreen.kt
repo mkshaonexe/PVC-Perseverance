@@ -88,15 +88,20 @@ fun PomodoroScreen(
                 .windowInsetsPadding(WindowInsets(0.dp, 0.dp, 0.dp, 0.dp)),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Top header - only show when timer is not playing
+            // Top header - inside the green marked area at the very top
             if (!uiState.isPlaying) {
-                TopHeader(
-                    onNavigateToSettings = onNavigateToSettings,
-                    onNavigateToInsights = onNavigateToInsights,
-                    onHamburgerClick = { /* Handle hamburger menu click */ }
-                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .windowInsetsPadding(WindowInsets.statusBars)
+                ) {
+                    TopHeader(
+                        onNavigateToSettings = onNavigateToSettings,
+                        onNavigateToInsights = onNavigateToInsights,
+                        onHamburgerClick = { /* Handle hamburger menu click */ }
+                    )
+                }
             }
-            
             // Main content with padding
             Column(
                 modifier = Modifier
@@ -104,7 +109,7 @@ fun PomodoroScreen(
                     .padding(ResponsivePadding.screen()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(modifier = Modifier.height(if (uiState.isPlaying) ResponsiveSpacing.extraLarge() * 3 else ResponsiveSpacing.extraLarge()))
+                Spacer(modifier = Modifier.height(if (uiState.isPlaying) ResponsiveSpacing.extraLarge() * 3 else ResponsiveSpacing.small()))
             
             // Status indicator (clickable)
             Row(
@@ -126,6 +131,7 @@ fun PomodoroScreen(
                     fontWeight = FontWeight.Normal
                 )
             }
+            
             
             // Subject Selection Dialog
             if (uiState.showSubjectDialog) {
