@@ -26,6 +26,7 @@ class StudyRepository(private val context: Context) {
     companion object {
         private val STUDY_SESSIONS_KEY = stringPreferencesKey("study_sessions")
         private val SUBJECTS_KEY = stringPreferencesKey("subjects")
+        private val TIMER_STATE_KEY = stringPreferencesKey("timer_state")
     }
     
     // Save a completed study session
@@ -211,6 +212,38 @@ class StudyRepository(private val context: Context) {
             endTime = startTime.plusSeconds(durationSeconds.toLong()),
             durationSeconds = durationSeconds
         )
+    }
+    
+    // Save timer state for auto-save functionality
+    suspend fun saveTimerState(timerState: PomodoroTimerState?) {
+        context.dataStore.edit { preferences ->
+            if (timerState != null) {
+                preferences[TIMER_STATE_KEY] = gson.toJson(timerState)
+            } else {
+                preferences.remove(TIMER_STATE_KEY)
+            }
+        }
+    }
+    
+    // Restore timer state
+    suspend fun restoreTimerState(): PomodoroTimerState? {
+        val timerStateJson = context.dataStore.data.first()[TIMER_STATE_KEY]
+        return if (timerStateJson != null) {
+            try {
+                gson.fromJson(timerStateJson, PomodoroTimerState::class.java)
+            } catch (e: Exception) {
+                null
+            }
+        } else {
+            null
+        }
+    }
+    
+    // Clear timer state
+    suspend fun clearTimerState() {
+        context.dataStore.edit { preferences ->
+            preferences.remove(TIMER_STATE_KEY)
+        }
     }
 }
 

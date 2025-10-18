@@ -23,8 +23,11 @@ import com.perseverance.pvc.ui.components.BottomNavigationBar
 import com.perseverance.pvc.ui.screens.*
 import com.perseverance.pvc.ui.theme.PerseverancePVCTheme
 import com.perseverance.pvc.ui.viewmodel.SettingsViewModel
+import com.perseverance.pvc.ui.viewmodel.PomodoroViewModel
 
 class MainActivity : ComponentActivity() {
+    private var pomodoroViewModel: PomodoroViewModel? = null
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
@@ -59,15 +62,31 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AppNavigation()
+                    AppNavigation(onPomodoroViewModelCreated = { viewModel ->
+                        pomodoroViewModel = viewModel
+                    })
                 }
             }
         }
     }
+    
+    override fun onPause() {
+        super.onPause()
+        // Auto-save timer state when app goes to background
+        pomodoroViewModel?.onAppGoingToBackground()
+    }
+    
+    override fun onStop() {
+        super.onStop()
+        // Additional auto-save when app is stopped
+        pomodoroViewModel?.onAppGoingToBackground()
+    }
 }
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(
+    onPomodoroViewModelCreated: (PomodoroViewModel) -> Unit = {}
+) {
     var currentRoute by remember { mutableStateOf(Screen.Home.route) }
     var showBottomBar by remember { mutableStateOf(true) }
     
@@ -97,7 +116,8 @@ fun AppNavigation() {
                     onNavigateToInsights = { currentRoute = Screen.Insights.route },
                     onTimerStateChanged = { isPlaying -> 
                         showBottomBar = !isPlaying 
-                    }
+                    },
+                    onViewModelCreated = onPomodoroViewModelCreated
                 ) // Home = Pomodoro timer
                 Screen.Group.route -> GroupScreen(
                     onNavigateToSettings = { currentRoute = Screen.Settings.route },

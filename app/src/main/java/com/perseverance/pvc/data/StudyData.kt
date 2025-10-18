@@ -27,3 +27,15 @@ data class StudyChartData(
     val totalStudyTime: Int,
     val mostStudiedSubject: String?
 )
+
+// Timer state for auto-save/restore functionality
+data class PomodoroTimerState(
+    val sessionStartTime: LocalDateTime?,
+    val remainingTimeInSeconds: Int,
+    val sessionInitialDuration: Int,
+    val selectedSubject: String,
+    val sessionType: String, // "WORK", "SHORT_BREAK", "LONG_BREAK"
+    val completedSessions: Int,
+    val isPlaying: Boolean,
+    val isPaused: Boolean
+)

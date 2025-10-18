@@ -34,7 +34,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.luminance
-import com.perseverance.pvc.ui.components.VideoBackground
 import com.perseverance.pvc.ui.components.StudyTimeChart
 import com.perseverance.pvc.ui.theme.PerseverancePVCTheme
 import com.perseverance.pvc.ui.components.AnalogClock
@@ -58,10 +57,11 @@ fun Page2Screen(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        // Video background
-        VideoBackground(
-            isPlaying = uiState.isTimerRunning,
-            modifier = Modifier.fillMaxSize()
+        // Simple background
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
         )
         
         // Semi-transparent overlay for text readability

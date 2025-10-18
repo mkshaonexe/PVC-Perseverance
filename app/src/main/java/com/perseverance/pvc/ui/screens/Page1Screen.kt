@@ -27,7 +27,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.perseverance.pvc.ui.components.VideoBackground
 import com.perseverance.pvc.ui.components.RadarChart
 import com.perseverance.pvc.ui.components.TopHeader
 import com.perseverance.pvc.ui.theme.PerseverancePVCTheme
@@ -56,10 +55,11 @@ fun Page1Screen(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        // Video background
-        VideoBackground(
-            isPlaying = false,
-            modifier = Modifier.fillMaxSize()
+        // Simple background
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
         )
         
         // Semi-transparent overlay

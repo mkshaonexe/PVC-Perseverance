@@ -51,10 +51,11 @@ fun SettingsScreen(
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
-        // Video background
-        com.perseverance.pvc.ui.components.VideoBackground(
-            isPlaying = false,
-            modifier = Modifier.fillMaxSize()
+        // Simple background
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
         )
         
         // Semi-transparent overlay

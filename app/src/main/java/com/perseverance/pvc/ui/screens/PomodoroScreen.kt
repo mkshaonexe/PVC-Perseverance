@@ -36,7 +36,6 @@ import androidx.compose.ui.graphics.luminance
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.platform.LocalContext
 import com.perseverance.pvc.R
-import com.perseverance.pvc.ui.components.VideoBackground
 import com.perseverance.pvc.ui.components.TopHeader
 import com.perseverance.pvc.ui.theme.PerseverancePVCTheme
 import com.perseverance.pvc.ui.viewmodel.PomodoroViewModel
@@ -45,7 +44,8 @@ import com.perseverance.pvc.ui.viewmodel.PomodoroViewModel
 fun PomodoroScreen(
     onNavigateToSettings: () -> Unit = {},
     onNavigateToInsights: () -> Unit = {},
-    onTimerStateChanged: (Boolean) -> Unit = {}
+    onTimerStateChanged: (Boolean) -> Unit = {},
+    onViewModelCreated: (PomodoroViewModel) -> Unit = {}
 ) {
     val context = LocalContext.current
     val viewModel: PomodoroViewModel = viewModel(
@@ -54,6 +54,11 @@ fun PomodoroScreen(
         )
     )
     val uiState by viewModel.uiState.collectAsState()
+    
+    // Notify parent about ViewModel creation (only once)
+    androidx.compose.runtime.LaunchedEffect(viewModel) {
+        onViewModelCreated(viewModel)
+    }
     
     // Notify parent about timer state changes
     androidx.compose.runtime.LaunchedEffect(uiState.isPlaying) {
@@ -64,10 +69,11 @@ fun PomodoroScreen(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        // Video background (always visible - preview when paused, playing when active)
-        VideoBackground(
-            isPlaying = uiState.isPlaying,
-            modifier = Modifier.fillMaxSize()
+        // Simple background - no video needed
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
         )
         
         // Semi-transparent overlay for text readability

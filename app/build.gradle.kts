@@ -52,10 +52,7 @@ dependencies {
     // Material icons (for pause/stop icons)
     implementation("androidx.compose.material:material-icons-extended")
     
-    // ExoPlayer for video playback
-    implementation("androidx.media3:media3-exoplayer:1.2.1")
-    implementation("androidx.media3:media3-ui:1.2.1")
-    implementation("androidx.media3:media3-common:1.2.1")
+    // Video dependencies removed - no longer needed
     
     // ViewModel and Compose integration
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")

@@ -20,7 +20,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.perseverance.pvc.ui.components.VideoBackground
 import com.perseverance.pvc.ui.components.TopHeader
 
 @Composable
@@ -31,10 +30,11 @@ fun GroupScreen(
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
-        // Video background
-        VideoBackground(
-            isPlaying = false,
-            modifier = Modifier.fillMaxSize()
+        // Simple background
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
         )
         
         // Semi-transparent overlay

@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.perseverance.pvc.data.StudyRepository
+import com.perseverance.pvc.data.PomodoroTimerState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -56,6 +57,7 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         updateTimeDisplay()
         loadSavedSubjects()
         loadTodayTotalStudyTime()
+        restoreTimerState()
     }
     
     private fun loadSavedSubjects() {
@@ -101,16 +103,25 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         if (sessionStartTime == null && _uiState.value.currentSessionType == SessionType.WORK) {
             sessionStartTime = LocalDateTime.now()
             sessionInitialDuration = remainingTimeInSeconds
+            // Save initial state immediately
+            saveTimerState()
         }
         
         _uiState.value = _uiState.value.copy(isPlaying = true, isPaused = false)
         
         timerJob = viewModelScope.launch {
+            var secondsCounter = 0
             while (remainingTimeInSeconds > 0 && _uiState.value.isPlaying) {
                 delay(1000)
                 if (!_uiState.value.isPlaying) break
                 remainingTimeInSeconds--
+                secondsCounter++
                 updateTimeDisplay()
+                
+                // Auto-save timer state every 5 seconds while running
+                if (secondsCounter % 5 == 0) {
+                    saveTimerState()
+                }
                 
                 // Update total study time display in real-time (without blocking)
                 val savedSeconds = repository.getTodayTotalSecondsOnce()
@@ -132,6 +143,9 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         timerJob?.cancel()
         timerJob = null
         
+        // Auto-save timer state when pausing
+        saveTimerState()
+        
         // Don't save the session when pausing - wait until user clicks "Done" or timer completes
         // Just refresh the display
         viewModelScope.launch {
@@ -150,6 +164,8 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         if (_uiState.value.currentSessionType == SessionType.WORK && sessionStartTime != null) {
             viewModelScope.launch {
                 saveCurrentSession()
+                // Clear timer state after saving session
+                repository.clearTimerState()
                 // Reset timer to initial state
                 remainingTimeInSeconds = workDuration
                 updateTimeDisplay()
@@ -175,6 +191,11 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         // Reset session tracking
         sessionStartTime = null
         sessionInitialDuration = 0
+        
+        // Clear saved timer state
+        viewModelScope.launch {
+            repository.clearTimerState()
+        }
         
         updateTimeDisplay()
         loadTodayTotalStudyTime()
@@ -202,6 +223,11 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
                     currentSessionType = if (newCompletedSessions % 4 == 0) SessionType.LONG_BREAK else SessionType.SHORT_BREAK
                 )
                 remainingTimeInSeconds = if (newCompletedSessions % 4 == 0) longBreakDuration else shortBreakDuration
+                
+                // Clear timer state after completing work session
+                viewModelScope.launch {
+                    repository.clearTimerState()
+                }
             }
             SessionType.SHORT_BREAK, SessionType.LONG_BREAK -> {
                 _uiState.value = _uiState.value.copy(currentSessionType = SessionType.WORK)
@@ -269,8 +295,109 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         }
     }
     
+    // Save current timer state for auto-save functionality
+    private fun saveTimerState() {
+        // Only save state if there's an active session
+        if (sessionStartTime != null && _uiState.value.currentSessionType == SessionType.WORK) {
+            val timerState = PomodoroTimerState(
+                sessionStartTime = sessionStartTime,
+                remainingTimeInSeconds = remainingTimeInSeconds,
+                sessionInitialDuration = sessionInitialDuration,
+                selectedSubject = _uiState.value.selectedSubject,
+                sessionType = _uiState.value.currentSessionType.name,
+                completedSessions = _uiState.value.completedSessions,
+                isPlaying = _uiState.value.isPlaying,
+                isPaused = _uiState.value.isPaused
+            )
+            
+            viewModelScope.launch {
+                repository.saveTimerState(timerState)
+            }
+        }
+    }
+    
+    // Restore timer state on app restart
+    private fun restoreTimerState() {
+        viewModelScope.launch {
+            val timerState = repository.restoreTimerState()
+            
+            if (timerState != null && timerState.sessionStartTime != null) {
+                // Calculate how much time was studied
+                val studyDurationSeconds = (timerState.sessionInitialDuration - timerState.remainingTimeInSeconds).coerceAtLeast(0)
+                
+                // Save the session if any time was studied (even 1 second)
+                if (studyDurationSeconds > 0) {
+                    val session = repository.createStudySession(
+                        subject = timerState.selectedSubject,
+                        durationSeconds = studyDurationSeconds,
+                        startTime = timerState.sessionStartTime
+                    )
+                    repository.saveStudySession(session)
+                    
+                    // Clear the saved state after auto-saving
+                    repository.clearTimerState()
+                    
+                    // Reset to initial state for a fresh start
+                    sessionStartTime = null
+                    sessionInitialDuration = 0
+                    remainingTimeInSeconds = workDuration
+                    _uiState.value = _uiState.value.copy(
+                        isPlaying = false,
+                        isPaused = false,
+                        currentSessionType = SessionType.WORK,
+                        selectedSubject = timerState.selectedSubject // Keep the same subject
+                    )
+                    updateTimeDisplay()
+                    loadTodayTotalStudyTime()
+                } else {
+                    // No time was studied, just restore the paused state
+                    sessionStartTime = timerState.sessionStartTime
+                    remainingTimeInSeconds = timerState.remainingTimeInSeconds
+                    sessionInitialDuration = timerState.sessionInitialDuration
+                    
+                    _uiState.value = _uiState.value.copy(
+                        selectedSubject = timerState.selectedSubject,
+                        currentSessionType = SessionType.valueOf(timerState.sessionType),
+                        completedSessions = timerState.completedSessions,
+                        isPlaying = false,
+                        isPaused = true
+                    )
+                    
+                    updateTimeDisplay()
+                }
+            }
+        }
+    }
+    
+    // Public method to force save timer state (called from Activity lifecycle)
+    fun onAppGoingToBackground() {
+        if (_uiState.value.isPlaying || _uiState.value.isPaused) {
+            saveTimerState()
+        }
+    }
+    
     override fun onCleared() {
         super.onCleared()
         timerJob?.cancel()
+        
+        // Auto-save timer state when ViewModel is destroyed
+        if (sessionStartTime != null && (_uiState.value.isPlaying || _uiState.value.isPaused)) {
+            // Save the current session immediately
+            val studyDurationSeconds = (sessionInitialDuration - remainingTimeInSeconds).coerceAtLeast(0)
+            
+            if (studyDurationSeconds > 0) {
+                val session = repository.createStudySession(
+                    subject = _uiState.value.selectedSubject,
+                    durationSeconds = studyDurationSeconds,
+                    startTime = sessionStartTime!!
+                )
+                
+                // Use runBlocking to ensure the save completes before cleanup
+                kotlinx.coroutines.runBlocking {
+                    repository.saveStudySession(session)
+                    repository.clearTimerState()
+                }
+            }
+        }
     }
 }
