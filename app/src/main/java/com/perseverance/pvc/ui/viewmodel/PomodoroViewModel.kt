@@ -7,7 +7,14 @@ import com.perseverance.pvc.data.StudyRepository
 import com.perseverance.pvc.data.PomodoroTimerState
 import com.perseverance.pvc.data.SettingsRepository
 import com.perseverance.pvc.services.TimerNotificationService
+import com.perseverance.pvc.services.TimerSoundService
 import com.perseverance.pvc.utils.PermissionManager
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
+import android.os.IBinder
+import android.util.Log
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,7 +41,9 @@ data class PomodoroUiState(
         "Computer Science"
     ),
     val showSubjectDialog: Boolean = false,
-    val totalStudyTimeDisplay: String = "00:00:00"  // HH:MM:SS format
+    val totalStudyTimeDisplay: String = "00:00:00",  // HH:MM:SS format
+    val isTimerCompleted: Boolean = false,  // New state for timer completion
+    val isWaitingForAcknowledgment: Boolean = false  // New state to track if waiting for user acknowledgment
 )
 
 enum class SessionType {
@@ -50,6 +59,24 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
     
     // Track notification setting
     private var enableNotifications = true
+    
+    // Sound service connection
+    private var soundService: TimerSoundService? = null
+    private var isSoundServiceBound = false
+    private val soundServiceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            Log.d("PomodoroViewModel", "Sound service connected")
+            val binder = service as TimerSoundService.TimerSoundBinder
+            soundService = binder.getService()
+            isSoundServiceBound = true
+        }
+        
+        override fun onServiceDisconnected(name: ComponentName?) {
+            Log.d("PomodoroViewModel", "Sound service disconnected")
+            soundService = null
+            isSoundServiceBound = false
+        }
+    }
     
     private var timerJob: Job? = null
     private var remainingTimeInSeconds = 50 * 60 // Default 50 minutes in seconds
@@ -68,7 +95,22 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         loadSavedSubjects()
         loadTodayTotalStudyTime()
         restoreTimerState()
+        bindSoundService()
     }
+    
+    private fun bindSoundService() {
+        Log.d("PomodoroViewModel", "Binding sound service")
+        val intent = Intent(getApplication(), TimerSoundService::class.java)
+        getApplication<Application>().bindService(intent, soundServiceConnection, Context.BIND_AUTO_CREATE)
+    }
+    
+    private fun unbindSoundService() {
+        if (isSoundServiceBound) {
+            getApplication<Application>().unbindService(soundServiceConnection)
+            isSoundServiceBound = false
+        }
+    }
+    
     
     private fun loadTimerDuration() {
         viewModelScope.launch {
@@ -245,7 +287,16 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
     }
     
     private fun onTimerComplete() {
-        _uiState.value = _uiState.value.copy(isPlaying = false, isPaused = false)
+        _uiState.value = _uiState.value.copy(
+            isPlaying = false, 
+            isPaused = false, 
+            isTimerCompleted = true,
+            isWaitingForAcknowledgment = true
+        )
+        
+        // Start infinite sound
+        Log.d("PomodoroViewModel", "Timer completed, starting sound. Service bound: $isSoundServiceBound, Service: $soundService")
+        soundService?.startInfiniteSound()
         
         when (_uiState.value.currentSessionType) {
             SessionType.WORK -> {
@@ -257,6 +308,42 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
                     notificationService.showWorkSessionCompleteNotification()
                 }
                 
+                // Don't automatically switch to break mode - wait for user acknowledgment
+                // The timer will stay in WORK mode until user clicks "I got it"
+                Log.d("PomodoroViewModel", "Work session completed, waiting for user acknowledgment")
+            }
+            SessionType.SHORT_BREAK, SessionType.LONG_BREAK -> {
+                // Show break complete notification
+                if (enableNotifications && PermissionManager.hasNotificationPermission(getApplication())) {
+                    notificationService.showBreakCompleteNotification()
+                }
+                
+                // For breaks, we can transition immediately back to work
+                _uiState.value = _uiState.value.copy(
+                    currentSessionType = SessionType.WORK,
+                    isWaitingForAcknowledgment = false
+                )
+                remainingTimeInSeconds = workDuration
+            }
+        }
+        
+        updateTimeDisplay()
+    }
+    
+    fun acknowledgeTimerCompletion() {
+        // Stop the infinite sound
+        soundService?.stopInfiniteSound()
+        
+        // Reset timer completion state
+        _uiState.value = _uiState.value.copy(
+            isTimerCompleted = false,
+            isWaitingForAcknowledgment = false
+        )
+        
+        // Handle the transition based on current session type
+        when (_uiState.value.currentSessionType) {
+            SessionType.WORK -> {
+                // Work session completed - transition to break
                 val newCompletedSessions = _uiState.value.completedSessions + 1
                 _uiState.value = _uiState.value.copy(
                     completedSessions = newCompletedSessions,
@@ -268,19 +355,34 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
                 viewModelScope.launch {
                     repository.clearTimerState()
                 }
+                
+                Log.d("PomodoroViewModel", "Work session acknowledged, transitioning to break")
             }
             SessionType.SHORT_BREAK, SessionType.LONG_BREAK -> {
-                // Show break complete notification
-                if (enableNotifications && PermissionManager.hasNotificationPermission(getApplication())) {
-                    notificationService.showBreakCompleteNotification()
-                }
-                
+                // Break completed - transition back to work
                 _uiState.value = _uiState.value.copy(currentSessionType = SessionType.WORK)
                 remainingTimeInSeconds = workDuration
+                
+                Log.d("PomodoroViewModel", "Break acknowledged, transitioning back to work")
             }
         }
         
         updateTimeDisplay()
+    }
+    
+    // Test method to verify sound service works
+    fun testSound() {
+        Log.d("PomodoroViewModel", "Testing sound service")
+        soundService?.startInfiniteSound()
+    }
+    
+    // Method to start a new work session with the same duration
+    fun startNewWorkSession() {
+        if (_uiState.value.currentSessionType == SessionType.WORK && !_uiState.value.isPlaying && !_uiState.value.isPaused) {
+            remainingTimeInSeconds = workDuration
+            updateTimeDisplay()
+            Log.d("PomodoroViewModel", "Starting new work session with duration: $workDuration seconds")
+        }
     }
     
     private fun saveCurrentSession() {
@@ -424,6 +526,7 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
     override fun onCleared() {
         super.onCleared()
         timerJob?.cancel()
+        unbindSoundService()
         
         // Auto-save timer state when ViewModel is destroyed
         if (sessionStartTime != null && (_uiState.value.isPlaying || _uiState.value.isPaused)) {

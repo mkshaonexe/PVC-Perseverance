@@ -51,6 +51,12 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_pomodoro_timer_info" />
         </receiver>
+
+        <!-- Timer Sound Service -->
+        <service
+            android:name=".services.TimerSoundService"
+            android:enabled="true"
+            android:exported="false" />
     </application>
 
 </manifest>

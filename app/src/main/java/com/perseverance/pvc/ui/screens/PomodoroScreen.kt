@@ -215,7 +215,49 @@ fun PomodoroScreen(
             Spacer(modifier = Modifier.height(ResponsiveSpacing.large()))
             
             // Buttons
-            if (uiState.isPlaying || uiState.isPaused) {
+            if (uiState.isTimerCompleted) {
+                // Show "I got it" button when timer is completed
+                Button(
+                    onClick = { viewModel.acknowledgeTimerCompletion() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(ResponsiveSpacing.extraLarge() + 10.dp)
+                        .padding(horizontal = ResponsivePadding.screen() * 1.5f),
+                    shape = RoundedCornerShape(ResponsiveSpacing.extraLarge() / 2 + 5.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF4CAF50),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text(
+                        text = "✓ I got it",
+                        fontSize = ResponsiveTextSizes.buttonText().sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(ResponsiveSpacing.medium()))
+                
+                // Test sound button (for debugging)
+                Button(
+                    onClick = { viewModel.testSound() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(ResponsiveSpacing.extraLarge() + 10.dp)
+                        .padding(horizontal = ResponsivePadding.screen() * 1.5f),
+                    shape = RoundedCornerShape(ResponsiveSpacing.extraLarge() / 2 + 5.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF2196F3),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text(
+                        text = "🔊 Test Sound",
+                        fontSize = ResponsiveTextSizes.buttonText().sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            } else if (uiState.isPlaying || uiState.isPaused) {
                 // Show Pause/Resume and Done while playing or paused
                 Row(
                     modifier = Modifier
