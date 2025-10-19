@@ -57,7 +57,7 @@ class TimerNotificationService(private val context: Context) {
         
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("Work Session Complete! 🎉")
+            .setContentTitle("Pomodoro session done, take a break")
             .setContentText("Great job! Time for a break. Tap to continue.")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)

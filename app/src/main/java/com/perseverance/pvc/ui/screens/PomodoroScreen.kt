@@ -3,7 +3,9 @@ package com.perseverance.pvc.ui.screens
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -152,14 +154,36 @@ fun PomodoroScreen(
             
             Spacer(modifier = Modifier.height(ResponsiveSpacing.large()))
             
-            // Timer display
+            // Timer display with long-press to change duration
+            var showDurationDialog by remember { mutableStateOf(false) }
+            
             Text(
                 text = uiState.timeDisplay,
                 fontSize = ResponsiveTextSizes.timerDisplay().sp,
                 fontWeight = FontWeight.Light,
                 color = MaterialTheme.colorScheme.onBackground,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                modifier = Modifier.combinedClickable(
+                    onClick = { /* Regular click does nothing */ },
+                    onLongClick = {
+                        // Only allow changing duration when timer is not running or is completed
+                        if (!uiState.isPlaying && !uiState.isPaused) {
+                            showDurationDialog = true
+                        }
+                    }
+                )
             )
+            
+            // Duration change dialog
+            if (showDurationDialog) {
+                TimerDurationDialog(
+                    onDismiss = { showDurationDialog = false },
+                    onDurationSelected = { minutes ->
+                        viewModel.updateTimerDurationFromHome(minutes)
+                        showDurationDialog = false
+                    }
+                )
+            }
             
             Spacer(modifier = Modifier.height(ResponsiveSpacing.medium()))
             
@@ -553,6 +577,201 @@ fun AddSubjectDialog(
                         enabled = subjectName.isNotBlank()
                     ) {
                         Text("Add", fontSize = ResponsiveTextSizes.dialogText().sp)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TimerDurationDialog(
+    onDismiss: () -> Unit,
+    onDurationSelected: (Int) -> Unit
+) {
+    val durationOptions = listOf(5, 10, 50, 60)
+    var showCustomDialog by remember { mutableStateOf(false) }
+    
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(ResponsivePadding.dialog()),
+            shape = RoundedCornerShape(ResponsiveSpacing.medium()),
+            color = Color(0xFF2C2C2C)
+        ) {
+            Column(
+                modifier = Modifier.padding(ResponsivePadding.dialog())
+            ) {
+                Text(
+                    text = "Change Timer Duration",
+                    fontSize = ResponsiveTextSizes.dialogTitle().sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    modifier = Modifier.padding(bottom = ResponsiveSpacing.medium())
+                )
+                
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 300.dp),
+                    verticalArrangement = Arrangement.spacedBy(ResponsiveSpacing.small())
+                ) {
+                    items(durationOptions.size) { index ->
+                        val duration = durationOptions[index]
+                        Button(
+                            onClick = { onDurationSelected(duration) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF3C3C3C),
+                                contentColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(ResponsiveSpacing.small())
+                        ) {
+                            Text(
+                                text = "$duration minutes",
+                                fontSize = ResponsiveTextSizes.dialogText().sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                    
+                    // Custom option
+                    item {
+                        Button(
+                            onClick = { showCustomDialog = true },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFFFD700),
+                                contentColor = Color.Black
+                            ),
+                            shape = RoundedCornerShape(ResponsiveSpacing.small())
+                        ) {
+                            Text(
+                                text = "Custom",
+                                fontSize = ResponsiveTextSizes.dialogText().sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(ResponsiveSpacing.medium()))
+                
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text(
+                        text = "Cancel",
+                        fontSize = ResponsiveTextSizes.dialogText().sp,
+                        color = Color.Gray
+                    )
+                }
+            }
+        }
+    }
+    
+    // Custom duration input dialog
+    if (showCustomDialog) {
+        CustomDurationInputDialog(
+            onDismiss = { showCustomDialog = false },
+            onConfirm = { minutes ->
+                onDurationSelected(minutes)
+                showCustomDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+fun CustomDurationInputDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (Int) -> Unit
+) {
+    var customMinutes by remember { mutableStateOf("") }
+    var isValid by remember { mutableStateOf(false) }
+    
+    // Validate input
+    LaunchedEffect(customMinutes) {
+        val minutes = customMinutes.toIntOrNull()
+        isValid = minutes != null && minutes > 0 && minutes <= 999
+    }
+    
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(ResponsivePadding.dialog()),
+            shape = RoundedCornerShape(ResponsiveSpacing.medium()),
+            color = Color(0xFF2C2C2C)
+        ) {
+            Column(
+                modifier = Modifier.padding(ResponsivePadding.dialog())
+            ) {
+                Text(
+                    text = "Custom Timer Duration",
+                    fontSize = ResponsiveTextSizes.dialogTitle().sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    modifier = Modifier.padding(bottom = ResponsiveSpacing.medium())
+                )
+                
+                Text(
+                    text = "Enter timer duration in minutes (1-999):",
+                    fontSize = ResponsiveTextSizes.dialogText().sp,
+                    color = Color.White.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(bottom = ResponsiveSpacing.medium())
+                )
+                
+                OutlinedTextField(
+                    value = customMinutes,
+                    onValueChange = { customMinutes = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = ResponsiveSpacing.medium()),
+                    placeholder = { Text("Enter minutes", color = Color.Gray) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFFFFD700),
+                        unfocusedBorderColor = Color.Gray,
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White
+                    ),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                    )
+                )
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(
+                        onClick = onDismiss,
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = Color.Gray
+                        )
+                    ) {
+                        Text("Cancel")
+                    }
+                    
+                    Spacer(modifier = Modifier.width(8.dp))
+                    
+                    Button(
+                        onClick = { onConfirm(customMinutes.toInt()) },
+                        enabled = isValid,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFFFD700),
+                            contentColor = Color.Black
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("Set Timer")
                     }
                 }
             }

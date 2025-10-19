@@ -188,14 +188,9 @@ class StudyRepository(private val context: Context) {
     
     private fun getDefaultSubjects(): List<String> {
         return listOf(
-            "Mathematics",
-            "Physics",
-            "Chemistry",
-            "Biology",
             "English",
-            "History",
-            "Geography",
-            "Computer Science"
+            "Math",
+            "Break"
         )
     }
     

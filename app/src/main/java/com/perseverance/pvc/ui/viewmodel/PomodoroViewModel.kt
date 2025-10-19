@@ -29,16 +29,11 @@ data class PomodoroUiState(
     val isPaused: Boolean = false,
     val completedSessions: Int = 0,
     val currentSessionType: SessionType = SessionType.WORK,
-    val selectedSubject: String = "pomodoro",
+    val selectedSubject: String = "English",
     val availableSubjects: List<String> = listOf(
-        "Mathematics",
-        "Physics",
-        "Chemistry",
-        "Biology",
         "English",
-        "History",
-        "Geography",
-        "Computer Science"
+        "Math",
+        "Break"
     ),
     val showSubjectDialog: Boolean = false,
     val totalStudyTimeDisplay: String = "00:00:00",  // HH:MM:SS format
@@ -438,6 +433,21 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
             // Save to repository
             viewModelScope.launch {
                 repository.saveSubjects(newSubjects)
+            }
+        }
+    }
+    
+    // Update timer duration from home screen (only when timer is not running)
+    fun updateTimerDurationFromHome(minutes: Int) {
+        // Only allow changing duration when timer is not running or paused
+        if (!_uiState.value.isPlaying && !_uiState.value.isPaused) {
+            workDuration = minutes * 60
+            remainingTimeInSeconds = workDuration
+            updateTimeDisplay()
+            
+            // Save to settings repository
+            viewModelScope.launch {
+                settingsRepository.setTimerDuration(minutes.toString())
             }
         }
     }

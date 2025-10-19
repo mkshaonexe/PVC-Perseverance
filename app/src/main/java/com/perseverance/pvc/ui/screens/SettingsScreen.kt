@@ -253,13 +253,13 @@ fun SettingsScreen(
                         SettingsInfoItem(
                             icon = Icons.Filled.Info,
                             title = "App Version",
-                            value = "0.1.9 Beta"
+                            value = "0.2.1"
                         )
                         
                         SettingsInfoItem(
                             icon = Icons.Filled.Update,
                             title = "Last Update",
-                            value = "8 Oct 2:13 PM"
+                            value = "19 Oct 12:23 PM"
                         )
                     }
                 )
@@ -638,7 +638,7 @@ private fun generateTimeOptions(): List<String> {
 
 // Helper function to generate timer duration options
 private fun generateTimerDurationOptions(): List<String> {
-    return listOf("15", "20", "25", "30", "35", "40", "45", "50", "Custom")
+    return listOf("10", "50", "60", "Custom")
 }
 
 @Composable
