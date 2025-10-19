@@ -41,6 +41,7 @@ import com.perseverance.pvc.R
 import com.perseverance.pvc.ui.components.TopHeader
 import com.perseverance.pvc.ui.theme.PerseverancePVCTheme
 import com.perseverance.pvc.ui.viewmodel.PomodoroViewModel
+import com.perseverance.pvc.ui.viewmodel.SessionType
 
 @Composable
 fun PomodoroScreen(
@@ -123,17 +124,30 @@ fun PomodoroScreen(
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
-                modifier = Modifier.clickable { viewModel.showSubjectDialog() }
+                modifier = Modifier.clickable { 
+                    // Only allow subject selection during work sessions
+                    if (uiState.currentSessionType == SessionType.WORK) {
+                        viewModel.showSubjectDialog() 
+                    }
+                }
             ) {
                 Box(
                     modifier = Modifier
                         .size(8.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFFFFD700))
+                        .background(
+                            if (uiState.currentSessionType == SessionType.WORK) 
+                                Color(0xFFFFD700) 
+                            else 
+                                Color(0xFF4CAF50) // Green for break
+                        )
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = uiState.selectedSubject,
+                    text = if (uiState.currentSessionType == SessionType.WORK) 
+                        uiState.selectedSubject 
+                    else 
+                        "Break",
                     fontSize = ResponsiveTextSizes.subjectText().sp,
                     color = MaterialTheme.colorScheme.onBackground,
                     fontWeight = FontWeight.Normal
@@ -262,9 +276,9 @@ fun PomodoroScreen(
                 
                 Spacer(modifier = Modifier.height(ResponsiveSpacing.medium()))
                 
-                // Test sound button (for debugging)
+                // Take a Break / Start Focus button (changes based on session type)
                 Button(
-                    onClick = { viewModel.testSound() },
+                    onClick = { viewModel.startBreakTimer() },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(ResponsiveSpacing.extraLarge() + 10.dp)
@@ -276,7 +290,7 @@ fun PomodoroScreen(
                     )
                 ) {
                     Text(
-                        text = "🔊 Test Sound",
+                        text = if (uiState.currentSessionType == SessionType.WORK) "☕ Take a Break" else "▶ Start Focus",
                         fontSize = ResponsiveTextSizes.buttonText().sp,
                         fontWeight = FontWeight.Bold
                     )

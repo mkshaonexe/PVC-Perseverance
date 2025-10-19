@@ -53,6 +53,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _timerDuration = MutableStateFlow("50")
     val timerDuration: StateFlow<String> = _timerDuration.asStateFlow()
     
+    // Break Duration
+    private val _breakDuration = MutableStateFlow("10")
+    val breakDuration: StateFlow<String> = _breakDuration.asStateFlow()
+    
     // Enable Timer Notifications
     private val _enableTimerNotifications = MutableStateFlow(true)
     val enableTimerNotifications: StateFlow<Boolean> = _enableTimerNotifications.asStateFlow()
@@ -95,6 +99,9 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
         viewModelScope.launch {
             repository.getTimerDuration().collect { _timerDuration.value = it }
+        }
+        viewModelScope.launch {
+            repository.getBreakDuration().collect { _breakDuration.value = it }
         }
         viewModelScope.launch {
             repository.getEnableTimerNotifications().collect { _enableTimerNotifications.value = it }
@@ -172,6 +179,13 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             _timerDuration.value = duration
             repository.setTimerDuration(duration)
+        }
+    }
+    
+    fun updateBreakDuration(duration: String) {
+        viewModelScope.launch {
+            _breakDuration.value = duration
+            repository.setBreakDuration(duration)
         }
     }
     

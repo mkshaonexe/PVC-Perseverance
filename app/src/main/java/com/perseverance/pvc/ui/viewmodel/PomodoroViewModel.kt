@@ -76,6 +76,7 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
     private var timerJob: Job? = null
     private var remainingTimeInSeconds = 50 * 60 // Default 50 minutes in seconds
     private var workDuration = 50 * 60 // Default 50 minutes, will be updated from settings
+    private var breakDuration = 10 * 60 // Default 10 minutes, will be updated from settings
     private val shortBreakDuration = 5 * 60 // 5 minutes
     private val longBreakDuration = 15 * 60 // 15 minutes
     
@@ -85,6 +86,7 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
     
     init {
         loadTimerDuration()
+        loadBreakDuration()
         loadNotificationSetting()
         updateTimeDisplay()
         loadSavedSubjects()
@@ -115,6 +117,22 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
                 // Update remaining time if it's a work session and not currently running
                 if (_uiState.value.currentSessionType == SessionType.WORK && !_uiState.value.isPlaying) {
                     remainingTimeInSeconds = workDuration
+                    updateTimeDisplay()
+                }
+            }
+        }
+    }
+    
+    private fun loadBreakDuration() {
+        viewModelScope.launch {
+            settingsRepository.getBreakDuration().collect { durationString ->
+                val durationMinutes = durationString.toIntOrNull() ?: 10
+                breakDuration = durationMinutes * 60
+                // Update remaining time if it's a break session and not currently running
+                if ((_uiState.value.currentSessionType == SessionType.SHORT_BREAK || 
+                     _uiState.value.currentSessionType == SessionType.LONG_BREAK) && 
+                    !_uiState.value.isPlaying) {
+                    remainingTimeInSeconds = breakDuration
                     updateTimeDisplay()
                 }
             }
@@ -256,8 +274,8 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         
         remainingTimeInSeconds = when (_uiState.value.currentSessionType) {
             SessionType.WORK -> workDuration
-            SessionType.SHORT_BREAK -> shortBreakDuration
-            SessionType.LONG_BREAK -> longBreakDuration
+            SessionType.SHORT_BREAK -> breakDuration
+            SessionType.LONG_BREAK -> breakDuration
         }
         
         // Reset session tracking
@@ -313,12 +331,9 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
                     notificationService.showBreakCompleteNotification()
                 }
                 
-                // For breaks, we can transition immediately back to work
-                _uiState.value = _uiState.value.copy(
-                    currentSessionType = SessionType.WORK,
-                    isWaitingForAcknowledgment = false
-                )
-                remainingTimeInSeconds = workDuration
+                // Wait for user acknowledgment just like work sessions
+                // The sound will play and user must click "I got it" to continue
+                Log.d("PomodoroViewModel", "Break session completed, waiting for user acknowledgment")
             }
         }
         
@@ -342,9 +357,9 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
                 val newCompletedSessions = _uiState.value.completedSessions + 1
                 _uiState.value = _uiState.value.copy(
                     completedSessions = newCompletedSessions,
-                    currentSessionType = if (newCompletedSessions % 4 == 0) SessionType.LONG_BREAK else SessionType.SHORT_BREAK
+                    currentSessionType = SessionType.SHORT_BREAK
                 )
-                remainingTimeInSeconds = if (newCompletedSessions % 4 == 0) longBreakDuration else shortBreakDuration
+                remainingTimeInSeconds = breakDuration
                 
                 // Clear timer state after completing work session
                 viewModelScope.launch {
@@ -365,10 +380,49 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         updateTimeDisplay()
     }
     
-    // Test method to verify sound service works
-    fun testSound() {
-        Log.d("PomodoroViewModel", "Testing sound service")
-        soundService?.startInfiniteSound()
+    // Start break timer directly from work session completion
+    fun startBreakTimer() {
+        Log.d("PomodoroViewModel", "Starting break timer")
+        
+        // Stop the infinite sound
+        soundService?.stopInfiniteSound()
+        
+        // Reset timer completion state
+        _uiState.value = _uiState.value.copy(
+            isTimerCompleted = false,
+            isWaitingForAcknowledgment = false
+        )
+        
+        // If currently in work session, increment completed sessions
+        if (_uiState.value.currentSessionType == SessionType.WORK) {
+            val newCompletedSessions = _uiState.value.completedSessions + 1
+            _uiState.value = _uiState.value.copy(
+                completedSessions = newCompletedSessions,
+                currentSessionType = SessionType.SHORT_BREAK
+            )
+            
+            // Clear timer state after completing work session
+            viewModelScope.launch {
+                repository.clearTimerState()
+            }
+        } else {
+            // If in break session, transition back to work
+            _uiState.value = _uiState.value.copy(currentSessionType = SessionType.WORK)
+        }
+        
+        // Set the appropriate duration
+        remainingTimeInSeconds = if (_uiState.value.currentSessionType == SessionType.SHORT_BREAK) {
+            breakDuration
+        } else {
+            workDuration
+        }
+        
+        updateTimeDisplay()
+        
+        // Auto-start the timer
+        startTimer()
+        
+        Log.d("PomodoroViewModel", "Break timer started with duration: $breakDuration seconds")
     }
     
     // Method to start a new work session with the same duration

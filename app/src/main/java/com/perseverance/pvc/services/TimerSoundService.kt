@@ -3,6 +3,9 @@ package com.perseverance.pvc.services
 import android.app.Service
 import android.content.Intent
 import android.media.AudioAttributes
+import android.media.AudioFormat
+import android.media.AudioManager
+import android.media.AudioTrack
 import android.media.MediaPlayer
 import android.media.RingtoneManager
 import android.media.ToneGenerator
@@ -11,14 +14,22 @@ import android.os.Binder
 import android.os.IBinder
 import android.util.Log
 import kotlinx.coroutines.*
+import kotlin.math.*
 
 class TimerSoundService : Service() {
     
     private val binder = TimerSoundBinder()
     private var mediaPlayer: MediaPlayer? = null
     private var toneGenerator: ToneGenerator? = null
+    private var audioTrack: AudioTrack? = null
     private var isPlaying = false
     private var soundJob: Job? = null
+    
+    // Audio parameters for 1000 Hz sine wave
+    private val sampleRate = 44100
+    private val frequency = 1000 // 1000 Hz
+    private val duration = 0.1 // 0.1 seconds per beep
+    private val beepInterval = 1000L // 1 second between beeps
     
     inner class TimerSoundBinder : Binder() {
         fun getService(): TimerSoundService = this@TimerSoundService
@@ -39,51 +50,84 @@ class TimerSoundService : Service() {
             // Stop any existing sound first
             stopInfiniteSound()
             
-            // Try MediaPlayer first
+            // Try 1000 Hz sine wave beep first
             try {
-                mediaPlayer = MediaPlayer().apply {
-                    setAudioAttributes(
-                        AudioAttributes.Builder()
-                            .setUsage(AudioAttributes.USAGE_ALARM)
-                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                            .build()
-                    )
-                    
-                    // Use system default notification sound
-                    val notificationUri: Uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-                    Log.d("TimerSoundService", "Using notification URI: $notificationUri")
-                    setDataSource(this@TimerSoundService, notificationUri)
-                    
-                    setOnPreparedListener { mp ->
-                        Log.d("TimerSoundService", "MediaPlayer prepared, starting sound")
-                        mp.isLooping = true
-                        mp.start()
-                        this@TimerSoundService.isPlaying = true
-                        Log.d("TimerSoundService", "Sound started successfully")
-                    }
-                    
-                    setOnErrorListener { _, what, extra ->
-                        Log.e("TimerSoundService", "MediaPlayer error: what=$what, extra=$extra")
-                        this@TimerSoundService.isPlaying = false
-                        // Try fallback method
-                        startFallbackSound()
-                        true
-                    }
-                    
-                    setOnCompletionListener {
-                        Log.d("TimerSoundService", "MediaPlayer completed")
-                        this@TimerSoundService.isPlaying = false
-                    }
-                    
-                    prepareAsync()
-                }
+                startSineWaveBeep()
             } catch (e: Exception) {
-                Log.e("TimerSoundService", "MediaPlayer failed, trying fallback", e)
+                Log.e("TimerSoundService", "Sine wave beep failed, trying fallback", e)
                 startFallbackSound()
             }
         } catch (e: Exception) {
             Log.e("TimerSoundService", "Error starting sound", e)
             isPlaying = false
+        }
+    }
+    
+    private fun startSineWaveBeep() {
+        Log.d("TimerSoundService", "Starting 1000 Hz sine wave beep")
+        try {
+            isPlaying = true
+            
+            // Create a coroutine to play continuous beeps
+            soundJob = CoroutineScope(Dispatchers.IO).launch {
+                while (isPlaying) {
+                    playSineWaveBeep()
+                    delay(beepInterval)
+                }
+            }
+            Log.d("TimerSoundService", "Sine wave beep started")
+        } catch (e: Exception) {
+            Log.e("TimerSoundService", "Error starting sine wave beep", e)
+            isPlaying = false
+        }
+    }
+    
+    private suspend fun playSineWaveBeep() {
+        try {
+            val bufferSize = AudioTrack.getMinBufferSize(
+                sampleRate,
+                AudioFormat.CHANNEL_OUT_MONO,
+                AudioFormat.ENCODING_PCM_16BIT
+            )
+            
+            audioTrack = AudioTrack.Builder()
+                .setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ALARM)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build()
+                )
+                .setAudioFormat(
+                    AudioFormat.Builder()
+                        .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                        .setSampleRate(sampleRate)
+                        .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                        .build()
+                )
+                .setBufferSizeInBytes(bufferSize)
+                .build()
+            
+            val samples = (sampleRate * duration).toInt()
+            val buffer = ShortArray(samples)
+            
+            // Generate sine wave
+            for (i in 0 until samples) {
+                val angle = 2.0 * PI * frequency * i / sampleRate
+                buffer[i] = (sin(angle) * Short.MAX_VALUE * 0.7).toInt().toShort()
+            }
+            
+            audioTrack?.play()
+            audioTrack?.write(buffer, 0, samples)
+            
+            // Wait for the beep to finish
+            delay((duration * 1000).toLong())
+            
+            audioTrack?.stop()
+            audioTrack?.release()
+            audioTrack = null
+            
+        } catch (e: Exception) {
+            Log.e("TimerSoundService", "Error playing sine wave beep", e)
         }
     }
     
@@ -119,6 +163,15 @@ class TimerSoundService : Service() {
                 mp.release()
             }
             mediaPlayer = null
+            
+            // Stop AudioTrack
+            audioTrack?.let { at ->
+                if (at.playState == AudioTrack.PLAYSTATE_PLAYING) {
+                    at.stop()
+                }
+                at.release()
+            }
+            audioTrack = null
             
             // Stop ToneGenerator
             toneGenerator?.release()

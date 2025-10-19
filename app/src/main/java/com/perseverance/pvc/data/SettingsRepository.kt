@@ -26,6 +26,7 @@ class SettingsRepository(private val context: Context) {
         private val LANGUAGE_KEY = stringPreferencesKey("language")
         private val USE_DND_DURING_FOCUS_KEY = booleanPreferencesKey("use_dnd_during_focus")
         private val TIMER_DURATION_KEY = stringPreferencesKey("timer_duration")
+        private val BREAK_DURATION_KEY = stringPreferencesKey("break_duration")
         private val ENABLE_TIMER_NOTIFICATIONS_KEY = booleanPreferencesKey("enable_timer_notifications")
         private val ONBOARDING_COMPLETED_KEY = booleanPreferencesKey("onboarding_completed")
     }
@@ -157,6 +158,19 @@ class SettingsRepository(private val context: Context) {
     fun getTimerDuration(): Flow<String> {
         return context.settingsDataStore.data.map { preferences ->
             preferences[TIMER_DURATION_KEY] ?: "50"
+        }
+    }
+    
+    // Break Duration
+    suspend fun setBreakDuration(duration: String) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[BREAK_DURATION_KEY] = duration
+        }
+    }
+    
+    fun getBreakDuration(): Flow<String> {
+        return context.settingsDataStore.data.map { preferences ->
+            preferences[BREAK_DURATION_KEY] ?: "10"
         }
     }
     

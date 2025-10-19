@@ -49,6 +49,7 @@ fun SettingsScreen(
     val language by viewModel.language.collectAsState()
     val useDoNotDisturbDuringFocus by viewModel.useDNDDuringFocus.collectAsState()
     val timerDuration by viewModel.timerDuration.collectAsState()
+    val breakDuration by viewModel.breakDuration.collectAsState()
     val enableTimerNotifications by viewModel.enableTimerNotifications.collectAsState()
 
     Box(
@@ -151,6 +152,14 @@ fun SettingsScreen(
                             value = if (timerDuration == "Custom") "Custom" else "${timerDuration} min",
                             options = generateTimerDurationOptions(),
                             onValueChange = { viewModel.updateTimerDuration(it) }
+                        )
+
+                        SettingsDropdownItem(
+                            icon = Icons.Filled.FreeBreakfast,
+                            title = "Break Duration",
+                            value = if (breakDuration == "Custom") "Custom" else "${breakDuration} min",
+                            options = generateBreakDurationOptions(),
+                            onValueChange = { viewModel.updateBreakDuration(it) }
                         )
 
                         SettingsToggleItem(
@@ -639,6 +648,11 @@ private fun generateTimeOptions(): List<String> {
 // Helper function to generate timer duration options
 private fun generateTimerDurationOptions(): List<String> {
     return listOf("10", "50", "60", "Custom")
+}
+
+// Helper function to generate break duration options
+private fun generateBreakDurationOptions(): List<String> {
+    return listOf("5", "10", "15", "20", "Custom")
 }
 
 @Composable
