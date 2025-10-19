@@ -20,7 +20,7 @@ class SineWaveBeepTest {
         val buffer = ShortArray(samples)
         for (i in 0 until samples) {
             val angle = 2.0 * PI * frequency * i / sampleRate
-            buffer[i] = (sin(angle) * Short.MAX_VALUE * 0.7).toInt().toShort()
+            buffer[i] = (sin(angle) * Short.MAX_VALUE * 1.0).toInt().toShort()
         }
         
         // Verify buffer is not empty
