@@ -536,16 +536,44 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
                 // Calculate how much time was studied
                 val studyDurationSeconds = (timerState.sessionInitialDuration - timerState.remainingTimeInSeconds).coerceAtLeast(0)
                 
-                // Save the session if any time was studied (even 1 second)
-                if (studyDurationSeconds > 0) {
+                // Check if timer was completed while app was in background
+                val wasTimerCompleted = studyDurationSeconds >= timerState.sessionInitialDuration
+                
+                if (wasTimerCompleted) {
+                    // Timer was completed while in background - show completion UI
+                    Log.d("PomodoroViewModel", "Timer was completed while in background")
                     val session = repository.createStudySession(
                         subject = timerState.selectedSubject,
                         durationSeconds = studyDurationSeconds,
                         startTime = timerState.sessionStartTime
                     )
                     repository.saveStudySession(session)
+                    repository.clearTimerState()
                     
-                    // Clear the saved state after auto-saving
+                    // Set completion state
+                    _uiState.value = _uiState.value.copy(
+                        isTimerCompleted = true,
+                        isWaitingForAcknowledgment = true,
+                        isPlaying = false,
+                        isPaused = false,
+                        currentSessionType = SessionType.valueOf(timerState.sessionType),
+                        completedSessions = timerState.completedSessions,
+                        selectedSubject = timerState.selectedSubject
+                    )
+                    
+                    // Start sound for completion
+                    soundService?.startInfiniteSound()
+                    
+                    updateTimeDisplay()
+                    loadTodayTotalStudyTime()
+                } else if (studyDurationSeconds > 0) {
+                    // Some time was studied but timer wasn't completed - auto-save and reset
+                    val session = repository.createStudySession(
+                        subject = timerState.selectedSubject,
+                        durationSeconds = studyDurationSeconds,
+                        startTime = timerState.sessionStartTime
+                    )
+                    repository.saveStudySession(session)
                     repository.clearTimerState()
                     
                     // Reset to initial state for a fresh start
@@ -555,8 +583,10 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
                     _uiState.value = _uiState.value.copy(
                         isPlaying = false,
                         isPaused = false,
+                        isTimerCompleted = false,
+                        isWaitingForAcknowledgment = false,
                         currentSessionType = SessionType.WORK,
-                        selectedSubject = timerState.selectedSubject // Keep the same subject
+                        selectedSubject = timerState.selectedSubject
                     )
                     updateTimeDisplay()
                     loadTodayTotalStudyTime()
@@ -571,7 +601,9 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
                         currentSessionType = SessionType.valueOf(timerState.sessionType),
                         completedSessions = timerState.completedSessions,
                         isPlaying = false,
-                        isPaused = true
+                        isPaused = true,
+                        isTimerCompleted = false,
+                        isWaitingForAcknowledgment = false
                     )
                     
                     updateTimeDisplay()
@@ -584,6 +616,37 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
     fun onAppGoingToBackground() {
         if (_uiState.value.isPlaying || _uiState.value.isPaused) {
             saveTimerState()
+        }
+        
+        // Stop sound when app goes to background to prevent infinite playing
+        if (isSoundServiceBound && soundService != null) {
+            Log.d("PomodoroViewModel", "App going to background, stopping sound")
+            soundService?.stopInfiniteSound()
+        }
+    }
+    
+    // Called when app returns to foreground
+    fun onAppReturningToForeground() {
+        Log.d("PomodoroViewModel", "App returning to foreground")
+        // Rebind sound service if needed
+        if (!isSoundServiceBound) {
+            bindSoundService()
+        }
+        
+        // Restore timer state if needed
+        restoreTimerState()
+    }
+    
+    // Called when app resumes (after onStart)
+    fun onAppResumed() {
+        Log.d("PomodoroViewModel", "App resumed")
+        // Ensure UI state is properly updated
+        updateTimeDisplay()
+        
+        // If timer was completed while in background, ensure sound is playing
+        if (_uiState.value.isTimerCompleted && _uiState.value.isWaitingForAcknowledgment) {
+            Log.d("PomodoroViewModel", "Timer was completed in background, restarting sound")
+            soundService?.startInfiniteSound()
         }
     }
     

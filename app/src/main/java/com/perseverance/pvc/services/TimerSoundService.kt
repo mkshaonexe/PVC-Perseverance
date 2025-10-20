@@ -44,7 +44,10 @@ class TimerSoundService : Service() {
     
     fun startInfiniteSound() {
         Log.d("TimerSoundService", "startInfiniteSound called, isPlaying: $isPlaying")
-        if (isPlaying) return
+        if (isPlaying) {
+            Log.d("TimerSoundService", "Sound already playing, ignoring request")
+            return
+        }
         
         try {
             // Stop any existing sound first
@@ -152,36 +155,57 @@ class TimerSoundService : Service() {
     }
     
     fun stopInfiniteSound() {
+        Log.d("TimerSoundService", "stopInfiniteSound called, isPlaying: $isPlaying")
         try {
             isPlaying = false
             
             // Stop MediaPlayer
             mediaPlayer?.let { mp ->
-                if (mp.isPlaying) {
-                    mp.stop()
+                try {
+                    if (mp.isPlaying) {
+                        mp.stop()
+                    }
+                    mp.release()
+                } catch (e: Exception) {
+                    Log.e("TimerSoundService", "Error stopping MediaPlayer", e)
                 }
-                mp.release()
             }
             mediaPlayer = null
             
             // Stop AudioTrack
             audioTrack?.let { at ->
-                if (at.playState == AudioTrack.PLAYSTATE_PLAYING) {
-                    at.stop()
+                try {
+                    if (at.playState == AudioTrack.PLAYSTATE_PLAYING) {
+                        at.stop()
+                    }
+                    at.release()
+                } catch (e: Exception) {
+                    Log.e("TimerSoundService", "Error stopping AudioTrack", e)
                 }
-                at.release()
             }
             audioTrack = null
             
             // Stop ToneGenerator
-            toneGenerator?.release()
+            toneGenerator?.let { tg ->
+                try {
+                    tg.release()
+                } catch (e: Exception) {
+                    Log.e("TimerSoundService", "Error releasing ToneGenerator", e)
+                }
+            }
             toneGenerator = null
             
             // Cancel coroutine job
-            soundJob?.cancel()
+            soundJob?.let { job ->
+                try {
+                    job.cancel()
+                } catch (e: Exception) {
+                    Log.e("TimerSoundService", "Error canceling sound job", e)
+                }
+            }
             soundJob = null
             
-            Log.d("TimerSoundService", "Sound stopped")
+            Log.d("TimerSoundService", "Sound stopped successfully")
         } catch (e: Exception) {
             Log.e("TimerSoundService", "Error stopping sound", e)
         }

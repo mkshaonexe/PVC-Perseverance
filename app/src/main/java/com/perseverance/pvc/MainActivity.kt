@@ -97,6 +97,18 @@ class MainActivity : ComponentActivity() {
         pomodoroViewModel?.onAppGoingToBackground()
     }
     
+    override fun onStart() {
+        super.onStart()
+        // Restore timer state when app comes to foreground
+        pomodoroViewModel?.onAppReturningToForeground()
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        // Ensure UI state is properly restored when app resumes
+        pomodoroViewModel?.onAppResumed()
+    }
+    
     override fun onStop() {
         super.onStop()
         // Additional auto-save when app is stopped
