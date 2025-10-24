@@ -71,3 +71,31 @@ data class ChartPoint(
     val totalMinutes: Int,
     val date: LocalDate
 )
+
+// Period study data models
+data class TodayStudyData(
+    val date: LocalDate,
+    val totalStudyMinutes: Int,
+    val totalStudyHours: Double,
+    val sessionCount: Int,
+    val averageSessionLength: Double,
+    val longestSession: Int,
+    val firstSessionTime: String?,
+    val lastSessionTime: String?,
+    val subjects: List<SubjectTodayStats>
+)
+
+data class SubjectTodayStats(
+    val subject: String,
+    val totalMinutes: Int,
+    val sessionCount: Int,
+    val averageSessionLength: Double,
+    val percentageOfTotal: Double
+)
+
+data class PeriodInsights(
+    val todayData: TodayStudyData,
+    val weeklyProgress: Double, // Percentage of weekly goal
+    val dailyStreak: Int,
+    val productivityScore: Int // 0-100 based on consistency and duration
+)

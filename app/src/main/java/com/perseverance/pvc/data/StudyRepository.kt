@@ -305,6 +305,127 @@ class StudyRepository(private val context: Context) {
         }
     }
     
+    // Get today's study data for period view
+    fun getTodayStudyData(): Flow<TodayStudyData> {
+        val today = LocalDate.now()
+        return getStudySessionsByDate(today).map { sessions ->
+            val validSessions = sessions.filter { it.startTime != null }
+            val totalStudyMinutes = validSessions.sumOf { it.durationSeconds } / 60
+            val totalStudyHours = totalStudyMinutes / 60.0
+            val sessionCount = validSessions.size
+            val averageSessionLength = if (sessionCount > 0) totalStudyMinutes.toDouble() / sessionCount else 0.0
+            val longestSession = validSessions.maxOfOrNull { it.durationSeconds }?.let { it / 60 } ?: 0
+            
+            val firstSession = validSessions.minByOrNull { it.startTime!! }
+            val lastSession = validSessions.maxByOrNull { it.startTime!! }
+            val firstSessionTime = firstSession?.startTime?.let { formatTime(it.hour, it.minute) }
+            val lastSessionTime = lastSession?.endTime?.let { formatTime(it.hour, it.minute) }
+            
+            // Calculate subject statistics
+            val subjectStats = validSessions
+                .groupBy { it.subject }
+                .map { (subject, subjectSessions) ->
+                    val subjectMinutes = subjectSessions.sumOf { it.durationSeconds } / 60
+                    val subjectSessionCount = subjectSessions.size
+                    val subjectAverageLength = if (subjectSessionCount > 0) subjectMinutes.toDouble() / subjectSessionCount else 0.0
+                    val percentageOfTotal = if (totalStudyMinutes > 0) (subjectMinutes.toDouble() / totalStudyMinutes) * 100 else 0.0
+                    
+                    SubjectTodayStats(
+                        subject = subject,
+                        totalMinutes = subjectMinutes,
+                        sessionCount = subjectSessionCount,
+                        averageSessionLength = subjectAverageLength,
+                        percentageOfTotal = percentageOfTotal
+                    )
+                }
+                .sortedByDescending { it.totalMinutes }
+            
+            TodayStudyData(
+                date = today,
+                totalStudyMinutes = totalStudyMinutes,
+                totalStudyHours = totalStudyHours,
+                sessionCount = sessionCount,
+                averageSessionLength = averageSessionLength,
+                longestSession = longestSession,
+                firstSessionTime = firstSessionTime,
+                lastSessionTime = lastSessionTime,
+                subjects = subjectStats
+            )
+        }
+    }
+    
+    // Get period insights including today's data and progress metrics
+    fun getPeriodInsights(): Flow<PeriodInsights> {
+        val today = LocalDate.now()
+        val weekStart = today.minusDays((today.dayOfWeek.value - 1).toLong())
+        
+        return getTodayStudyData().map { todayData ->
+            // Calculate weekly progress (assuming 5 hours per week goal)
+            val weeklyGoalMinutes = 5 * 60 // 5 hours
+            val weeklyProgress = if (weeklyGoalMinutes > 0) {
+                (todayData.totalStudyMinutes.toDouble() / weeklyGoalMinutes) * 100
+            } else 0.0
+            
+            // Calculate daily streak (simplified - consecutive days with study time)
+            val dailyStreak = calculateDailyStreak(today)
+            
+            // Calculate productivity score based on consistency and duration
+            val productivityScore = calculateProductivityScore(todayData)
+            
+            PeriodInsights(
+                todayData = todayData,
+                weeklyProgress = weeklyProgress,
+                dailyStreak = dailyStreak,
+                productivityScore = productivityScore
+            )
+        }
+    }
+    
+    private fun formatTime(hour: Int, minute: Int): String {
+        val period = if (hour < 12) "AM" else "PM"
+        val hour12 = if (hour == 0) 12 else if (hour > 12) hour - 12 else hour
+        return "$period $hour12:${minute.toString().padStart(2, '0')}"
+    }
+    
+    private suspend fun calculateDailyStreak(currentDate: LocalDate): Int {
+        var streak = 0
+        var checkDate = currentDate
+        
+        while (true) {
+            val sessions = getStudySessionsByDate(checkDate).first()
+            if (sessions.isEmpty()) break
+            
+            streak++
+            checkDate = checkDate.minusDays(1)
+            
+            // Limit streak calculation to prevent infinite loop
+            if (streak > 365) break
+        }
+        
+        return streak
+    }
+    
+    private fun calculateProductivityScore(todayData: TodayStudyData): Int {
+        var score = 0
+        
+        // Base score for having study sessions (40 points)
+        if (todayData.sessionCount > 0) score += 40
+        
+        // Bonus for multiple sessions (20 points)
+        if (todayData.sessionCount >= 3) score += 20
+        else if (todayData.sessionCount >= 2) score += 10
+        
+        // Bonus for good session length (20 points)
+        if (todayData.averageSessionLength >= 25) score += 20
+        else if (todayData.averageSessionLength >= 15) score += 10
+        
+        // Bonus for studying multiple subjects (20 points)
+        if (todayData.subjects.size >= 2) score += 20
+        else if (todayData.subjects.size >= 1) score += 10
+        
+        return minOf(score, 100)
+    }
+    
     // Restore timer state
     suspend fun restoreTimerState(): PomodoroTimerState? {
         val timerStateJson = context.dataStore.data.first()[TIMER_STATE_KEY]

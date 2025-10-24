@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.perseverance.pvc.data.StudyRepository
 import com.perseverance.pvc.data.WeekStudyData
 import com.perseverance.pvc.data.WeeklyChartData
+import com.perseverance.pvc.data.TodayStudyData
+import com.perseverance.pvc.data.PeriodInsights
 import com.perseverance.pvc.ui.components.SubjectRadarData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -37,6 +39,8 @@ data class InsightsUiState(
     val topSubjects: List<SubjectRadarData> = emptyList(),
     val weeklyData: WeekStudyData? = null,
     val weeklyChartData: WeeklyChartData? = null,
+    val todayData: TodayStudyData? = null,
+    val periodInsights: PeriodInsights? = null,
     val isLoading: Boolean = false
 )
 
@@ -54,10 +58,13 @@ class InsightsViewModel(application: Application) : AndroidViewModel(application
         
         // Load data based on selected period
         when (period) {
+            PeriodType.PERIOD -> loadPeriodData()
             PeriodType.WEEK -> loadWeeklyData()
             else -> {
-                // Clear weekly data when switching to other periods
+                // Clear period and weekly data when switching to other periods
                 _uiState.value = _uiState.value.copy(
+                    todayData = null,
+                    periodInsights = null,
                     weeklyData = null,
                     weeklyChartData = null
                 )
@@ -228,6 +235,26 @@ class InsightsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             repository.getWeeklyChartData(nextWeekStart).collect { chartData ->
                 _uiState.value = _uiState.value.copy(weeklyChartData = chartData)
+            }
+        }
+    }
+    
+    private fun loadPeriodData() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            
+            repository.getTodayStudyData().collect { todayData ->
+                _uiState.value = _uiState.value.copy(
+                    todayData = todayData,
+                    isLoading = false
+                )
+            }
+        }
+        
+        // Load period insights separately
+        viewModelScope.launch {
+            repository.getPeriodInsights().collect { insights ->
+                _uiState.value = _uiState.value.copy(periodInsights = insights)
             }
         }
     }

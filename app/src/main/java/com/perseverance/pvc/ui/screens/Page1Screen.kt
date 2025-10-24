@@ -32,6 +32,9 @@ import com.perseverance.pvc.ui.components.TopHeader
 import com.perseverance.pvc.ui.components.WeeklySummaryCard
 import com.perseverance.pvc.ui.components.SubjectBreakdownCard
 import com.perseverance.pvc.ui.components.WeeklyStudyChart
+import com.perseverance.pvc.ui.components.TodaySummaryCard
+import com.perseverance.pvc.ui.components.PeriodInsightsCard
+import com.perseverance.pvc.ui.components.TodaySubjectBreakdown
 import com.perseverance.pvc.ui.theme.PerseverancePVCTheme
 import com.perseverance.pvc.ui.viewmodel.InsightsViewModel
 import com.perseverance.pvc.ui.viewmodel.PeriodType
@@ -119,6 +122,65 @@ fun Page1Screen(
             
             // Conditional content based on selected period
             when (uiState.selectedPeriod) {
+                PeriodType.PERIOD -> {
+                    // Period Insights - Today's Study Data
+                    if (uiState.isLoading) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                color = Color(0xFFFF8C42)
+                            )
+                        }
+                    } else {
+                        uiState.todayData?.let { todayData ->
+                            TodaySummaryCard(todayData = todayData)
+                            
+                            Spacer(modifier = Modifier.height(16.dp))
+                            
+                            // Period Insights
+                            uiState.periodInsights?.let { insights ->
+                                PeriodInsightsCard(insights = insights)
+                                
+                                Spacer(modifier = Modifier.height(16.dp))
+                            }
+                            
+                            // Today's Subject Breakdown
+                            if (todayData.subjects.isNotEmpty()) {
+                                TodaySubjectBreakdown(subjects = todayData.subjects)
+                                
+                                Spacer(modifier = Modifier.height(16.dp))
+                            }
+                        } ?: run {
+                            // No data available
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surface
+                                ),
+                                shape = RoundedCornerShape(16.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(200.dp)
+                                        .padding(20.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "No study data available for today",
+                                        fontSize = 16.sp,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
                 PeriodType.WEEK -> {
                     // Weekly Insights
                     if (uiState.isLoading) {
