@@ -608,6 +608,22 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
                         selectedSubject = timerState.selectedSubject
                     )
                     
+                    // Show notification immediately when timer completes in background
+                    when (SessionType.valueOf(timerState.sessionType)) {
+                        SessionType.WORK -> {
+                            if (enableNotifications && PermissionManager.hasNotificationPermission(getApplication())) {
+                                Log.d("PomodoroViewModel", "Showing work session complete notification")
+                                notificationService.showWorkSessionCompleteNotification()
+                            }
+                        }
+                        SessionType.SHORT_BREAK, SessionType.LONG_BREAK -> {
+                            if (enableNotifications && PermissionManager.hasNotificationPermission(getApplication())) {
+                                Log.d("PomodoroViewModel", "Showing break complete notification")
+                                notificationService.showBreakCompleteNotification()
+                            }
+                        }
+                    }
+                    
                     // Start sound for completion
                     Log.d("PomodoroViewModel", "Starting completion sound after background completion")
                     soundService?.startInfiniteSound()
