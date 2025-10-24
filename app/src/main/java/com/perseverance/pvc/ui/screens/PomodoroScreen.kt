@@ -57,6 +57,7 @@ fun PomodoroScreen(
         )
     )
     val uiState by viewModel.uiState.collectAsState()
+    var showDurationDialog by remember { mutableStateOf(false) }
     
     // Notify parent about ViewModel creation (only once)
     androidx.compose.runtime.LaunchedEffect(viewModel) {
@@ -109,15 +110,15 @@ fun PomodoroScreen(
                     )
                 }
             }
-            // Main content with padding
+            // Main content with padding - centered vertically
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .weight(1f)
                     .padding(ResponsivePadding.screen()),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
-                // Keep consistent spacing - always use the spacing from when timer is running
-                Spacer(modifier = Modifier.height(ResponsiveSpacing.extraLarge() * 3))
             
             // Status indicator (clickable)
             Row(
@@ -153,24 +154,9 @@ fun PomodoroScreen(
                 )
             }
             
-            
-            // Subject Selection Dialog
-            if (uiState.showSubjectDialog) {
-                SubjectSelectionDialog(
-                    selectedSubject = uiState.selectedSubject,
-                    availableSubjects = uiState.availableSubjects,
-                    onSubjectSelected = { viewModel.selectSubject(it) },
-                    onAddNewSubject = { viewModel.addNewSubject(it) },
-                    onDismiss = { viewModel.hideSubjectDialog() }
-                )
-            }
-            
-            // Shift the main content (timer, image, totals, buttons) slightly lower
-            Spacer(modifier = Modifier.height(ResponsiveSpacing.large() + ResponsiveSpacing.small()))
+            Spacer(modifier = Modifier.height(ResponsiveSpacing.small()))
             
             // Timer display with long-press to change duration
-            var showDurationDialog by remember { mutableStateOf(false) }
-            
             Text(
                 text = uiState.timeDisplay,
                 fontSize = ResponsiveTextSizes.timerDisplay().sp,
@@ -187,17 +173,6 @@ fun PomodoroScreen(
                     }
                 )
             )
-            
-            // Duration change dialog
-            if (showDurationDialog) {
-                TimerDurationDialog(
-                    onDismiss = { showDurationDialog = false },
-                    onDurationSelected = { minutes ->
-                        viewModel.updateTimerDurationFromHome(minutes)
-                        showDurationDialog = false
-                    }
-                )
-            }
             
             Spacer(modifier = Modifier.height(ResponsiveSpacing.medium()))
             
@@ -373,11 +348,31 @@ fun PomodoroScreen(
                     )
                 }
             }
-            
-            Spacer(modifier = Modifier.weight(1f))
-            }
+        } // Close inner Column (centered content)
+        
+        // Dialogs rendered as overlays
+        if (uiState.showSubjectDialog) {
+            SubjectSelectionDialog(
+                selectedSubject = uiState.selectedSubject,
+                availableSubjects = uiState.availableSubjects,
+                onSubjectSelected = { viewModel.selectSubject(it) },
+                onAddNewSubject = { viewModel.addNewSubject(it) },
+                onDismiss = { viewModel.hideSubjectDialog() }
+            )
         }
-    }
+        
+        // Timer duration dialog
+        if (showDurationDialog) {
+            TimerDurationDialog(
+                onDismiss = { showDurationDialog = false },
+                onDurationSelected = { minutes ->
+                    viewModel.updateTimerDurationFromHome(minutes)
+                    showDurationDialog = false
+                }
+            )
+        }
+        } // Close outer Column
+    } // Close main Box
 }
 
 @Composable
