@@ -29,6 +29,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.perseverance.pvc.ui.components.RadarChart
 import com.perseverance.pvc.ui.components.TopHeader
+import com.perseverance.pvc.ui.components.WeeklySummaryCard
+import com.perseverance.pvc.ui.components.SubjectBreakdownCard
+import com.perseverance.pvc.ui.components.WeeklyStudyChart
 import com.perseverance.pvc.ui.theme.PerseverancePVCTheme
 import com.perseverance.pvc.ui.viewmodel.InsightsViewModel
 import com.perseverance.pvc.ui.viewmodel.PeriodType
@@ -114,33 +117,101 @@ fun Page1Screen(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Calendar Section
-            CalendarView(
-                currentMonth = uiState.currentMonth,
-                selectedDate = uiState.selectedDate,
-                monthDays = uiState.monthDays,
-                onDateSelected = { viewModel.selectDate(it) },
-                onPreviousMonth = { viewModel.previousMonth() },
-                onNextMonth = { viewModel.nextMonth() }
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Selected Day Details
-            DayDetailsSection(
-                selectedDate = uiState.selectedDate,
-                dayData = uiState.selectedDayData
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Radar Chart - Top Subjects
-            RadarChart(
-                subjects = uiState.topSubjects,
-                modifier = Modifier.fillMaxWidth()
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
+            // Conditional content based on selected period
+            when (uiState.selectedPeriod) {
+                PeriodType.WEEK -> {
+                    // Weekly Insights
+                    if (uiState.isLoading) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                color = Color(0xFFFF8C42)
+                            )
+                        }
+                    } else {
+                        uiState.weeklyData?.let { weekData ->
+                        WeeklySummaryCard(
+                            weekData = weekData,
+                            onPreviousWeek = { viewModel.navigateToPreviousWeek() },
+                            onNextWeek = { viewModel.navigateToNextWeek() }
+                        )
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        // Subject Breakdown
+                        if (weekData.subjects.isNotEmpty()) {
+                            SubjectBreakdownCard(subjects = weekData.subjects)
+                            
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
+                        
+                        // Weekly Chart
+                        uiState.weeklyChartData?.let { chartData ->
+                            WeeklyStudyChart(chartData = chartData)
+                            
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
+                        } ?: run {
+                            // No data available
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surface
+                                ),
+                                shape = RoundedCornerShape(16.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(200.dp)
+                                        .padding(20.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "No study data available for this week",
+                                        fontSize = 16.sp,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                else -> {
+                    // Calendar Section
+                    CalendarView(
+                        currentMonth = uiState.currentMonth,
+                        selectedDate = uiState.selectedDate,
+                        monthDays = uiState.monthDays,
+                        onDateSelected = { viewModel.selectDate(it) },
+                        onPreviousMonth = { viewModel.previousMonth() },
+                        onNextMonth = { viewModel.nextMonth() }
+                    )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Selected Day Details
+                    DayDetailsSection(
+                        selectedDate = uiState.selectedDate,
+                        dayData = uiState.selectedDayData
+                    )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Radar Chart - Top Subjects
+                    RadarChart(
+                        subjects = uiState.topSubjects,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
             }
         }
     }

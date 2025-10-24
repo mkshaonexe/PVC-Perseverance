@@ -220,6 +220,91 @@ class StudyRepository(private val context: Context) {
         }
     }
     
+    // Get weekly study data for a specific week
+    fun getWeeklyStudyData(weekStartDate: LocalDate): Flow<WeekStudyData> {
+        val weekEndDate = weekStartDate.plusDays(6)
+        return getStudySessionsInRange(weekStartDate, weekEndDate).map { sessions ->
+            val validSessions = sessions.filter { it.startTime != null }
+            val sessionsByDate = validSessions.groupBy { it.startTime!!.toLocalDate() }
+            
+            // Calculate total study time
+            val totalStudyMinutes = validSessions.sumOf { it.durationSeconds } / 60
+            val totalStudyHours = totalStudyMinutes / 60.0
+            val studyDays = sessionsByDate.keys.size
+            val averageStudyMinutesPerDay = if (studyDays > 0) totalStudyMinutes.toDouble() / studyDays else 0.0
+            
+            // Calculate subject statistics
+            val subjectStats = validSessions
+                .groupBy { it.subject }
+                .map { (subject, subjectSessions) ->
+                    val subjectMinutes = subjectSessions.sumOf { it.durationSeconds } / 60
+                    val subjectStudyDays = subjectSessions.map { it.startTime!!.toLocalDate() }.distinct().size
+                    val subjectAveragePerDay = if (subjectStudyDays > 0) subjectMinutes.toDouble() / subjectStudyDays else 0.0
+                    val percentageOfTotal = if (totalStudyMinutes > 0) (subjectMinutes.toDouble() / totalStudyMinutes) * 100 else 0.0
+                    
+                    SubjectWeeklyStats(
+                        subject = subject,
+                        totalMinutes = subjectMinutes,
+                        averageMinutesPerDay = subjectAveragePerDay,
+                        studyDays = subjectStudyDays,
+                        percentageOfTotal = percentageOfTotal
+                    )
+                }
+                .sortedByDescending { it.totalMinutes }
+            
+            // Create daily breakdown
+            val dailyBreakdown = (0..6).map { dayOffset ->
+                val date = weekStartDate.plusDays(dayOffset.toLong())
+                val daySessions = sessionsByDate[date] ?: emptyList()
+                
+                val subjectData = daySessions.groupBy { it.subject }
+                    .map { (subject, subjectSessions) ->
+                        val totalSeconds = subjectSessions.sumOf { it.durationSeconds }
+                        SubjectStudyTime(
+                            subject = subject,
+                            totalMinutes = totalSeconds / 60,
+                            sessions = subjectSessions
+                        )
+                    }
+                
+                DailyStudyData(
+                    date = date,
+                    subjects = subjectData
+                )
+            }
+            
+            WeekStudyData(
+                weekStartDate = weekStartDate,
+                weekEndDate = weekEndDate,
+                totalStudyMinutes = totalStudyMinutes,
+                totalStudyHours = totalStudyHours,
+                averageStudyMinutesPerDay = averageStudyMinutesPerDay,
+                studyDays = studyDays,
+                subjects = subjectStats,
+                dailyBreakdown = dailyBreakdown
+            )
+        }
+    }
+    
+    // Get weekly chart data for visualization
+    fun getWeeklyChartData(weekStartDate: LocalDate): Flow<WeeklyChartData> {
+        return getWeeklyStudyData(weekStartDate).map { weekData ->
+            val chartPoints = weekData.dailyBreakdown.map { dailyData ->
+                val totalMinutes = dailyData.subjects.sumOf { it.totalMinutes }
+                ChartPoint(
+                    day = dailyData.date.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.getDefault()),
+                    totalMinutes = totalMinutes,
+                    date = dailyData.date
+                )
+            }
+            
+            WeeklyChartData(
+                weekData = weekData,
+                chartPoints = chartPoints
+            )
+        }
+    }
+    
     // Restore timer state
     suspend fun restoreTimerState(): PomodoroTimerState? {
         val timerStateJson = context.dataStore.data.first()[TIMER_STATE_KEY]

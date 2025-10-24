@@ -4,6 +4,8 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.perseverance.pvc.data.StudyRepository
+import com.perseverance.pvc.data.WeekStudyData
+import com.perseverance.pvc.data.WeeklyChartData
 import com.perseverance.pvc.ui.components.SubjectRadarData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -33,6 +35,8 @@ data class InsightsUiState(
     val monthDays: Map<LocalDate, DayStudyData> = emptyMap(),
     val selectedDayData: DayStudyData? = null,
     val topSubjects: List<SubjectRadarData> = emptyList(),
+    val weeklyData: WeekStudyData? = null,
+    val weeklyChartData: WeeklyChartData? = null,
     val isLoading: Boolean = false
 )
 
@@ -47,6 +51,18 @@ class InsightsViewModel(application: Application) : AndroidViewModel(application
     
     fun selectPeriod(period: PeriodType) {
         _uiState.value = _uiState.value.copy(selectedPeriod = period)
+        
+        // Load data based on selected period
+        when (period) {
+            PeriodType.WEEK -> loadWeeklyData()
+            else -> {
+                // Clear weekly data when switching to other periods
+                _uiState.value = _uiState.value.copy(
+                    weeklyData = null,
+                    weeklyChartData = null
+                )
+            }
+        }
     }
     
     fun selectDate(date: LocalDate) {
@@ -143,6 +159,77 @@ class InsightsViewModel(application: Application) : AndroidViewModel(application
     
     fun getMonthName(): String {
         return _uiState.value.currentMonth.month.getDisplayName(TextStyle.SHORT, Locale.getDefault())
+    }
+    
+    private fun loadWeeklyData() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            
+            // Get the start of the current week (Monday)
+            val today = LocalDate.now()
+            val currentWeekStart = today.minusDays((today.dayOfWeek.value - 1).toLong())
+            
+            repository.getWeeklyStudyData(currentWeekStart).collect { weekData ->
+                _uiState.value = _uiState.value.copy(
+                    weeklyData = weekData,
+                    isLoading = false
+                )
+            }
+        }
+        
+        // Load chart data separately
+        viewModelScope.launch {
+            val today = LocalDate.now()
+            val currentWeekStart = today.minusDays((today.dayOfWeek.value - 1).toLong())
+            
+            repository.getWeeklyChartData(currentWeekStart).collect { chartData ->
+                _uiState.value = _uiState.value.copy(weeklyChartData = chartData)
+            }
+        }
+    }
+    
+    fun navigateToPreviousWeek() {
+        val currentWeekStart = _uiState.value.weeklyData?.weekStartDate ?: return
+        val previousWeekStart = currentWeekStart.minusWeeks(1)
+        
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            
+            repository.getWeeklyStudyData(previousWeekStart).collect { weekData ->
+                _uiState.value = _uiState.value.copy(
+                    weeklyData = weekData,
+                    isLoading = false
+                )
+            }
+        }
+        
+        viewModelScope.launch {
+            repository.getWeeklyChartData(previousWeekStart).collect { chartData ->
+                _uiState.value = _uiState.value.copy(weeklyChartData = chartData)
+            }
+        }
+    }
+    
+    fun navigateToNextWeek() {
+        val currentWeekStart = _uiState.value.weeklyData?.weekStartDate ?: return
+        val nextWeekStart = currentWeekStart.plusWeeks(1)
+        
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            
+            repository.getWeeklyStudyData(nextWeekStart).collect { weekData ->
+                _uiState.value = _uiState.value.copy(
+                    weeklyData = weekData,
+                    isLoading = false
+                )
+            }
+        }
+        
+        viewModelScope.launch {
+            repository.getWeeklyChartData(nextWeekStart).collect { chartData ->
+                _uiState.value = _uiState.value.copy(weeklyChartData = chartData)
+            }
+        }
     }
 }
 
