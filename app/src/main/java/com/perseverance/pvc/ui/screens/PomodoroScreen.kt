@@ -97,8 +97,8 @@ fun PomodoroScreen(
                 .windowInsetsPadding(WindowInsets(0.dp, 0.dp, 0.dp, 0.dp)),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Top header - inside the green marked area at the very top
-            if (!uiState.isPlaying) {
+            // Top header - only show when timer is not running or paused
+            if (!uiState.isPlaying && !uiState.isPaused) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -118,7 +118,8 @@ fun PomodoroScreen(
                     .padding(ResponsivePadding.screen()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(modifier = Modifier.height(if (uiState.isPlaying) ResponsiveSpacing.extraLarge() * 3 else ResponsiveSpacing.small()))
+                // Keep consistent spacing - always use the spacing from when timer is running
+                Spacer(modifier = Modifier.height(ResponsiveSpacing.extraLarge() * 3))
             
             // Status indicator (clickable)
             Row(
@@ -166,7 +167,8 @@ fun PomodoroScreen(
                 )
             }
             
-            Spacer(modifier = Modifier.height(ResponsiveSpacing.large()))
+            // Shift the main content (timer, image, totals, buttons) slightly lower
+            Spacer(modifier = Modifier.height(ResponsiveSpacing.large() + ResponsiveSpacing.small()))
             
             // Timer display with long-press to change duration
             var showDurationDialog by remember { mutableStateOf(false) }
