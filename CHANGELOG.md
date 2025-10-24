@@ -1,5 +1,13 @@
 # Changelog
 
+## Version 0.2.6 - October 24, 2025, 2:25 PM
+
+### Updates
+- Version bump to 0.2.6
+- Last updated: October 24, 2025, 2:25 PM
+
+---
+
 ## Version 0.2.5 - October 19, 2025, 2:25 PM
 
 ### New Features
