@@ -362,27 +362,41 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         // Handle the transition based on current session type
         when (_uiState.value.currentSessionType) {
             SessionType.WORK -> {
-                // Work session completed - transition to break
+                // Work session completed - stay in work mode and reset to initial state
+                // User can choose to start a new session or take a break
                 val newCompletedSessions = _uiState.value.completedSessions + 1
                 _uiState.value = _uiState.value.copy(
                     completedSessions = newCompletedSessions,
-                    currentSessionType = SessionType.SHORT_BREAK
+                    currentSessionType = SessionType.WORK
                 )
-                remainingTimeInSeconds = breakDuration
+                remainingTimeInSeconds = workDuration
+                
+                // Reset session tracking so user can start fresh
+                sessionStartTime = null
+                sessionInitialDuration = 0
                 
                 // Clear timer state after completing work session
                 viewModelScope.launch {
                     repository.clearTimerState()
                 }
                 
-                Log.d("PomodoroViewModel", "Work session acknowledged, transitioning to break")
+                Log.d("PomodoroViewModel", "Work session acknowledged, staying in work mode for user choice")
             }
             SessionType.SHORT_BREAK, SessionType.LONG_BREAK -> {
-                // Break completed - transition back to work
+                // Break completed - transition back to work and reset to initial state
                 _uiState.value = _uiState.value.copy(currentSessionType = SessionType.WORK)
                 remainingTimeInSeconds = workDuration
                 
-                Log.d("PomodoroViewModel", "Break acknowledged, transitioning back to work")
+                // Reset session tracking so user can start fresh
+                sessionStartTime = null
+                sessionInitialDuration = 0
+                
+                // Clear timer state after completing break session
+                viewModelScope.launch {
+                    repository.clearTimerState()
+                }
+                
+                Log.d("PomodoroViewModel", "Break acknowledged, transitioning back to work and reset to initial state")
             }
         }
         
