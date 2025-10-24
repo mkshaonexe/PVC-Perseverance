@@ -37,5 +37,6 @@ data class PomodoroTimerState(
     val sessionType: String, // "WORK", "SHORT_BREAK", "LONG_BREAK"
     val completedSessions: Int,
     val isPlaying: Boolean,
-    val isPaused: Boolean
+    val isPaused: Boolean,
+    val lastUpdateTime: LocalDateTime = LocalDateTime.now() // Track when timer was last active
 )

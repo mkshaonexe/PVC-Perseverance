@@ -31,6 +31,10 @@ class TimerSoundService : Service() {
     private val duration = 0.1 // 0.1 seconds per beep
     private val beepInterval = 1000L // 1 second between beeps
     
+    // Timeout parameters
+    private val maxSoundDurationMillis = 120000L // 2 minutes max
+    private var soundStartTime = 0L
+    
     inner class TimerSoundBinder : Binder() {
         fun getService(): TimerSoundService = this@TimerSoundService
     }
@@ -53,6 +57,9 @@ class TimerSoundService : Service() {
             // Stop any existing sound first
             stopInfiniteSound()
             
+            // Record start time for timeout
+            soundStartTime = System.currentTimeMillis()
+            
             // Try 1000 Hz sine wave beep first
             try {
                 startSineWaveBeep()
@@ -74,6 +81,14 @@ class TimerSoundService : Service() {
             // Create a coroutine to play continuous beeps
             soundJob = CoroutineScope(Dispatchers.IO).launch {
                 while (isPlaying) {
+                    // Check if timeout has been reached
+                    val elapsedTime = System.currentTimeMillis() - soundStartTime
+                    if (elapsedTime >= maxSoundDurationMillis) {
+                        Log.d("TimerSoundService", "Sound timeout reached (${elapsedTime}ms), stopping sound")
+                        stopInfiniteSound()
+                        break
+                    }
+                    
                     playSineWaveBeep()
                     delay(beepInterval)
                 }
@@ -143,6 +158,14 @@ class TimerSoundService : Service() {
             // Create a coroutine to play continuous beeps
             soundJob = CoroutineScope(Dispatchers.IO).launch {
                 while (isPlaying) {
+                    // Check if timeout has been reached
+                    val elapsedTime = System.currentTimeMillis() - soundStartTime
+                    if (elapsedTime >= maxSoundDurationMillis) {
+                        Log.d("TimerSoundService", "Fallback sound timeout reached (${elapsedTime}ms), stopping sound")
+                        stopInfiniteSound()
+                        break
+                    }
+                    
                     toneGenerator?.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 1000)
                     delay(1500) // 1.5 second intervals
                 }
@@ -158,6 +181,7 @@ class TimerSoundService : Service() {
         Log.d("TimerSoundService", "stopInfiniteSound called, isPlaying: $isPlaying")
         try {
             isPlaying = false
+            soundStartTime = 0L // Reset start time
             
             // Stop MediaPlayer
             mediaPlayer?.let { mp ->
