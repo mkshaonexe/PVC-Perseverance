@@ -169,8 +169,10 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
     }
     
     private fun updateTotalStudyTimeDisplay(savedSeconds: Int) {
-        // Add current session time if timer is running
-        val currentSessionSeconds = if (_uiState.value.isPlaying && sessionStartTime != null) {
+        // Add current session time if timer is running AND subject is not "Break"
+        val currentSessionSeconds = if (_uiState.value.isPlaying && 
+                                         sessionStartTime != null && 
+                                         !_uiState.value.selectedSubject.equals("Break", ignoreCase = true)) {
             sessionInitialDuration - remainingTimeInSeconds
         } else {
             0
@@ -444,6 +446,14 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
     private fun saveCurrentSession() {
         if (sessionStartTime == null) return
         
+        // Don't save session if subject is "Break" - break time should not count as study time
+        if (_uiState.value.selectedSubject.equals("Break", ignoreCase = true)) {
+            Log.d("PomodoroViewModel", "Skipping save for Break session - not counting as study time")
+            sessionStartTime = null
+            sessionInitialDuration = 0
+            return
+        }
+        
         // Calculate actual study time in SECONDS (time elapsed since session start)
         val studyDurationSeconds = (sessionInitialDuration - remainingTimeInSeconds).coerceAtLeast(0)
         
@@ -571,12 +581,17 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
                     // Calculate actual study duration (initial duration minus what remained when it completed)
                     val actualStudyDuration = timerState.sessionInitialDuration
                     
-                    val session = repository.createStudySession(
-                        subject = timerState.selectedSubject,
-                        durationSeconds = actualStudyDuration,
-                        startTime = timerState.sessionStartTime
-                    )
-                    repository.saveStudySession(session)
+                    // Only save if subject is not "Break"
+                    if (!timerState.selectedSubject.equals("Break", ignoreCase = true)) {
+                        val session = repository.createStudySession(
+                            subject = timerState.selectedSubject,
+                            durationSeconds = actualStudyDuration,
+                            startTime = timerState.sessionStartTime
+                        )
+                        repository.saveStudySession(session)
+                    } else {
+                        Log.d("PomodoroViewModel", "Timer completed with Break subject - not saving as study time")
+                    }
                     repository.clearTimerState()
                     
                     // Reset remaining time to 0 to show completion
@@ -691,10 +706,10 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         
         // Auto-save timer state when ViewModel is destroyed
         if (sessionStartTime != null && (_uiState.value.isPlaying || _uiState.value.isPaused)) {
-            // Save the current session immediately
+            // Save the current session immediately (but only if not "Break")
             val studyDurationSeconds = (sessionInitialDuration - remainingTimeInSeconds).coerceAtLeast(0)
             
-            if (studyDurationSeconds > 0) {
+            if (studyDurationSeconds > 0 && !_uiState.value.selectedSubject.equals("Break", ignoreCase = true)) {
                 val session = repository.createStudySession(
                     subject = _uiState.value.selectedSubject,
                     durationSeconds = studyDurationSeconds,
@@ -706,6 +721,8 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
                     repository.saveStudySession(session)
                     repository.clearTimerState()
                 }
+            } else if (_uiState.value.selectedSubject.equals("Break", ignoreCase = true)) {
+                Log.d("PomodoroViewModel", "ViewModel cleared with Break subject - not saving as study time")
             }
         }
     }
