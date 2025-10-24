@@ -100,9 +100,7 @@ fun PomodoroScreen(
             // Top header - only show when timer is not running or paused
             if (!uiState.isPlaying && !uiState.isPaused) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .windowInsetsPadding(WindowInsets.statusBars)
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     TopHeader(
                         onNavigateToSettings = onNavigateToSettings,
