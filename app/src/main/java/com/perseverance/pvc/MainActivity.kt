@@ -239,7 +239,8 @@ fun AppNavigation(
             when (currentRoute) {
                 Screen.Dashboard.route -> Page2Screen(
                     onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
-                    onNavigateToInsights = { navigateToRoute(Screen.Insights.route) }
+                    onNavigateToInsights = { navigateToRoute(Screen.Insights.route) },
+                    onNavigateToMenu = { navigateToRoute(Screen.Menu.route) }
                 ) // Dashboard = Page2Screen (study stats)
                 Screen.Home.route -> PomodoroScreen(
                     onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
@@ -252,16 +253,19 @@ fun AppNavigation(
                 ) // Home = Pomodoro timer
                 Screen.Group.route -> GroupScreen(
                     onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
-                    onNavigateToInsights = { navigateToRoute(Screen.Insights.route) }
+                    onNavigateToInsights = { navigateToRoute(Screen.Insights.route) },
+                    onNavigateToMenu = { navigateToRoute(Screen.Menu.route) }
                 ) // Group = GroupScreen (Study Groups)
                 Screen.Settings.route -> SettingsScreen(
                     onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
                     onNavigateToInsights = { navigateToRoute(Screen.Insights.route) },
+                    onNavigateToMenu = { navigateToRoute(Screen.Menu.route) },
                     onBackClick = { goBack() }
                 )
                 Screen.Insights.route -> Page1Screen(
                     onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
                     onNavigateToInsights = { navigateToRoute(Screen.Insights.route) },
+                    onNavigateToMenu = { navigateToRoute(Screen.Menu.route) },
                     onBackClick = { goBack() }
                 ) // Insights = Page1Screen (accessible via top icon)
                 Screen.Menu.route -> MenuScreen(

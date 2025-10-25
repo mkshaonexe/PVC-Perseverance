@@ -25,7 +25,8 @@ import com.perseverance.pvc.ui.components.TopHeader
 @Composable
 fun GroupScreen(
     onNavigateToSettings: () -> Unit = {},
-    onNavigateToInsights: () -> Unit = {}
+    onNavigateToInsights: () -> Unit = {},
+    onNavigateToMenu: () -> Unit = {}
 ) {
     Box(
         modifier = Modifier.fillMaxSize()
@@ -57,7 +58,7 @@ fun GroupScreen(
             TopHeader(
                 onNavigateToSettings = onNavigateToSettings,
                 onNavigateToInsights = onNavigateToInsights,
-                onHamburgerClick = { /* Handle hamburger menu click */ }
+                onHamburgerClick = onNavigateToMenu
             )
             
             // Main content with padding and scroll

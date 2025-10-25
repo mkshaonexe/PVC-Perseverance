@@ -43,7 +43,8 @@ import com.perseverance.pvc.ui.viewmodel.StudyViewModel
 @Composable
 fun Page2Screen(
     onNavigateToSettings: () -> Unit = {},
-    onNavigateToInsights: () -> Unit = {}
+    onNavigateToInsights: () -> Unit = {},
+    onNavigateToMenu: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val studyViewModel: StudyViewModel = viewModel(
@@ -85,7 +86,7 @@ fun Page2Screen(
             TopHeader(
                 onNavigateToSettings = onNavigateToSettings,
                 onNavigateToInsights = onNavigateToInsights,
-                onHamburgerClick = { /* Handle hamburger menu click */ }
+                onHamburgerClick = onNavigateToMenu
             )
             
             // Main content with padding

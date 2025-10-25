@@ -33,6 +33,7 @@ import com.perseverance.pvc.ui.viewmodel.SettingsViewModel
 fun SettingsScreen(
     onNavigateToSettings: () -> Unit = {},
     onNavigateToInsights: () -> Unit = {},
+    onNavigateToMenu: () -> Unit = {},
     onBackClick: () -> Unit = {},
     viewModel: SettingsViewModel = viewModel()
 ) {
@@ -82,7 +83,7 @@ fun SettingsScreen(
             TopHeader(
                 onNavigateToSettings = onNavigateToSettings,
                 onNavigateToInsights = onNavigateToInsights,
-                onHamburgerClick = { /* Handle hamburger menu click */ },
+                onHamburgerClick = onNavigateToMenu,
                 onBackClick = onBackClick,
                 showBackButton = true
             )

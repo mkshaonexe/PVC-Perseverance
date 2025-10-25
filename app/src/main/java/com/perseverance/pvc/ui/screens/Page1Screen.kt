@@ -47,6 +47,7 @@ import java.util.Locale
 fun Page1Screen(
     onNavigateToSettings: () -> Unit = {},
     onNavigateToInsights: () -> Unit = {},
+    onNavigateToMenu: () -> Unit = {},
     onBackClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -89,7 +90,7 @@ fun Page1Screen(
             TopHeader(
                 onNavigateToSettings = onNavigateToSettings,
                 onNavigateToInsights = onNavigateToInsights,
-                onHamburgerClick = { /* Handle hamburger menu click */ },
+                onHamburgerClick = onNavigateToMenu,
                 onBackClick = onBackClick,
                 showBackButton = true
             )
