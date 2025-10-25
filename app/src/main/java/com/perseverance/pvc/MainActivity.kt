@@ -126,6 +126,11 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+    
+    fun requestBackgroundPermissionsIfNeeded() {
+        // Request all background permissions for proper timer functionality
+        PermissionManager.requestAllBackgroundPermissions(this)
+    }
 }
 
 @Composable

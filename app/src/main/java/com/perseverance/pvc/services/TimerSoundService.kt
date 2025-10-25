@@ -1,6 +1,11 @@
 package com.perseverance.pvc.services
 
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.media.AudioAttributes
 import android.media.AudioFormat
@@ -11,8 +16,12 @@ import android.media.RingtoneManager
 import android.media.ToneGenerator
 import android.net.Uri
 import android.os.Binder
+import android.os.Build
 import android.os.IBinder
 import android.util.Log
+import androidx.core.app.NotificationCompat
+import com.perseverance.pvc.MainActivity
+import com.perseverance.pvc.R
 import kotlinx.coroutines.*
 import kotlin.math.*
 
@@ -35,6 +44,14 @@ class TimerSoundService : Service() {
     private val maxSoundDurationMillis = 120000L // 2 minutes max
     private var soundStartTime = 0L
     
+    // Foreground service constants
+    companion object {
+        private const val FOREGROUND_SERVICE_ID = 2001
+        private const val CHANNEL_ID = "timer_sound_service"
+        private const val CHANNEL_NAME = "Timer Sound Service"
+        private const val CHANNEL_DESCRIPTION = "Keeps timer sounds playing in background"
+    }
+    
     inner class TimerSoundBinder : Binder() {
         fun getService(): TimerSoundService = this@TimerSoundService
     }
@@ -43,7 +60,49 @@ class TimerSoundService : Service() {
     
     override fun onCreate() {
         super.onCreate()
+        createNotificationChannel()
         Log.d("TimerSoundService", "Service created")
+    }
+    
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                CHANNEL_NAME,
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = CHANNEL_DESCRIPTION
+                enableVibration(false)
+                enableLights(false)
+                setSound(null, null) // Silent channel
+            }
+            
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
+    
+    private fun createForegroundNotification(): Notification {
+        val intent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle("Pomodoro Timer Active")
+            .setContentText("Timer is running in background")
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true)
+            .setContentIntent(pendingIntent)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .build()
     }
     
     fun startInfiniteSound() {
@@ -54,6 +113,9 @@ class TimerSoundService : Service() {
         }
         
         try {
+            // Start foreground service
+            startForeground(FOREGROUND_SERVICE_ID, createForegroundNotification())
+            
             // Stop any existing sound first
             stopInfiniteSound()
             
@@ -228,6 +290,18 @@ class TimerSoundService : Service() {
                 }
             }
             soundJob = null
+            
+            // Stop foreground service
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                } else {
+                    @Suppress("DEPRECATION")
+                    stopForeground(true)
+                }
+            } catch (e: Exception) {
+                Log.e("TimerSoundService", "Error stopping foreground service", e)
+            }
             
             Log.d("TimerSoundService", "Sound stopped successfully")
         } catch (e: Exception) {

@@ -37,6 +37,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.graphics.luminance
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.platform.LocalContext
+import androidx.activity.ComponentActivity
 import com.perseverance.pvc.R
 import com.perseverance.pvc.ui.components.TopHeader
 import com.perseverance.pvc.ui.theme.PerseverancePVCTheme
@@ -254,7 +255,10 @@ fun PomodoroScreen(
                 
                 // Take a Break / Start Focus button (changes based on session type)
                 Button(
-                    onClick = { viewModel.startBreakTimer() },
+                    onClick = { 
+                        val activity = context as? ComponentActivity
+                        viewModel.startBreakTimer(activity)
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(ResponsiveSpacing.extraLarge() + 10.dp)
@@ -281,7 +285,12 @@ fun PomodoroScreen(
                     // Pause/Resume Button
                     Button(
                         onClick = {
-                            if (uiState.isPlaying) viewModel.pauseTimer() else viewModel.startTimer()
+                            if (uiState.isPlaying) {
+                                viewModel.pauseTimer()
+                            } else {
+                                val activity = context as? ComponentActivity
+                                viewModel.startTimer(activity)
+                            }
                         },
                         modifier = Modifier
                             .weight(1f)
@@ -331,7 +340,10 @@ fun PomodoroScreen(
             } else {
                 // Show single Start Focus button when timer is not running
                 Button(
-                    onClick = { viewModel.startTimer() },
+                    onClick = { 
+                        val activity = context as? ComponentActivity
+                        viewModel.startTimer(activity)
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(ResponsiveSpacing.extraLarge() + 10.dp)

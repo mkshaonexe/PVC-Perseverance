@@ -9,6 +9,7 @@ import com.perseverance.pvc.data.SettingsRepository
 import com.perseverance.pvc.services.TimerNotificationService
 import com.perseverance.pvc.services.TimerSoundService
 import com.perseverance.pvc.utils.PermissionManager
+import android.app.Activity
 import com.perseverance.pvc.widgets.PomodoroTimerWidgetProvider
 import com.perseverance.pvc.widgets.StudyTimeWidgetProvider
 import android.content.ComponentName
@@ -190,8 +191,13 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         )
     }
     
-    fun startTimer() {
+    fun startTimer(activity: Activity? = null) {
         if (timerJob?.isActive == true) return
+        
+        // Request background permissions when timer starts
+        activity?.let { 
+            requestBackgroundPermissionsIfNeeded(it)
+        }
         
         // Only set session start time if this is a new session (not resuming)
         if (sessionStartTime == null && _uiState.value.currentSessionType == SessionType.WORK) {
@@ -412,7 +418,7 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
     }
     
     // Start break timer directly from work session completion
-    fun startBreakTimer() {
+    fun startBreakTimer(activity: Activity? = null) {
         Log.d("PomodoroViewModel", "Starting break timer")
         
         // Stop the infinite sound
@@ -451,7 +457,7 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         updateTimeDisplay()
         
         // Auto-start the timer
-        startTimer()
+        startTimer(activity)
         
         Log.d("PomodoroViewModel", "Break timer started with duration: $breakDuration seconds")
     }
@@ -777,5 +783,10 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         val context = getApplication<Application>().applicationContext
         PomodoroTimerWidgetProvider.updateAllWidgets(context)
         StudyTimeWidgetProvider.updateAllWidgets(context)
+    }
+    
+    // Request background permissions when timer starts
+    fun requestBackgroundPermissionsIfNeeded(activity: Activity) {
+        PermissionManager.requestAllBackgroundPermissions(activity)
     }
 }
