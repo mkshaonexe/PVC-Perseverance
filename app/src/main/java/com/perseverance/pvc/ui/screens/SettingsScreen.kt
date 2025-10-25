@@ -356,7 +356,8 @@ fun SettingsItem(
         Icon(
             imageVector = Icons.Filled.ChevronRight,
             contentDescription = null,
-            tint = Color(0xFF4CAF50),
+            tint = if (MaterialTheme.colorScheme.background.luminance() >= 0.5f) 
+                Color(0xFF6B7280) else Color(0xFF4CAF50),
             modifier = Modifier.size(16.dp)
         )
     }
@@ -393,10 +394,14 @@ fun SettingsToggleItem(
             onCheckedChange = onCheckedChange,
             modifier = Modifier.scale(0.8f),
             colors = SwitchDefaults.colors(
-                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                checkedTrackColor = Color(0xFF4CAF50),
-                uncheckedThumbColor = MaterialTheme.colorScheme.onSurface,
-                uncheckedTrackColor = Color(0xFF666666)
+                checkedThumbColor = if (MaterialTheme.colorScheme.background.luminance() >= 0.5f) 
+                    Color.White else MaterialTheme.colorScheme.onPrimary,
+                checkedTrackColor = if (MaterialTheme.colorScheme.background.luminance() >= 0.5f) 
+                    Color(0xFF6B7280) else Color(0xFF4CAF50),
+                uncheckedThumbColor = if (MaterialTheme.colorScheme.background.luminance() >= 0.5f) 
+                    Color(0xFFE5E7EB) else MaterialTheme.colorScheme.onSurface,
+                uncheckedTrackColor = if (MaterialTheme.colorScheme.background.luminance() >= 0.5f) 
+                    Color(0xFFD1D5DB) else Color(0xFF666666)
             )
         )
     }
@@ -508,7 +513,8 @@ fun SettingsDropdownItem(
                                         }
                                     },
                                     colors = RadioButtonDefaults.colors(
-                                        selectedColor = Color(0xFF4CAF50),
+                                        selectedColor = if (MaterialTheme.colorScheme.background.luminance() >= 0.5f) 
+                                            Color(0xFF6B7280) else Color(0xFF4CAF50),
                                         unselectedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                                     )
                                 )
@@ -599,10 +605,11 @@ fun CustomTimerInputDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 24.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFF4CAF50),
-                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                    )
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = if (MaterialTheme.colorScheme.background.luminance() >= 0.5f) 
+                                Color(0xFF6B7280) else Color(0xFF4CAF50),
+                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                        )
                 )
                 
                 Row(
@@ -624,7 +631,8 @@ fun CustomTimerInputDialog(
                         onClick = { onConfirm(customMinutes) },
                         enabled = isValid,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF4CAF50),
+                            containerColor = if (MaterialTheme.colorScheme.background.luminance() >= 0.5f) 
+                                Color(0xFF6B7280) else Color(0xFF4CAF50),
                             contentColor = Color.White
                         ),
                         shape = RoundedCornerShape(8.dp)
