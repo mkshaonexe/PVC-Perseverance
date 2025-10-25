@@ -8,7 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -32,6 +32,9 @@ fun MenuScreen(
     onBackClick: () -> Unit = {},
     onNavigate: (String) -> Unit = {}
 ) {
+    var developerClickCount by remember { mutableStateOf(0) }
+    var isDeveloperModeUnlocked by remember { mutableStateOf(false) }
+    var showDeveloperPopup by remember { mutableStateOf(false) }
     val menuItems = listOf(
         MenuItem(
             title = "Dashboard",
@@ -103,26 +106,85 @@ fun MenuScreen(
             items(menuItems) { item ->
                 MenuItemCard(
                     item = item,
-                    onClick = { onNavigate(item.route) }
+                    onClick = { 
+                        if (item.route == "developer") {
+                            // Special handling for Developer Mode
+                            developerClickCount++
+                            if (developerClickCount >= 7) {
+                                isDeveloperModeUnlocked = true
+                                showDeveloperPopup = true
+                                // Navigate after showing popup
+                                onNavigate(item.route)
+                            }
+                            // Don't navigate on clicks 1-6, just count them
+                        } else {
+                            onNavigate(item.route)
+                        }
+                    },
+                    isDeveloperMode = item.route == "developer",
+                    isUnlocked = isDeveloperModeUnlocked
                 )
             }
         }
+    }
+    
+    // Developer mode popup
+    if (showDeveloperPopup) {
+        AlertDialog(
+            onDismissRequest = { showDeveloperPopup = false },
+            title = {
+                Text(
+                    text = "🎉 Developer Mode Unlocked!",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = "You are now a developer!\n\nYou can now add study time manually for testing purposes.",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showDeveloperPopup = false },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Text("Got it!")
+                }
+            }
+        )
     }
 }
 
 @Composable
 fun MenuItemCard(
     item: MenuItem,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    isDeveloperMode: Boolean = false,
+    isUnlocked: Boolean = false
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = if (isDeveloperMode && !isUnlocked) {
+                // Subtle color change for developer mode (always when not unlocked)
+                MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
+            } else {
+                MaterialTheme.colorScheme.surface
+            }
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isDeveloperMode && !isUnlocked) {
+                6.dp // Slightly higher elevation for feedback
+            } else {
+                4.dp
+            }
+        )
     ) {
         Row(
             modifier = Modifier
@@ -159,13 +221,15 @@ fun MenuItemCard(
                 }
             }
             
-            // Arrow icon
-            Icon(
-                imageVector = Icons.Filled.ChevronRight,
-                contentDescription = "Navigate to ${item.title}",
-                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                modifier = Modifier.size(20.dp)
-            )
+            // Arrow icon (only show for non-developer items or unlocked developer mode)
+            if (!isDeveloperMode || isUnlocked) {
+                Icon(
+                    imageVector = Icons.Filled.ChevronRight,
+                    contentDescription = "Navigate to ${item.title}",
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
         }
     }
 }
