@@ -12,11 +12,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.perseverance.pvc.ui.components.TopHeader
+import com.perseverance.pvc.ui.theme.glassBorder
+import com.perseverance.pvc.ui.theme.glassElevation
+import com.perseverance.pvc.ui.theme.isLightTheme
 
 data class MenuItem(
     val title: String,
@@ -166,6 +170,7 @@ fun MenuItemCard(
     isDeveloperMode: Boolean = false,
     isUnlocked: Boolean = false
 ) {
+    val isLight = isLightTheme()
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -178,13 +183,12 @@ fun MenuItemCard(
                 MaterialTheme.colorScheme.surface
             }
         ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isDeveloperMode && !isUnlocked) {
-                6.dp // Slightly higher elevation for feedback
-            } else {
-                4.dp
-            }
-        )
+        border = glassBorder(isLight),
+        elevation = if (isDeveloperMode && !isUnlocked) {
+            CardDefaults.cardElevation(defaultElevation = 6.dp)
+        } else {
+            glassElevation(isLight)
+        }
     ) {
         Row(
             modifier = Modifier

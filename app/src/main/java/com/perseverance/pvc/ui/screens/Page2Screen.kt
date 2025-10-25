@@ -36,6 +36,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.luminance
 import com.perseverance.pvc.ui.components.StudyTimeChart
 import com.perseverance.pvc.ui.theme.PerseverancePVCTheme
+import com.perseverance.pvc.ui.theme.glassBorder
+import com.perseverance.pvc.ui.theme.glassElevation
+import com.perseverance.pvc.ui.theme.isLightTheme
 import com.perseverance.pvc.ui.components.AnalogClock
 import com.perseverance.pvc.ui.components.TopHeader
 import com.perseverance.pvc.ui.viewmodel.StudyViewModel
@@ -107,9 +110,8 @@ fun Page2Screen(
                         containerColor = MaterialTheme.colorScheme.surface
                     ),
                     shape = RoundedCornerShape(16.dp),
-                    elevation = CardDefaults.cardElevation(
-                        defaultElevation = if (isLightTheme) 2.dp else 0.dp
-                    )
+                    border = glassBorder(isLightTheme),
+                    elevation = glassElevation(isLightTheme)
                 ) {
                     Row(
                         modifier = Modifier
@@ -234,9 +236,8 @@ fun StudyTimeChartWithScrollableLegend(
                 MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
         ),
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isLightTheme) 2.dp else 0.dp
-        )
+        border = glassBorder(isLightTheme),
+        elevation = glassElevation(isLightTheme)
     ) {
         Column(
             modifier = Modifier.fillMaxSize()

@@ -7,6 +7,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
@@ -28,13 +29,16 @@ private val LightColorScheme = lightColorScheme(
     primary = PomodoroYellow,
     secondary = PomodoroGreen,
     tertiary = PomodoroGrey,
-    background = PomodoroWhite,
-    surface = PomodoroWhite,
+    background = LightBackground, // Soft gradient background
+    surface = GlassWhite, // Glass-like surface
+    surfaceVariant = LightSurfaceVariant, // Slightly darker variant
     onPrimary = PomodoroBlack,
     onSecondary = PomodoroBlack,
     onTertiary = PomodoroBlack,
-    onBackground = PomodoroBlack,
-    onSurface = PomodoroBlack
+    onBackground = Color(0xFF1A1F36), // Darker text for better contrast
+    onSurface = Color(0xFF1A1F36),
+    onSurfaceVariant = Color(0xFF4A5568),
+    outline = GlassBorder // Subtle borders
 )
 
 @Composable

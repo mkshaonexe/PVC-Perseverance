@@ -27,6 +27,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.perseverance.pvc.ui.components.TopHeader
+import com.perseverance.pvc.ui.theme.glassBorder
+import com.perseverance.pvc.ui.theme.glassElevation
+import com.perseverance.pvc.ui.theme.isLightTheme
 import com.perseverance.pvc.ui.viewmodel.SettingsViewModel
 
 @Composable
@@ -312,9 +315,8 @@ fun SettingsSection(
                     MaterialTheme.colorScheme.surface.copy(alpha = 0.3f)
             ),
             shape = RoundedCornerShape(12.dp),
-            elevation = CardDefaults.cardElevation(
-                defaultElevation = if (isLightTheme) 1.dp else 0.dp
-            )
+            border = glassBorder(isLightTheme),
+            elevation = glassElevation(isLightTheme)
         ) {
             Column {
                 items()
@@ -447,6 +449,7 @@ fun SettingsDropdownItem(
     // Dialog with options
     if (showDialog) {
         Dialog(onDismissRequest = { showDialog = false }) {
+            val isLight = isLightTheme()
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -454,7 +457,9 @@ fun SettingsDropdownItem(
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 ),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(16.dp),
+                border = glassBorder(isLight),
+                elevation = glassElevation(isLight)
             ) {
                 Column(
                     modifier = Modifier
@@ -548,6 +553,7 @@ fun CustomTimerInputDialog(
     }
     
     Dialog(onDismissRequest = onDismiss) {
+        val isLight = isLightTheme()
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -555,7 +561,9 @@ fun CustomTimerInputDialog(
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface
             ),
-            shape = RoundedCornerShape(16.dp)
+            shape = RoundedCornerShape(16.dp),
+            border = glassBorder(isLight),
+            elevation = glassElevation(isLight)
         ) {
             Column(
                 modifier = Modifier

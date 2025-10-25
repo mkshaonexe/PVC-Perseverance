@@ -21,6 +21,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.perseverance.pvc.ui.components.TopHeader
+import com.perseverance.pvc.ui.theme.glassBorder
+import com.perseverance.pvc.ui.theme.glassElevation
 
 @Composable
 fun GroupScreen(
@@ -113,9 +115,8 @@ fun GroupScreen(
                         containerColor = MaterialTheme.colorScheme.surface
                     ),
                     shape = RoundedCornerShape(16.dp),
-                    elevation = CardDefaults.cardElevation(
-                        defaultElevation = if (isLightTheme) 2.dp else 0.dp
-                    )
+                    border = glassBorder(isLightTheme),
+                    elevation = glassElevation(isLightTheme)
                 ) {
                     Column(
                         modifier = Modifier
@@ -216,9 +217,8 @@ fun GroupScreen(
                         containerColor = MaterialTheme.colorScheme.surface
                     ),
                     shape = RoundedCornerShape(16.dp),
-                    elevation = CardDefaults.cardElevation(
-                        defaultElevation = if (isLightTheme) 2.dp else 0.dp
-                    )
+                    border = glassBorder(isLightTheme),
+                    elevation = glassElevation(isLightTheme)
                 ) {
                     Column(
                         modifier = Modifier

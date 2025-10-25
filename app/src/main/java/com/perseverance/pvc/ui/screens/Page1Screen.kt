@@ -36,6 +36,9 @@ import com.perseverance.pvc.ui.components.TodaySummaryCard
 import com.perseverance.pvc.ui.components.PeriodInsightsCard
 import com.perseverance.pvc.ui.components.TodaySubjectBreakdown
 import com.perseverance.pvc.ui.theme.PerseverancePVCTheme
+import com.perseverance.pvc.ui.theme.glassBorder
+import com.perseverance.pvc.ui.theme.glassElevation
+import com.perseverance.pvc.ui.theme.isLightTheme
 import com.perseverance.pvc.ui.viewmodel.InsightsViewModel
 import com.perseverance.pvc.ui.viewmodel.PeriodType
 import java.time.LocalDate
@@ -225,7 +228,9 @@ fun Page1Screen(
                                 colors = CardDefaults.cardColors(
                                     containerColor = MaterialTheme.colorScheme.surface
                                 ),
-                                shape = RoundedCornerShape(16.dp)
+                                shape = RoundedCornerShape(16.dp),
+                                border = glassBorder(isLightTheme()),
+                                elevation = glassElevation(isLightTheme())
                             ) {
                                 Box(
                                     modifier = Modifier
@@ -559,9 +564,8 @@ fun DayDetailsSection(
             containerColor = MaterialTheme.colorScheme.surface
         ),
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isLightTheme) 2.dp else 0.dp
-        )
+        border = glassBorder(isLightTheme),
+        elevation = glassElevation(isLightTheme)
     ) {
         Column(
             modifier = Modifier.padding(20.dp),

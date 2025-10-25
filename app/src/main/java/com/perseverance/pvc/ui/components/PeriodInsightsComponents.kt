@@ -18,6 +18,8 @@ import androidx.compose.ui.unit.sp
 import com.perseverance.pvc.data.TodayStudyData
 import com.perseverance.pvc.data.PeriodInsights
 import com.perseverance.pvc.data.SubjectTodayStats
+import com.perseverance.pvc.ui.theme.glassBorder
+import com.perseverance.pvc.ui.theme.glassElevation
 import java.time.format.TextStyle
 import java.util.Locale
 
@@ -33,9 +35,8 @@ fun TodaySummaryCard(
             containerColor = MaterialTheme.colorScheme.surface
         ),
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isLightTheme) 2.dp else 0.dp
-        )
+        border = glassBorder(isLightTheme),
+        elevation = glassElevation(isLightTheme)
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
@@ -200,9 +201,8 @@ fun PeriodInsightsCard(
             containerColor = MaterialTheme.colorScheme.surface
         ),
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isLightTheme) 2.dp else 0.dp
-        )
+        border = glassBorder(isLightTheme),
+        elevation = glassElevation(isLightTheme)
     ) {
         Column(
             modifier = Modifier.padding(20.dp)
@@ -305,9 +305,8 @@ fun TodaySubjectBreakdown(
             containerColor = MaterialTheme.colorScheme.surface
         ),
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isLightTheme) 2.dp else 0.dp
-        )
+        border = glassBorder(isLightTheme),
+        elevation = glassElevation(isLightTheme)
     ) {
         Column(
             modifier = Modifier.padding(20.dp)

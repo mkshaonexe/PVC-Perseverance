@@ -2,12 +2,20 @@ package com.perseverance.pvc.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Light theme colors
+// Light theme colors - Glassmorphism inspired
 val PomodoroYellow = Color(0xFFFFD700)
 val PomodoroGreen = Color(0xFF4CAF50)
 val PomodoroGrey = Color(0xFFE0E0E0)
 val PomodoroBlack = Color(0xFF000000)
 val PomodoroWhite = Color(0xFFFFFFFF)
+
+// Light theme - Apple Liquid Glass inspired colors
+val LightBackground = Color(0xFFF5F7FA) // Soft off-white with slight blue tint
+val LightSurface = Color(0xFFFAFBFC) // Very light, almost white with transparency effect
+val LightSurfaceVariant = Color(0xFFEFF1F5) // Slightly darker for contrast
+val GlassWhite = Color(0xFFFEFEFE) // Pure white with glass effect
+val GlassBorder = Color(0xFFE8ECEF) // Subtle border for glass effect
+val SoftShadow = Color(0x1A000000) // Very subtle shadow
 
 // Dark theme colors
 val DarkBackground = Color(0xFF121212)
