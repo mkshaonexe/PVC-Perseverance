@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -15,8 +16,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.animation.core.*
+import androidx.compose.animation.animateColor
 import com.perseverance.pvc.ui.components.TopHeader
 import com.perseverance.pvc.ui.theme.glassBorder
 import com.perseverance.pvc.ui.theme.glassElevation
@@ -129,6 +133,11 @@ fun MenuScreen(
                     isUnlocked = isDeveloperModeUnlocked
                 )
             }
+            
+            // App version and developer info
+            item {
+                AppVersionInfo()
+            }
         }
     }
     
@@ -234,6 +243,54 @@ fun MenuItemCard(
                     modifier = Modifier.size(20.dp)
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun AppVersionInfo() {
+    val isLight = isLightTheme()
+    
+    // Fixed turquoise color
+    val versionColor = Color(0xFF66E0FF) // Turquoise
+    
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isLight)
+                MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
+            else
+                MaterialTheme.colorScheme.surface.copy(alpha = 0.3f)
+        ),
+        shape = RoundedCornerShape(12.dp),
+        border = glassBorder(isLight),
+        elevation = glassElevation(isLight)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "v 0.4.0",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = versionColor,
+                textAlign = TextAlign.Center
+            )
+            
+            Spacer(modifier = Modifier.height(4.dp))
+            
+            Text(
+                text = "MK Shaon",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = versionColor,
+                textAlign = TextAlign.Center
+            )
         }
     }
 }
