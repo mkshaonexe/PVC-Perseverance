@@ -12,8 +12,8 @@ android {
         applicationId = "com.perseverance.pvc"
         minSdk = 24
         targetSdk = 36
-        versionCode = 13
-        versionName = "0.4.4"
+        versionCode = 14
+        versionName = "0.4.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
