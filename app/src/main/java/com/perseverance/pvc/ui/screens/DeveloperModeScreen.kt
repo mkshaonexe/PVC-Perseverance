@@ -28,6 +28,8 @@ import androidx.compose.runtime.collectAsState
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
+import java.util.Locale
 
 @Composable
 fun DeveloperModeScreen(
@@ -49,6 +51,8 @@ fun DeveloperModeScreen(
     var hours by remember { mutableStateOf("0") }
     var minutes by remember { mutableStateOf("0") }
     var subject by remember { mutableStateOf("") }
+    var selectedDate by remember { mutableStateOf(LocalDate.now()) }
+    var showDatePicker by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
     var showErrorDialog by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
@@ -91,6 +95,47 @@ fun DeveloperModeScreen(
                 .padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Date selection section
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text(
+                        text = "Study Date",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Medium
+                    )
+
+                    // Date selection button
+                    OutlinedButton(
+                        onClick = { showDatePicker = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.CalendarToday,
+                            contentDescription = "Select Date",
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = formatDateForDisplay(selectedDate),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                }
+            }
+
             // Time input section
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -286,12 +331,11 @@ fun DeveloperModeScreen(
                         }
                         
                         val totalMinutes = hoursInt * 60 + minutesInt
-                        val currentDate = LocalDate.now()
                         val currentTime = LocalTime.now()
                         
                         // Add the study time
                         studyViewModel.addManualStudyTime(
-                            date = currentDate,
+                            date = selectedDate,
                             subject = subject,
                             durationMinutes = totalMinutes,
                             startTime = currentTime
@@ -411,4 +455,139 @@ fun DeveloperModeScreen(
             }
         )
     }
+    
+    // Date picker dialog
+    if (showDatePicker) {
+        DatePickerDialog(
+            selectedDate = selectedDate,
+            onDateSelected = { date ->
+                selectedDate = date
+                showDatePicker = false
+            },
+            onDismiss = { showDatePicker = false }
+        )
+    }
+}
+
+// Date formatting function
+private fun formatDateForDisplay(date: LocalDate): String {
+    val formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy")
+    return date.format(formatter)
+}
+
+// Date picker dialog composable
+@Composable
+fun DatePickerDialog(
+    selectedDate: LocalDate,
+    onDateSelected: (LocalDate) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var date by remember { mutableStateOf(selectedDate) }
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Select Study Date",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column {
+                Text(
+                    text = "Choose the date for this study session:",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
+                // Simple date input fields
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Year input
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Year",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        OutlinedTextField(
+                            value = date.year.toString(),
+                            onValueChange = { yearStr ->
+                                yearStr.toIntOrNull()?.let { year ->
+                                    if (year >= 2020 && year <= 2030) {
+                                        date = date.withYear(year)
+                                    }
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true
+                        )
+                    }
+                    
+                    // Month input
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Month",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        OutlinedTextField(
+                            value = date.monthValue.toString(),
+                            onValueChange = { monthStr ->
+                                monthStr.toIntOrNull()?.let { month ->
+                                    if (month >= 1 && month <= 12) {
+                                        date = date.withMonth(month)
+                                    }
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true
+                        )
+                    }
+                    
+                    // Day input
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Day",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        OutlinedTextField(
+                            value = date.dayOfMonth.toString(),
+                            onValueChange = { dayStr ->
+                                dayStr.toIntOrNull()?.let { day ->
+                                    if (day >= 1 && day <= 31) {
+                                        date = date.withDayOfMonth(day)
+                                    }
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onDateSelected(date) },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
+                Text("Select")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
