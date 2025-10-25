@@ -126,8 +126,8 @@ fun PomodoroScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
                 modifier = Modifier.clickable { 
-                    // Only allow subject selection during work sessions
-                    if (uiState.currentSessionType == SessionType.WORK) {
+                    // Only allow subject selection during work sessions when timer is not running
+                    if (uiState.currentSessionType == SessionType.WORK && !uiState.isPlaying && !uiState.isPaused) {
                         viewModel.showSubjectDialog() 
                     }
                 }
@@ -150,7 +150,10 @@ fun PomodoroScreen(
                     else 
                         "Break",
                     fontSize = ResponsiveTextSizes.subjectText().sp,
-                    color = MaterialTheme.colorScheme.onBackground,
+                    color = if (uiState.isPlaying || uiState.isPaused) 
+                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                    else 
+                        MaterialTheme.colorScheme.onBackground,
                     fontWeight = FontWeight.Normal
                 )
             }
