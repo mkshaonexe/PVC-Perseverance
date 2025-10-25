@@ -118,7 +118,7 @@ class SettingsRepository(private val context: Context) {
     
     fun getDayStartTime(): Flow<String> {
         return context.settingsDataStore.data.map { preferences ->
-            preferences[DAY_START_TIME_KEY] ?: "12:00 AM"
+            preferences[DAY_START_TIME_KEY] ?: "4:00 AM"
         }
     }
     

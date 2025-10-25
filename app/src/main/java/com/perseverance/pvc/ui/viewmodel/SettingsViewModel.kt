@@ -38,7 +38,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     val followSystemFontSettings: StateFlow<Boolean> = _followSystemFontSettings.asStateFlow()
     
     // Day Start Time
-    private val _dayStartTime = MutableStateFlow("12:00 AM")
+    private val _dayStartTime = MutableStateFlow("4:00 AM")
     val dayStartTime: StateFlow<String> = _dayStartTime.asStateFlow()
     
     // Language
