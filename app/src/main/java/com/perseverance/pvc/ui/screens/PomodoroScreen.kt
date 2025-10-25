@@ -47,6 +47,7 @@ import com.perseverance.pvc.ui.viewmodel.SessionType
 fun PomodoroScreen(
     onNavigateToSettings: () -> Unit = {},
     onNavigateToInsights: () -> Unit = {},
+    onNavigateToMenu: () -> Unit = {},
     onTimerStateChanged: (Boolean) -> Unit = {},
     onViewModelCreated: (PomodoroViewModel) -> Unit = {}
 ) {
@@ -106,7 +107,7 @@ fun PomodoroScreen(
                     TopHeader(
                         onNavigateToSettings = onNavigateToSettings,
                         onNavigateToInsights = onNavigateToInsights,
-                        onHamburgerClick = { /* Handle hamburger menu click */ }
+                        onHamburgerClick = onNavigateToMenu
                     )
                 }
             }

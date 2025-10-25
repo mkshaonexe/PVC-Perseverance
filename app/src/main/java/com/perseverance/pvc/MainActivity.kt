@@ -244,6 +244,7 @@ fun AppNavigation(
                 Screen.Home.route -> PomodoroScreen(
                     onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
                     onNavigateToInsights = { navigateToRoute(Screen.Insights.route) },
+                    onNavigateToMenu = { navigateToRoute(Screen.Menu.route) },
                     onTimerStateChanged = { isPlaying -> 
                         showBottomBar = !isPlaying 
                     },
@@ -263,6 +264,12 @@ fun AppNavigation(
                     onNavigateToInsights = { navigateToRoute(Screen.Insights.route) },
                     onBackClick = { goBack() }
                 ) // Insights = Page1Screen (accessible via top icon)
+                Screen.Menu.route -> MenuScreen(
+                    onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
+                    onNavigateToInsights = { navigateToRoute(Screen.Insights.route) },
+                    onBackClick = { goBack() },
+                    onNavigate = { route -> navigateToRoute(route) }
+                ) // Menu = MenuScreen (accessible via hamburger menu)
             }
         }
     }
