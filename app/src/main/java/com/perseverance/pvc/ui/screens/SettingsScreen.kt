@@ -266,7 +266,7 @@ fun SettingsScreen(
                         SettingsInfoItem(
                             icon = Icons.Filled.Info,
                             title = "App Version",
-                            value = "0.4.2"
+                            value = "0.4.4"
                         )
                         
                         SettingsInfoItem(

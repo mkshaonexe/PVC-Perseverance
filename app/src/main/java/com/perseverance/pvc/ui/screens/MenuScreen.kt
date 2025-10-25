@@ -278,7 +278,7 @@ fun AppVersionInfo() {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "v 0.4.2",
+                text = "v 0.4.4",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = versionColor,
