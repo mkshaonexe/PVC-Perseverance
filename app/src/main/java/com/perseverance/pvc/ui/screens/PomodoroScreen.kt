@@ -157,22 +157,19 @@ fun PomodoroScreen(
             
             Spacer(modifier = Modifier.height(ResponsiveSpacing.small()))
             
-            // Timer display with long-press to change duration
+            // Timer display with click to change duration
             Text(
                 text = uiState.timeDisplay,
                 fontSize = ResponsiveTextSizes.timerDisplay().sp,
                 fontWeight = FontWeight.Light,
                 color = MaterialTheme.colorScheme.onBackground,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.combinedClickable(
-                    onClick = { /* Regular click does nothing */ },
-                    onLongClick = {
-                        // Only allow changing duration when timer is not running or is completed
-                        if (!uiState.isPlaying && !uiState.isPaused) {
-                            showDurationDialog = true
-                        }
+                modifier = Modifier.clickable {
+                    // Only allow changing duration when timer is not running or is completed
+                    if (!uiState.isPlaying && !uiState.isPaused) {
+                        showDurationDialog = true
                     }
-                )
+                }
             )
             
             Spacer(modifier = Modifier.height(ResponsiveSpacing.medium()))
