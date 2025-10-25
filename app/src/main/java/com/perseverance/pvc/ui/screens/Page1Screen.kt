@@ -34,7 +34,7 @@ import com.perseverance.pvc.ui.components.SubjectBreakdownCard
 import com.perseverance.pvc.ui.components.WeeklyStudyChart
 import com.perseverance.pvc.ui.components.TodaySummaryCard
 import com.perseverance.pvc.ui.components.PeriodInsightsCard
-import com.perseverance.pvc.ui.components.TodaySubjectBreakdown
+import com.perseverance.pvc.ui.components.TodaySubjectBreakdownComponent
 import com.perseverance.pvc.ui.theme.PerseverancePVCTheme
 import com.perseverance.pvc.ui.theme.glassBorder
 import com.perseverance.pvc.ui.theme.glassElevation
@@ -152,9 +152,9 @@ fun Page1Screen(
                                 Spacer(modifier = Modifier.height(16.dp))
                             }
                             
-                            // Today's Subject Breakdown
+                            // Today's Subject Breakdown with Pie Chart
                             if (todayData.subjects.isNotEmpty()) {
-                                TodaySubjectBreakdown(subjects = todayData.subjects)
+                                TodaySubjectBreakdownComponent(subjects = todayData.subjects)
                                 
                                 Spacer(modifier = Modifier.height(16.dp))
                             }
