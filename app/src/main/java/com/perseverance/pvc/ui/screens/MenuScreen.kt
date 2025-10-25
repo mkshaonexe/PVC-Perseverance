@@ -297,34 +297,51 @@ fun AppVersionInfo() {
             
             Spacer(modifier = Modifier.height(12.dp))
             
-            // Gmail button
-            Button(
-                onClick = {
-                    val intent = Intent(Intent.ACTION_SENDTO).apply {
-                        data = Uri.parse("mailto:mkshaon2024@gmail.com")
-                    }
-                    context.startActivity(intent)
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = versionColor,
-                    contentColor = Color.White
-                ),
-                shape = RoundedCornerShape(8.dp),
+            // Gmail button with glassmorphism style
+            Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(40.dp)
+                    .clickable {
+                        val intent = Intent(Intent.ACTION_SENDTO).apply {
+                            data = Uri.parse("mailto:mkshaon2024@gmail.com")
+                        }
+                        context.startActivity(intent)
+                    },
+                colors = CardDefaults.cardColors(
+                    containerColor = if (isLight)
+                        versionColor.copy(alpha = 0.1f)
+                    else
+                        versionColor.copy(alpha = 0.2f)
+                ),
+                shape = RoundedCornerShape(8.dp),
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    versionColor.copy(alpha = 0.3f)
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Filled.Email,
-                    contentDescription = "Email",
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "mkshaon2024@gmail.com",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 12.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Email,
+                        contentDescription = "Email",
+                        tint = versionColor,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "mkshaon2024@gmail.com",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = versionColor
+                    )
+                }
             }
         }
     }
