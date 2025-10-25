@@ -9,6 +9,8 @@ import com.perseverance.pvc.data.SettingsRepository
 import com.perseverance.pvc.services.TimerNotificationService
 import com.perseverance.pvc.services.TimerSoundService
 import com.perseverance.pvc.utils.PermissionManager
+import com.perseverance.pvc.widgets.PomodoroTimerWidgetProvider
+import com.perseverance.pvc.widgets.StudyTimeWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -263,6 +265,9 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
                 remainingTimeInSeconds = workDuration
                 updateTimeDisplay()
                 loadTodayTotalStudyTime()
+                
+                // Update widgets after completing session
+                updateWidgets()
             }
         } else {
             // For break sessions, just reset
@@ -322,6 +327,9 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
             SessionType.WORK -> {
                 // Save completed work session
                 saveCurrentSession()
+                
+                // Update widgets after timer completes
+                updateWidgets()
                 
                 // Show work session complete notification
                 if (enableNotifications && PermissionManager.hasNotificationPermission(getApplication())) {
@@ -486,6 +494,8 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         
         viewModelScope.launch {
             repository.saveStudySession(session)
+            // Update widgets after saving session
+            updateWidgets()
         }
         
         // Reset session tracking
@@ -603,6 +613,8 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
                             startTime = timerState.sessionStartTime
                         )
                         repository.saveStudySession(session)
+                        // Update widgets after saving session in background
+                        updateWidgets()
                     } else {
                         Log.d("PomodoroViewModel", "Timer completed with Break subject - not saving as study time")
                     }
@@ -751,9 +763,19 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
                     repository.saveStudySession(session)
                     repository.clearTimerState()
                 }
+                
+                // Update widgets after saving session on cleanup
+                updateWidgets()
             } else if (_uiState.value.selectedSubject.equals("Break", ignoreCase = true)) {
                 Log.d("PomodoroViewModel", "ViewModel cleared with Break subject - not saving as study time")
             }
         }
+    }
+    
+    // Helper method to update all widgets
+    private fun updateWidgets() {
+        val context = getApplication<Application>().applicationContext
+        PomodoroTimerWidgetProvider.updateAllWidgets(context)
+        StudyTimeWidgetProvider.updateAllWidgets(context)
     }
 }
