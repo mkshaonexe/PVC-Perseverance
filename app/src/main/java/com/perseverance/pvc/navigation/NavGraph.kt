@@ -11,6 +11,7 @@ sealed class Screen(val route: String, val icon: ImageVector) {
     object Settings : Screen("settings", Icons.Filled.Settings)
     object Insights : Screen("insights", Icons.Filled.Insights)
     object Menu : Screen("menu", Icons.Filled.Menu)
+    object Developer : Screen("developer", Icons.Filled.Build)
 }
 
 val bottomNavItems = listOf(

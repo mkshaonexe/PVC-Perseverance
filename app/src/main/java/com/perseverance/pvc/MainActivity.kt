@@ -274,6 +274,11 @@ fun AppNavigation(
                     onBackClick = { goBack() },
                     onNavigate = { route -> navigateToRoute(route) }
                 ) // Menu = MenuScreen (accessible via hamburger menu)
+                Screen.Developer.route -> DeveloperModeScreen(
+                    onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
+                    onNavigateToInsights = { navigateToRoute(Screen.Insights.route) },
+                    onBackClick = { goBack() }
+                ) // Developer = DeveloperModeScreen (accessible via menu)
             }
         }
     }

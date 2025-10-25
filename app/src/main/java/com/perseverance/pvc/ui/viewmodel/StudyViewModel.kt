@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 data class StudyUiState(
     val chartData: StudyChartData = StudyChartData(
@@ -161,6 +162,25 @@ class StudyViewModel(application: Application) : AndroidViewModel(application) {
                 )
                 repository.saveStudySession(session)
             }
+            refreshData()
+        }
+    }
+    
+    // Add manual study time for developer mode
+    fun addManualStudyTime(
+        date: LocalDate,
+        subject: String,
+        durationMinutes: Int,
+        startTime: LocalTime
+    ) {
+        viewModelScope.launch {
+            val startDateTime = date.atTime(startTime)
+            val session = repository.createStudySession(
+                subject = subject,
+                durationSeconds = durationMinutes * 60,
+                startTime = startDateTime
+            )
+            repository.saveStudySession(session)
             refreshData()
         }
     }

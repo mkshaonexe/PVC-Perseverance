@@ -62,6 +62,12 @@ fun MenuScreen(
             icon = Icons.Filled.Settings,
             route = "settings",
             description = "App preferences and configuration"
+        ),
+        MenuItem(
+            title = "Developer Mode",
+            icon = Icons.Filled.Build,
+            route = "developer",
+            description = "Add study time manually for testing"
         )
     )
 
