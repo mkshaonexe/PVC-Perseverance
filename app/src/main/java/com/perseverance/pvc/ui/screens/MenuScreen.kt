@@ -278,10 +278,20 @@ fun AppVersionInfo() {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "v 0.4.1",
+                text = "v 0.4.2",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = versionColor,
+                textAlign = TextAlign.Center
+            )
+            
+            Spacer(modifier = Modifier.height(4.dp))
+            
+            Text(
+                text = "Last Update: 25 Oct 8:47 PM",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                color = versionColor.copy(alpha = 0.8f),
                 textAlign = TextAlign.Center
             )
             
