@@ -21,6 +21,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.animation.core.*
 import androidx.compose.animation.animateColor
+import android.content.Intent
+import android.net.Uri
 import com.perseverance.pvc.ui.components.TopHeader
 import com.perseverance.pvc.ui.theme.glassBorder
 import com.perseverance.pvc.ui.theme.glassElevation
@@ -250,6 +252,7 @@ fun MenuItemCard(
 @Composable
 fun AppVersionInfo() {
     val isLight = isLightTheme()
+    val context = androidx.compose.ui.platform.LocalContext.current
     
     // Fixed turquoise color
     val versionColor = Color(0xFF66E0FF) // Turquoise
@@ -291,6 +294,38 @@ fun AppVersionInfo() {
                 color = versionColor,
                 textAlign = TextAlign.Center
             )
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            // Gmail button
+            Button(
+                onClick = {
+                    val intent = Intent(Intent.ACTION_SENDTO).apply {
+                        data = Uri.parse("mailto:mkshaon2024@gmail.com")
+                    }
+                    context.startActivity(intent)
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = versionColor,
+                    contentColor = Color.White
+                ),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(40.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Email,
+                    contentDescription = "Email",
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "mkshaon2024@gmail.com",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
         }
     }
 }
