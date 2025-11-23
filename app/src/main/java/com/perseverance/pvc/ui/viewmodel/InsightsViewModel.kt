@@ -31,7 +31,7 @@ data class DayStudyData(
 )
 
 data class InsightsUiState(
-    val selectedPeriod: PeriodType = PeriodType.DAY,
+    val selectedPeriod: PeriodType = PeriodType.PERIOD,
     val currentMonth: YearMonth = YearMonth.now(),
     val selectedDate: LocalDate = LocalDate.now(),
     val monthDays: Map<LocalDate, DayStudyData> = emptyMap(),
@@ -51,6 +51,8 @@ class InsightsViewModel(application: Application) : AndroidViewModel(application
     
     init {
         loadMonthData()
+        // Load period data by default since PERIOD is the default selected period
+        loadPeriodData()
     }
     
     fun selectPeriod(period: PeriodType) {
