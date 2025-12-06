@@ -1,6 +1,7 @@
 export class SoundManager {
     private static audioCtx: AudioContext | null = null;
     private static oscillator: OscillatorNode | null = null;
+    private static alarmTimeouts: number[] = [];
 
     static init() {
         if (!this.audioCtx) {
@@ -31,9 +32,18 @@ export class SoundManager {
     }
 
     static playAlarm() {
+        // Clear any existing alarm timeouts
+        this.stopAlarm();
+
         // Play 3 beeps
         this.playBeep();
-        setTimeout(() => this.playBeep(), 600);
-        setTimeout(() => this.playBeep(), 1200);
+        this.alarmTimeouts.push(window.setTimeout(() => this.playBeep(), 600));
+        this.alarmTimeouts.push(window.setTimeout(() => this.playBeep(), 1200));
+    }
+
+    static stopAlarm() {
+        // Clear all pending alarm timeouts
+        this.alarmTimeouts.forEach(timeoutId => clearTimeout(timeoutId));
+        this.alarmTimeouts = [];
     }
 }

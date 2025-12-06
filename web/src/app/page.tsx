@@ -74,8 +74,8 @@ export default function Home() {
           </div>
         ) : (
           <div className="flex items-center gap-2 mb-2 p-2">
-            <div className="w-2 h-2 rounded-full bg-secondary"></div>
-            <span className="text-secondary text-sm uppercase tracking-wide">
+            <div className="w-2 h-2 rounded-full bg-[#2196F3]"></div>
+            <span className="text-[#2196F3] text-sm uppercase tracking-wide">
               Break
             </span>
           </div>
@@ -133,7 +133,10 @@ export default function Home() {
               // Show "Take a Break" AND "Start Focus"
               <div className="flex flex-col gap-4">
                 <button
-                  onClick={startBreakTimer}
+                  onClick={() => {
+                    SoundManager.stopAlarm();
+                    startBreakTimer();
+                  }}
                   className="w-full h-14 bg-[#2196F3] text-white font-bold text-lg rounded-full flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all">
                   <Coffee className="w-5 h-5" />
                   Take a Break
@@ -189,7 +192,7 @@ export default function Home() {
               <div className="p-6">
                 <h2 className="text-xl font-bold mb-6 text-white">Select Subject</h2>
                 <div className="space-y-4 max-h-[60vh] overflow-y-auto">
-                  {['English', 'Math', 'Science', 'Coding'].map(sub => (
+                  {['English', 'Math', 'Science', 'Coding', 'Break'].map(sub => (
                     <button
                       key={sub}
                       onClick={() => { setSelectedSubject(sub); setShowSubjectDialog(false); }}

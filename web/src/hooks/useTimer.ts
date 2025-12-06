@@ -111,13 +111,14 @@ export function useTimer() {
 
     // Wrapper for startBreakTimer that also triggers the worker
     const startBreakTimer = useCallback(() => {
+        const breakDuration = useTimerStore.getState().breakDuration;
         storeStartBreak(); // Sets mode, timeLeft, initialTime, isRunning in store
         // Need to also START the worker
         workerRef.current?.postMessage({
             type: 'START',
-            payload: { initialTime: 10 * 60 }
+            payload: { initialTime: breakDuration }
         });
-        lastTimeRef.current = 10 * 60;
+        lastTimeRef.current = breakDuration;
     }, [storeStartBreak]);
 
     // Wrapper for startWorkTimer
