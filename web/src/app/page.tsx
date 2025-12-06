@@ -32,6 +32,7 @@ export default function Home() {
 
   const [showSubjectDialog, setShowSubjectDialog] = useState(false);
   const [showDurationDialog, setShowDurationDialog] = useState(false);
+  const [showCustomInput, setShowCustomInput] = useState(false);
 
   // Initialize Audio
   useEffect(() => {
@@ -226,25 +227,81 @@ export default function Home() {
               className="bg-[#2C2C2C] w-full max-w-sm rounded-[2rem] overflow-hidden border border-white/5"
             >
               <div className="p-6">
-                <h2 className="text-xl font-bold mb-6 text-white">Change Timer Duration</h2>
-                <div className="space-y-2">
-                  {[5, 10, 25, 50, 60].map(mins => (
+                <h2 className="text-xl font-bold mb-6 text-white text-center">
+                  {showCustomInput ? "Set Custom Duration" : "Change Timer Duration"}
+                </h2>
+
+                {!showCustomInput ? (
+                  <div className="space-y-2">
+                    {[5, 10, 25, 50, 60].map(mins => (
+                      <button
+                        key={mins}
+                        onClick={() => { setDuration(mins); setShowDurationDialog(false); }}
+                        className="w-full p-4 rounded-xl bg-[#3C3C3C] text-white text-left hover:bg-[#4a4a4a] transition-colors font-medium">
+                        {mins} minutes
+                      </button>
+                    ))}
                     <button
-                      key={mins}
-                      onClick={() => { setDuration(mins); setShowDurationDialog(false); }}
-                      className="w-full p-4 rounded-xl bg-[#3C3C3C] text-white text-left hover:bg-[#4a4a4a] transition-colors font-medium">
-                      {mins} minutes
+                      onClick={() => setShowCustomInput(true)}
+                      className="w-full p-4 rounded-xl bg-primary text-black font-medium mt-2">
+                      Custom
                     </button>
-                  ))}
-                  <button className="w-full p-4 rounded-xl bg-primary text-black font-medium mt-2">
-                    Custom
-                  </button>
-                  <button
-                    onClick={() => setShowDurationDialog(false)}
-                    className="w-full p-2 text-center text-white/50 mt-4 text-sm">
-                    Cancel
-                  </button>
-                </div>
+                    <button
+                      onClick={() => setShowDurationDialog(false)}
+                      className="w-full p-2 text-center text-white/50 mt-4 text-sm">
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="bg-[#3C3C3C] rounded-xl p-6 flex flex-col items-center gap-2">
+                      <input
+                        type="number"
+                        min="1"
+                        max="180"
+                        placeholder="25"
+                        autoFocus
+                        className="bg-transparent text-5xl font-bold text-white text-center w-full outline-none placeholder:text-white/20"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            const val = parseInt((e.target as HTMLInputElement).value);
+                            if (val > 0 && val <= 180) {
+                              setDuration(val);
+                              setShowDurationDialog(false);
+                              setShowCustomInput(false);
+                            }
+                          }
+                        }}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value);
+                          if (val > 180) e.target.value = "180";
+                        }}
+                        id="custom-duration-input"
+                      />
+                      <span className="text-white/50 text-sm uppercase tracking-widest font-medium">Minutes</span>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        const input = document.getElementById('custom-duration-input') as HTMLInputElement;
+                        const val = parseInt(input.value);
+                        if (val > 0 && val <= 180) {
+                          setDuration(val);
+                          setShowDurationDialog(false);
+                          setShowCustomInput(false);
+                        }
+                      }}
+                      className="w-full p-4 rounded-xl bg-primary text-black font-bold text-lg hover:brightness-110 transition-all">
+                      Start Timer
+                    </button>
+
+                    <button
+                      onClick={() => setShowCustomInput(false)}
+                      className="w-full p-2 text-center text-white/50 text-sm hover:text-white transition-colors">
+                      Back to Presets
+                    </button>
+                  </div>
+                )}
               </div>
             </motion.div>
             <div className="absolute inset-0 -z-10" onClick={() => setShowDurationDialog(false)} />
