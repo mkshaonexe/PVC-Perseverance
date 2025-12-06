@@ -118,7 +118,7 @@ export default function Home() {
         </div>
 
         {/* Action Buttons */}
-        <div className="w-full px-12">
+        <div className="w-full max-w-md px-12 mx-auto">
           {isWaitingForAcknowledgment ? (
             // "I got it" Button (Green)
             <button
