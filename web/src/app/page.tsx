@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useTimer } from "@/hooks/useTimer";
-import { Play, Pause, Check, Plus, X } from "lucide-react";
+import { Play, Pause, Check, Plus, Coffee } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { SoundManager } from "@/lib/sound";
@@ -16,15 +16,22 @@ export default function Home() {
     mode,
     selectedSubject,
     totalStudyTime,
+    completedSessions,
+    isTimerCompleted,
+    isWaitingForAcknowledgment,
     start,
     pause,
     reset,
+    setDuration,
+    acknowledgeTimerCompletion,
+    startBreakTimer,
     setSelectedSubject,
     formatTime,
     formatHours
   } = useTimer();
 
   const [showSubjectDialog, setShowSubjectDialog] = useState(false);
+  const [showDurationDialog, setShowDurationDialog] = useState(false);
 
   // Initialize Audio
   useEffect(() => {
@@ -56,24 +63,36 @@ export default function Home() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col items-center justify-center -mt-10">
 
-        {/* Subject & Language */}
-        <div className="flex items-center gap-2 mb-2 p-2 rounded-full active:bg-white/10 transition-colors cursor-pointer"
-          onClick={() => !isRunning && setShowSubjectDialog(true)}>
-          <div className="w-2 h-2 rounded-full bg-primary"></div>
-          <span className="text-muted-foreground text-sm uppercase tracking-wide">
-            {selectedSubject}
-          </span>
-        </div>
+        {/* Subject */}
+        {mode === 'pomodoro' ? (
+          <div className="flex items-center gap-2 mb-2 p-2 rounded-full active:bg-white/10 transition-colors cursor-pointer"
+            onClick={() => !isRunning && setShowSubjectDialog(true)}>
+            <div className="w-2 h-2 rounded-full bg-primary"></div>
+            <span className="text-muted-foreground text-sm uppercase tracking-wide">
+              {selectedSubject}
+            </span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 mb-2 p-2">
+            <div className="w-2 h-2 rounded-full bg-secondary"></div>
+            <span className="text-secondary text-sm uppercase tracking-wide">
+              Break
+            </span>
+          </div>
+        )}
 
-        {/* Digital Clock */}
-        <div className="text-[5rem] font-light tracking-tighter tabular-nums leading-none mb-8 select-none">
+        {/* Digital Clock (Clickable) */}
+        <div
+          className="text-[5rem] font-light tracking-tighter tabular-nums leading-none mb-8 select-none cursor-pointer active:opacity-70 transition-opacity"
+          onClick={() => !isRunning && setShowDurationDialog(true)}
+        >
           {formatTime(timeLeft)}
         </div>
 
-        {/* Pagination Dots (Visual Only) */}
+        {/* Pagination Dots */}
         <div className="flex gap-2 mb-12">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className={cn("w-2 h-2 rounded-full", i === 1 ? "bg-white" : "bg-white/30")}></div>
+            <div key={i} className={cn("w-2 h-2 rounded-full", i <= completedSessions ? "bg-[#4CAF50]" : "bg-white/30")}></div>
           ))}
         </div>
 
@@ -98,16 +117,45 @@ export default function Home() {
           {formatHours(totalStudyTime)}
         </div>
 
-        {/* Action Button */}
+        {/* Action Buttons */}
         <div className="w-full px-12">
-          {!isRunning ? (
+          {isWaitingForAcknowledgment ? (
+            // "I got it" Button (Green)
             <button
-              onClick={start}
-              className="w-full h-14 bg-primary text-black font-bold text-lg rounded-full flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_20px_rgba(255,215,0,0.2)]">
-              <Play className="fill-black w-5 h-5" />
-              Start Focus
+              onClick={acknowledgeTimerCompletion}
+              className="w-full h-14 bg-secondary text-white font-bold text-lg rounded-full flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_20px_rgba(76,175,80,0.4)]">
+              <Check className="w-5 h-5" />
+              I got it
             </button>
+          ) : !isRunning ? (
+            // Idle State
+            completedSessions > 0 && mode === 'pomodoro' ? (
+              // Show "Take a Break" AND "Start Focus"
+              <div className="flex flex-col gap-4">
+                <button
+                  onClick={startBreakTimer}
+                  className="w-full h-14 bg-[#2196F3] text-white font-bold text-lg rounded-full flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all">
+                  <Coffee className="w-5 h-5" />
+                  Take a Break
+                </button>
+                <button
+                  onClick={start}
+                  className="w-full h-14 bg-primary text-black font-bold text-lg rounded-full flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all">
+                  <Play className="fill-black w-5 h-5" />
+                  Start Focus
+                </button>
+              </div>
+            ) : (
+              // Default Start
+              <button
+                onClick={start}
+                className="w-full h-14 bg-primary text-black font-bold text-lg rounded-full flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_20px_rgba(255,215,0,0.2)]">
+                <Play className="fill-black w-5 h-5" />
+                Start Focus
+              </button>
+            )
           ) : (
+            // Running/Paused State
             <div className="flex gap-4">
               <button
                 onClick={pause}
@@ -116,7 +164,7 @@ export default function Home() {
                 Pause
               </button>
               <button
-                onClick={() => { pause(); reset(); }} // 'Done' usually resets/stops logic
+                onClick={reset} // "Done"
                 className="flex-1 h-14 bg-secondary text-white font-bold text-lg rounded-full flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-transform">
                 <Check className="w-5 h-5" />
                 Done
@@ -127,44 +175,76 @@ export default function Home() {
 
       </main>
 
-      {/* Subject Selection Dialog Overlay */}
+      {/* Dialogs */}
       <AnimatePresence>
+        {/* Subject Dialog */}
         {showSubjectDialog && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-8">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-card w-full max-w-sm rounded-[2rem] overflow-hidden border border-white/10"
+              className="bg-[#2C2C2C] w-full max-w-sm rounded-[2rem] overflow-hidden border border-white/5"
             >
               <div className="p-6">
-                <h2 className="text-xl font-bold mb-6">Select Subject</h2>
-
-                <div className="space-y-2">
+                <h2 className="text-xl font-bold mb-6 text-white">Select Subject</h2>
+                <div className="space-y-4 max-h-[60vh] overflow-y-auto">
                   {['English', 'Math', 'Science', 'Coding'].map(sub => (
                     <button
                       key={sub}
                       onClick={() => { setSelectedSubject(sub); setShowSubjectDialog(false); }}
                       className={cn(
                         "w-full p-4 rounded-xl flex justify-between items-center text-left transition-colors",
-                        selectedSubject === sub ? "bg-[#3C3220] text-primary" : "bg-white/5 hover:bg-white/10"
+                        selectedSubject === sub ? "bg-[#3C3220]" : "bg-[#3C3C3C]"
                       )}
                     >
-                      <span>{sub}</span>
-                      {selectedSubject === sub && <Check className="w-5 h-5" />}
+                      <span className={cn(selectedSubject === sub ? "text-white font-medium" : "text-white ml-2")}>{sub}</span>
+                      {selectedSubject === sub && <Check className="w-5 h-5 text-primary" />}
                     </button>
                   ))}
-
-                  <button className="w-full p-4 rounded-xl flex items-center justify-center gap-2 text-primary mt-4 hover:bg-white/5">
+                  <button className="w-full p-4 rounded-xl flex items-center justify-center gap-2 text-primary mt-2">
                     <Plus className="w-5 h-5" />
                     Add New Subject
                   </button>
                 </div>
               </div>
             </motion.div>
-
-            {/* Close Backdrop Click */}
             <div className="absolute inset-0 -z-10" onClick={() => setShowSubjectDialog(false)} />
+          </div>
+        )}
+
+        {/* Duration Dialog */}
+        {showDurationDialog && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-8">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="bg-[#2C2C2C] w-full max-w-sm rounded-[2rem] overflow-hidden border border-white/5"
+            >
+              <div className="p-6">
+                <h2 className="text-xl font-bold mb-6 text-white">Change Timer Duration</h2>
+                <div className="space-y-2">
+                  {[5, 10, 25, 50, 60].map(mins => (
+                    <button
+                      key={mins}
+                      onClick={() => { setDuration(mins); setShowDurationDialog(false); }}
+                      className="w-full p-4 rounded-xl bg-[#3C3C3C] text-white text-left hover:bg-[#4a4a4a] transition-colors font-medium">
+                      {mins} minutes
+                    </button>
+                  ))}
+                  <button className="w-full p-4 rounded-xl bg-primary text-black font-medium mt-2">
+                    Custom
+                  </button>
+                  <button
+                    onClick={() => setShowDurationDialog(false)}
+                    className="w-full p-2 text-center text-white/50 mt-4 text-sm">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+            <div className="absolute inset-0 -z-10" onClick={() => setShowDurationDialog(false)} />
           </div>
         )}
       </AnimatePresence>

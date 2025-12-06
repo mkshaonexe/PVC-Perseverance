@@ -10,31 +10,37 @@ export function useTimer() {
         mode,
         selectedSubject,
         totalStudyTime,
+        completedSessions,
+        isTimerCompleted,
+        isWaitingForAcknowledgment,
         setTimeLeft,
         setIsRunning,
         resetTimer,
         setSelectedSubject,
-        addToTotalTime
+        addToTotalTime,
+        acknowledgeTimerCompletion,
+        startBreakTimer,
+        startWorkTimer,
+        setInitialTime,
+        completeSession
     } = useTimerStore();
 
     const workerRef = useRef<Worker | null>(null);
 
     useEffect(() => {
-        // Initialize Worker
         workerRef.current = new Worker(new URL('../workers/timer.worker.ts', import.meta.url));
 
         workerRef.current.onmessage = (e) => {
             const { type, payload } = e.data;
             if (type === 'TICK') {
-                const diff = timeLeft - payload;
-                // If we want to track real-time study stats, we might add diff here?
-                // But better to just update displayed time.
                 setTimeLeft(payload);
+                if (mode === 'pomodoro' && selectedSubject !== 'Break') {
+                    addToTotalTime(1);
+                }
             } else if (type === 'COMPLETE') {
                 setIsRunning(false);
                 setTimeLeft(0);
-                // Add the completed time to total
-                addToTotalTime(initialTime);
+                useTimerStore.setState({ isTimerCompleted: true, isWaitingForAcknowledgment: true });
                 SoundManager.playAlarm();
             }
         };
@@ -42,11 +48,10 @@ export function useTimer() {
         return () => {
             workerRef.current?.terminate();
         };
-    }, [setTimeLeft, setIsRunning, addToTotalTime, initialTime, timeLeft]);
+    }, [setTimeLeft, setIsRunning, addToTotalTime, mode, selectedSubject, initialTime]);
 
     const start = () => {
         if (!isRunning) {
-            // Decide whether to START or RESUME
             if (timeLeft === initialTime) {
                 workerRef.current?.postMessage({
                     type: 'START',
@@ -69,9 +74,10 @@ export function useTimer() {
         }
     };
 
-    const reset = () => {
-        workerRef.current?.postMessage({ type: 'RESET', payload: { initialTime } });
-        resetTimer();
+    const setDuration = (minutes: number) => {
+        const seconds = minutes * 60;
+        setInitialTime(seconds);
+        setTimeLeft(seconds);
     };
 
     return {
@@ -81,9 +87,16 @@ export function useTimer() {
         mode,
         selectedSubject,
         totalStudyTime,
+        completedSessions,
+        isTimerCompleted,
+        isWaitingForAcknowledgment,
         start,
         pause,
-        reset,
+        reset: completeSession,
+        setDuration,
+        acknowledgeTimerCompletion,
+        startBreakTimer,
+        startWorkTimer,
         setSelectedSubject,
         formatTime: (seconds: number) => {
             const m = Math.floor(seconds / 60);
