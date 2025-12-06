@@ -82,11 +82,11 @@ function AnalogClock() {
 }
 
 // Bar Chart Component
-function StudyTimeBarChart({ subjects }: { subjects: { name: string; minutes: number; color: string }[] }) {
+function StudyTimeBarChart({ subjects, heightClass = "h-48" }: { subjects: { name: string; minutes: number; color: string }[], heightClass?: string }) {
     const maxMinutes = Math.max(...subjects.map(s => s.minutes), 1);
 
     return (
-        <div className="w-full h-48 flex items-end justify-around gap-2 px-4">
+        <div className={`w-full ${heightClass} flex items-end justify-around gap-2 px-4`}>
             {subjects.map((subject, index) => {
                 const heightPercent = (subject.minutes / maxMinutes) * 100;
                 return (
@@ -133,108 +133,119 @@ export default function DashboardPage() {
 
     return (
         <div className="min-h-screen bg-black text-white pb-24">
-            {/* Header */}
-            <div className="flex justify-between items-center p-6">
-                <button className="p-2">
-                    <div className="space-y-1.5">
-                        <div className="w-6 h-0.5 bg-white"></div>
-                        <div className="w-6 h-0.5 bg-white"></div>
-                        <div className="w-6 h-0.5 bg-white"></div>
-                    </div>
-                </button>
-            </div>
-
-            <div className="px-6 space-y-6">
-                {/* Timer Card with Analog Clock */}
-                <div className="bg-[#1E1E1E] rounded-2xl p-5 border border-white/5">
-                    <div className="flex items-center justify-between">
-                        {/* Analog Clock */}
-                        <AnalogClock />
-
-                        {/* Remaining Time */}
-                        <div className="flex flex-col items-center">
-                            <span className="text-white/50 text-sm mb-1">Remaining time</span>
-                            <span className="text-4xl font-bold tabular-nums">{formatTime(timeLeft)}</span>
-
-                            {/* Control Buttons */}
-                            <div className="flex gap-2 mt-3">
-                                {isRunning ? (
-                                    <button
-                                        onClick={pause}
-                                        className="w-10 h-10 bg-[#2C2C2C] rounded-lg flex items-center justify-center hover:bg-[#3C3C3C] transition-colors"
-                                    >
-                                        <Pause className="w-5 h-5 text-primary" />
-                                    </button>
-                                ) : (
-                                    <button
-                                        onClick={start}
-                                        className="w-10 h-10 bg-[#2C2C2C] rounded-lg flex items-center justify-center hover:bg-[#3C3C3C] transition-colors"
-                                    >
-                                        <Play className="w-5 h-5 text-primary fill-primary" />
-                                    </button>
-                                )}
-                                <button
-                                    onClick={reset}
-                                    className="w-10 h-10 bg-[#2C2C2C] rounded-lg flex items-center justify-center hover:bg-[#3C3C3C] transition-colors"
-                                >
-                                    <Square className="w-4 h-4 text-primary fill-primary" />
-                                </button>
-                            </div>
+            <div className="max-w-6xl mx-auto w-full">
+                {/* Header */}
+                <div className="flex justify-between items-center p-6">
+                    <button className="p-2">
+                        <div className="space-y-1.5">
+                            <div className="w-6 h-0.5 bg-white"></div>
+                            <div className="w-6 h-0.5 bg-white"></div>
+                            <div className="w-6 h-0.5 bg-white"></div>
                         </div>
-
-                        {/* Today's Time Mini Display */}
-                        <div className="flex flex-col items-center">
-                            <div className="w-16 h-16 bg-[#2C2C2C] rounded-xl flex items-center justify-center mb-2">
-                                <span className="text-3xl">📚</span>
-                            </div>
-                            <span className="text-primary text-sm font-medium tabular-nums">{formatHours(totalStudyTime)}</span>
-                        </div>
-                    </div>
+                    </button>
+                    {/* Add Settings or Profile button here if needed for symmetry/utility */}
                 </div>
 
-                {/* Today's Total Study Time - Green Card */}
-                <div className="bg-[#4CAF50]/20 rounded-2xl p-5 border border-[#4CAF50]/30">
-                    <div className="flex items-center justify-between">
-                        {/* Icon */}
-                        <div className="w-12 h-12 bg-[#4CAF50] rounded-full flex items-center justify-center">
-                            <span className="text-2xl">📚</span>
-                        </div>
+                <div className="px-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Timer Card with Analog Clock */}
+                    <div className="bg-[#1E1E1E] rounded-2xl p-6 border border-white/5 col-span-1 lg:col-span-2">
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-6 sm:gap-0">
+                            {/* Analog Clock */}
+                            <AnalogClock />
 
-                        {/* Text */}
-                        <div className="flex flex-col items-center flex-1 mx-4">
-                            <span className="text-white/70 text-sm">Today&apos;s Total Study Time</span>
-                            <span className="text-2xl font-bold text-[#4CAF50] tracking-wider tabular-nums">
-                                {formatHours(totalStudyTime)}
-                            </span>
-                        </div>
+                            {/* Remaining Time */}
+                            <div className="flex flex-col items-center">
+                                <span className="text-white/50 text-sm mb-1">Remaining time</span>
+                                <span className="text-5xl font-bold tabular-nums tracking-tight">{formatTime(timeLeft)}</span>
 
-                        {/* Arrow */}
-                        <div className="w-8 h-8 bg-[#4CAF50] rounded-full flex items-center justify-center">
-                            <ArrowRight className="w-4 h-4 text-white" />
+                                {/* Control Buttons */}
+                                <div className="flex gap-3 mt-4">
+                                    {isRunning ? (
+                                        <button
+                                            onClick={pause}
+                                            className="w-12 h-12 bg-[#2C2C2C] rounded-xl flex items-center justify-center hover:bg-[#3C3C3C] transition-all hover:scale-105 active:scale-95"
+                                        >
+                                            <Pause className="w-6 h-6 text-primary" />
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={start}
+                                            className="w-12 h-12 bg-[#2C2C2C] rounded-xl flex items-center justify-center hover:bg-[#3C3C3C] transition-all hover:scale-105 active:scale-95"
+                                        >
+                                            <Play className="w-6 h-6 text-primary fill-primary" />
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={reset}
+                                        className="w-12 h-12 bg-[#2C2C2C] rounded-xl flex items-center justify-center hover:bg-[#3C3C3C] transition-all hover:scale-105 active:scale-95"
+                                    >
+                                        <Square className="w-5 h-5 text-primary fill-primary" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Today's Time Mini Display */}
+                            <div className="flex flex-col items-center pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5 w-full sm:w-auto mt-2 sm:mt-0">
+                                <div className="w-16 h-16 bg-[#2C2C2C] rounded-2xl flex items-center justify-center mb-2 shadow-inner">
+                                    <span className="text-3xl">📚</span>
+                                </div>
+                                <span className="text-primary text-sm font-medium tabular-nums">{formatHours(totalStudyTime)}</span>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                {/* Daily Study Time Chart */}
-                <div className="bg-[#1E1E1E] rounded-2xl p-5 border border-white/5">
-                    <h2 className="text-xl font-bold text-center mb-6">Daily Study Time</h2>
+                    {/* Today's Total Study Time - Green Card */}
+                    <div className="bg-[#4CAF50]/10 rounded-2xl p-6 border border-[#4CAF50]/20 col-span-1 lg:col-span-1 flex flex-col justify-center">
+                        <div className="flex items-center justify-between gap-4">
+                            {/* Icon */}
+                            <div className="w-14 h-14 bg-[#4CAF50] rounded-full flex items-center justify-center shadow-lg shadow-[#4CAF50]/20 shrink-0">
+                                <span className="text-2xl">🌱</span>
+                            </div>
 
-                    <StudyTimeBarChart subjects={subjects} />
+                            {/* Text */}
+                            <div className="flex flex-col items-start flex-1 min-w-0">
+                                <span className="text-white/60 text-xs font-medium uppercase tracking-wider mb-1">Today's Total</span>
+                                <span className="text-3xl font-bold text-[#4CAF50] tracking-tight tabular-nums truncate w-full">
+                                    {formatHours(totalStudyTime)}
+                                </span>
+                            </div>
 
-                    {/* Legend */}
-                    <div className="mt-6 space-y-3">
-                        {subjects.map((subject, index) => (
-                            <div key={index} className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
+                            {/* Arrow */}
+                            <div className="w-10 h-10 bg-[#4CAF50]/20 rounded-full flex items-center justify-center hover:bg-[#4CAF50]/30 transition-colors cursor-pointer shrink-0">
+                                <ArrowRight className="w-5 h-5 text-[#4CAF50]" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Daily Study Time Chart */}
+                    <div className="bg-[#1E1E1E] rounded-2xl p-6 border border-white/5 col-span-1 lg:col-span-3 min-h-[55vh] flex flex-col justify-between">
+                        <div className="flex items-center justify-between mb-8">
+                            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                                <span className="w-1 h-6 bg-primary rounded-full"></span>
+                                Daily Study Time
+                            </h2>
+                            <button className="text-xs text-white/40 hover:text-white transition-colors bg-[#2C2C2C] px-3 py-1.5 rounded-full font-medium">
+                                Last 7 Days
+                            </button>
+                        </div>
+
+                        <div className="flex-1 flex flex-col justify-center">
+                            <StudyTimeBarChart subjects={subjects} heightClass="h-64" />
+                        </div>
+
+                        {/* Legend */}
+                        <div className="mt-8 flex flex-wrap gap-4 justify-center">
+                            {subjects.map((subject, index) => (
+                                <div key={index} className="flex items-center gap-2 bg-[#2C2C2C] px-3 py-1.5 rounded-lg border border-white/5">
                                     <div
-                                        className="w-3 h-3 rounded-sm"
+                                        className="w-2.5 h-2.5 rounded-full"
                                         style={{ backgroundColor: subject.color }}
                                     />
-                                    <span className="text-white text-sm">{subject.name}</span>
+                                    <span className="text-white/90 text-sm font-medium">{subject.name}</span>
+                                    <span className="text-white/40 text-xs ml-1 border-l border-white/10 pl-2">{subject.minutes}m</span>
                                 </div>
-                                <span className="text-white/70 text-sm font-medium">{subject.minutes}m</span>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
