@@ -34,10 +34,23 @@ export default function Home() {
   const [showDurationDialog, setShowDurationDialog] = useState(false);
   const [showCustomInput, setShowCustomInput] = useState(false);
 
-  // Initialize Audio
+
+  // Initialize Audio and Request Notification Permission
   useEffect(() => {
-    const primeAudio = () => SoundManager.init();
-    window.addEventListener('click', primeAudio);
+    const primeAudio = () => {
+      SoundManager.init();
+
+      // Request notification permission
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission().then(permission => {
+          console.log('Notification permission:', permission);
+        });
+      }
+    };
+
+    // Prime audio on first click
+    window.addEventListener('click', primeAudio, { once: true });
+
     return () => window.removeEventListener('click', primeAudio);
   }, []);
 
