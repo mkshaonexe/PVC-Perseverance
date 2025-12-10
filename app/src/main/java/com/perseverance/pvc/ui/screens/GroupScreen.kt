@@ -9,9 +9,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.People
 import androidx.compose.material3.*
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -21,15 +24,52 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.perseverance.pvc.ui.components.TopHeader
-import com.perseverance.pvc.ui.theme.glassBorder
-import com.perseverance.pvc.ui.theme.glassElevation
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun GroupScreen(
+    socialViewModel: com.perseverance.pvc.ui.viewmodel.SocialViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
     onNavigateToSettings: () -> Unit = {},
     onNavigateToInsights: () -> Unit = {},
     onNavigateToMenu: () -> Unit = {}
 ) {
+    val uiState by socialViewModel.uiState.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
+    
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    // Launcher for Google Sign In
+    val launcher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val task = com.google.android.gms.auth.api.signin.GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            scope.launch {
+                try {
+                    val account = task.getResult(com.google.android.gms.common.api.ApiException::class.java)
+                    val credential = com.google.firebase.auth.GoogleAuthProvider.getCredential(account.idToken, null)
+                    val authResult = Firebase.auth.signInWithCredential(credential).await()
+                    
+                    val signInResult = com.perseverance.pvc.utils.SignInResult(
+                        data = authResult.user?.let { user ->
+                            com.perseverance.pvc.utils.UserData(
+                                userId = user.uid,
+                                username = user.displayName,
+                                profilePictureUrl = user.photoUrl?.toString(),
+                                email = user.email
+                            )
+                        },
+                        errorMessage = null
+                    )
+                    socialViewModel.onSignInResult(signInResult)
+                } catch (e: Exception) {
+                     socialViewModel.onSignInResult(com.perseverance.pvc.utils.SignInResult(null, e.message))
+                }
+            }
+        }
+    }
+
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -56,15 +96,12 @@ fun GroupScreen(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // Top header with hamburger menu and settings/insights icons
+            // Top header
             TopHeader(
                 onNavigateToSettings = onNavigateToSettings,
                 onNavigateToInsights = onNavigateToInsights,
                 onHamburgerClick = onNavigateToMenu
             )
-            
-            // Main content with padding and scroll
-            val isLightTheme = MaterialTheme.colorScheme.background.luminance() >= 0.5f
             
             Column(
                 modifier = Modifier
@@ -73,7 +110,7 @@ fun GroupScreen(
                     .padding(horizontal = 24.dp, vertical = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Header Icon and Title
+                // Header Icon
                 Box(
                     modifier = Modifier
                         .size(80.dp)
@@ -91,210 +128,147 @@ fun GroupScreen(
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 Text(
-                    text = "Study Groups",
+                    text = "Study Friends",
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                Text(
-                    text = "Study together with friends and stay motivated",
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                    textAlign = TextAlign.Center
-                )
-                
                 Spacer(modifier = Modifier.height(32.dp))
-                
-                // Create/Join Group Card
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    ),
-                    shape = RoundedCornerShape(16.dp),
-                    border = glassBorder(isLightTheme),
-                    elevation = glassElevation(isLightTheme)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+
+                if (!uiState.isSignedIn) {
+                    // Sign In UI
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        shape = RoundedCornerShape(16.dp),
+                         border = com.perseverance.pvc.ui.theme.glassBorder(MaterialTheme.colorScheme.background.luminance() >= 0.5f),
+                         elevation = com.perseverance.pvc.ui.theme.glassElevation(MaterialTheme.colorScheme.background.luminance() >= 0.5f)
                     ) {
-                        Icon(
-                            imageVector = Icons.Filled.People,
-                            contentDescription = "People",
-                            tint = Color(0xFFFFD700),
-                            modifier = Modifier.size(48.dp)
-                        )
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
+                        Column(
+                            modifier = Modifier.padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                "Connect with Friends",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                "Sign in with Google to see when your friends are studying.",
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            )
+                            Spacer(modifier = Modifier.height(24.dp))
+                            Button(
+                                onClick = { 
+                                     val intent = socialViewModel.getSignInIntent()
+                                     launcher.launch(intent)
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD700), contentColor = Color.Black)
+                            ) {
+                                Text("Sign In with Google")
+                            }
+                        }
+                    }
+                } else {
+                    // Logged In UI
+                    
+                    // Add Friend Button
+                    Button(
+                        onClick = { socialViewModel.showAddFriendDialog() },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                    ) {
+                        Icon(Icons.Filled.Add, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Add Friend (${uiState.friends.size}/10)")
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    if (uiState.friends.isEmpty()) {
                         Text(
-                            text = "Join Study Groups",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        
-                        Spacer(modifier = Modifier.height(8.dp))
-                        
-                        Text(
-                            text = "Connect with other students, share progress, and motivate each other to achieve your goals.",
-                            fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                            "No friends yet. Add someone to see their status!",
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                             textAlign = TextAlign.Center
                         )
-                        
-                        Spacer(modifier = Modifier.height(24.dp))
-                        
-                        // Create Group Button
-                        Button(
-                            onClick = { /* TODO: Add create group functionality */ },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(50.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFFFFD700),
-                                contentColor = Color.Black
-                            ),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Add,
-                                contentDescription = "Create",
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Create Group",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        
-                        Spacer(modifier = Modifier.height(12.dp))
-                        
-                        // Join Group Button
-                        OutlinedButton(
-                            onClick = { /* TODO: Add join group functionality */ },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(50.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = MaterialTheme.colorScheme.onSurface
-                            ),
-                            border = androidx.compose.foundation.BorderStroke(
-                                1.dp,
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                            ),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Group,
-                                contentDescription = "Join",
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Join Group",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold
-                            )
+                    } else {
+                        uiState.friends.forEach { friend ->
+                            FriendItem(friend)
+                            Spacer(modifier = Modifier.height(8.dp))
                         }
                     }
                 }
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                // Benefits Section
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    ),
-                    shape = RoundedCornerShape(16.dp),
-                    border = glassBorder(isLightTheme),
-                    elevation = glassElevation(isLightTheme)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp)
-                    ) {
-                        Text(
-                            text = "Benefits of Study Groups",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.padding(bottom = 16.dp)
-                        )
-                        
-                        BenefitItem(
-                            emoji = "📊",
-                            title = "Track Progress Together",
-                            description = "See how your group members are progressing"
-                        )
-                        
-                        Spacer(modifier = Modifier.height(12.dp))
-                        
-                        BenefitItem(
-                            emoji = "🏆",
-                            title = "Compete & Motivate",
-                            description = "Stay motivated with friendly competition"
-                        )
-                        
-                        Spacer(modifier = Modifier.height(12.dp))
-                        
-                        BenefitItem(
-                            emoji = "🎯",
-                            title = "Shared Goals",
-                            description = "Work towards common study objectives"
-                        )
-                        
-                        Spacer(modifier = Modifier.height(12.dp))
-                        
-                        BenefitItem(
-                            emoji = "💪",
-                            title = "Accountability",
-                            description = "Stay committed with peer support"
+            }
+        }
+        
+        if (uiState.showAddFriendDialog) {
+            AlertDialog(
+                onDismissRequest = { socialViewModel.hideAddFriendDialog() },
+                title = { Text("Add Friend") },
+                text = {
+                    Column {
+                        Text("Enter your friend's email address:")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = uiState.addFriendEmail,
+                            onValueChange = { socialViewModel.updateAddFriendEmail(it) },
+                            singleLine = true,
+                            label = { Text("Email") }
                         )
                     }
-                }
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                // Coming Soon Notice
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    color = Color(0xFF4CAF50).copy(alpha = 0.2f)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "🚀",
-                            fontSize = 20.sp
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Group features will be added soon!",
-                            fontSize = 14.sp,
-                            color = Color(0xFF4CAF50),
-                            fontWeight = FontWeight.Medium
-                        )
+                },
+                confirmButton = {
+                    TextButton(onClick = { socialViewModel.sendFriendRequest() }) {
+                        Text("Send Request")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { socialViewModel.hideAddFriendDialog() }) {
+                        Text("Cancel")
                     }
                 }
-                
-                Spacer(modifier = Modifier.height(16.dp))
+            )
+        }
+    }
+}
+
+@Composable
+fun FriendItem(user: com.perseverance.pvc.data.SocialUser) {
+    val isStudying = user.status == "STUDYING"
+    
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isStudying) Color(0xFF4CAF50).copy(alpha = 0.2f) else MaterialTheme.colorScheme.surface
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Setup simple avatar placeholder
+            Box(
+                modifier = Modifier.size(40.dp).background(Color.Gray, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                 Text(user.displayName.first().toString(), color = Color.White)
+            }
+            
+            Spacer(modifier = Modifier.width(16.dp))
+            
+            Column {
+                Text(user.displayName, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                if (isStudying) {
+                    Text("Studying ${user.currentSubject}", color = Color(0xFF4CAF50))
+                } else {
+                    Text("Idle", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                }
             }
         }
     }

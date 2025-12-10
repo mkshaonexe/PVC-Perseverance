@@ -33,6 +33,7 @@ class TimerSoundService : Service() {
     private var audioTrack: AudioTrack? = null
     private var isPlaying = false
     private var soundJob: Job? = null
+    private var currentSessionType: String? = null
     
     // Audio parameters for 1000 Hz sine wave
     private val sampleRate = 44100
@@ -47,7 +48,7 @@ class TimerSoundService : Service() {
     // Foreground service constants
     companion object {
         private const val FOREGROUND_SERVICE_ID = 2001
-        private const val CHANNEL_ID = "timer_sound_service"
+        private const val CHANNEL_ID = "timer_sound_service_high_priority"
         private const val CHANNEL_NAME = "Timer Sound Service"
         private const val CHANNEL_DESCRIPTION = "Keeps timer sounds playing in background"
     }
@@ -63,13 +64,33 @@ class TimerSoundService : Service() {
         createNotificationChannel()
         Log.d("TimerSoundService", "Service created")
     }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Log.d("TimerSoundService", "onStartCommand called with action: ${intent?.action}")
+        
+        when (intent?.action) {
+                Log.d("TimerSoundService", "Starting infinite sound from Intent")
+                if (intent.hasExtra("SESSION_TYPE")) {
+                    currentSessionType = intent.getStringExtra("SESSION_TYPE")
+                }
+                startInfiniteSound()
+            }
+            "ACTION_STOP_SOUND" -> {
+                Log.d("TimerSoundService", "Stopping infinite sound from Intent")
+                stopInfiniteSound()
+                stopSelf()
+            }
+        }
+        
+        return START_STICKY
+    }
     
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 CHANNEL_NAME,
-                NotificationManager.IMPORTANCE_LOW
+                NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = CHANNEL_DESCRIPTION
                 enableVibration(false)
@@ -94,14 +115,33 @@ class TimerSoundService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         
+        val title: String
+        val text: String
+        
+        when (currentSessionType) {
+            "WORK" -> {
+                title = "Pomodoro session done, take a break"
+                text = "Great job! Time for a break. Tap to continue."
+            }
+            "SHORT_BREAK", "LONG_BREAK" -> {
+                title = "Break Complete! ⏰"
+                text = "Break time is over. Ready for your next work session?"
+            }
+            else -> {
+                 title = "Pomodoro Timer Expired"
+                 text = "Tap to stop the alarm."
+            }
+        }
+
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("Pomodoro Timer Active")
-            .setContentText("Timer is running in background")
-            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setOngoing(true)
             .setContentIntent(pendingIntent)
-            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .build()
     }
     
@@ -310,6 +350,13 @@ class TimerSoundService : Service() {
     }
     
     fun isSoundPlaying(): Boolean = isPlaying
+    
+    fun setSessionType(type: String) {
+        currentSessionType = type
+        if (isPlaying) {
+            startForeground(FOREGROUND_SERVICE_ID, createForegroundNotification())
+        }
+    }
     
     override fun onDestroy() {
         super.onDestroy()

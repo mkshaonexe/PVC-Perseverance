@@ -3,6 +3,7 @@ package com.perseverance.pvc.ui.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import android.os.Build
 import com.perseverance.pvc.data.StudyRepository
 import com.perseverance.pvc.data.PomodoroTimerState
 import com.perseverance.pvc.data.SettingsRepository
@@ -24,6 +25,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import android.app.AlarmManager
+import android.app.PendingIntent
+import com.perseverance.pvc.receivers.TimerExpiredReceiver
+import android.os.SystemClock
 import java.time.LocalDateTime
 
 data class PomodoroUiState(
@@ -207,6 +212,9 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
             saveTimerState()
         }
         
+        // Schedule AlarmManager for exact wake-up
+        scheduleTimerAlarm(remainingTimeInSeconds * 1000L)
+
         _uiState.value = _uiState.value.copy(isPlaying = true, isPaused = false)
         
         timerJob = viewModelScope.launch {
@@ -235,9 +243,68 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         }
     }
     
+    private fun scheduleTimerAlarm(durationMillis: Long) {
+        val alarmManager = getApplication<Application>().getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(getApplication(), TimerExpiredReceiver::class.java).apply {
+            action = TimerExpiredReceiver.ACTION_TIMER_EXPIRED
+            putExtra("SESSION_TYPE", _uiState.value.currentSessionType.name)
+        }
+        
+        // Unique request code to distinguish different alarms if needed (using 0 for single timer)
+        val pendingIntent = PendingIntent.getBroadcast(
+            getApplication(),
+            0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        
+        val triggerTime = System.currentTimeMillis() + durationMillis
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (alarmManager.canScheduleExactAlarms()) {
+                alarmManager.setAlarmClock(
+                    AlarmManager.AlarmClockInfo(triggerTime, pendingIntent),
+                    pendingIntent
+                )
+            } else {
+                // Fallback for no permission (should request permission)
+                alarmManager.setExactAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    triggerTime,
+                    pendingIntent
+                )
+            }
+        } else {
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                triggerTime,
+                pendingIntent
+            )
+        }
+        Log.d("PomodoroViewModel", "Alarm scheduled for ${durationMillis/1000} seconds from now")
+    }
+
+    private fun cancelTimerAlarm() {
+        val alarmManager = getApplication<Application>().getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(getApplication(), TimerExpiredReceiver::class.java).apply {
+            action = TimerExpiredReceiver.ACTION_TIMER_EXPIRED
+        }
+        val pendingIntent = PendingIntent.getBroadcast(
+            getApplication(),
+            0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        alarmManager.cancel(pendingIntent)
+        Log.d("PomodoroViewModel", "Alarm canceled")
+    }
+    
     fun pauseTimer() {
         // Set isPlaying to false FIRST so the while loop in startTimer stops naturally
         _uiState.value = _uiState.value.copy(isPlaying = false, isPaused = true)
+        
+        // Cancel Alarm
+        cancelTimerAlarm()
         
         // Then cancel the job
         timerJob?.cancel()
@@ -258,6 +325,7 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         // Stop the timer
         timerJob?.cancel()
         timerJob = null
+        cancelTimerAlarm()
         _uiState.value = _uiState.value.copy(isPlaying = false, isPaused = false)
         hasRestoredState = false // Allow restore on next background/foreground cycle
         
@@ -284,6 +352,7 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
     fun resetTimer() {
         timerJob?.cancel()
         timerJob = null
+        cancelTimerAlarm()
         _uiState.value = _uiState.value.copy(isPlaying = false, isPaused = false)
         
         // Clear any existing notifications
@@ -318,6 +387,11 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
     }
     
     private fun onTimerComplete() {
+        // Timer completed naturally, so the alarm might have fired or is about to fire.
+        // We can cancel it just in case to avoid double triggers if we're in foreground.
+        // If app was in background, the Receiver would have started the sound independently.
+        cancelTimerAlarm()
+        
         _uiState.value = _uiState.value.copy(
             isPlaying = false, 
             isPaused = false, 
@@ -327,6 +401,7 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         
         // Start infinite sound
         Log.d("PomodoroViewModel", "Timer completed, starting sound. Service bound: $isSoundServiceBound, Service: $soundService")
+        soundService?.setSessionType(_uiState.value.currentSessionType.name)
         soundService?.startInfiniteSound()
         
         when (_uiState.value.currentSessionType) {
@@ -658,6 +733,7 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
                     
                     // Start sound for completion
                     Log.d("PomodoroViewModel", "Starting completion sound after background completion")
+                    soundService?.setSessionType(timerState.sessionType)
                     soundService?.startInfiniteSound()
                     
                     updateTimeDisplay()
