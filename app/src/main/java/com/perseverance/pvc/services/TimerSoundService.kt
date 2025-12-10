@@ -69,6 +69,7 @@ class TimerSoundService : Service() {
         Log.d("TimerSoundService", "onStartCommand called with action: ${intent?.action}")
         
         when (intent?.action) {
+            "ACTION_START_SOUND" -> {
                 Log.d("TimerSoundService", "Starting infinite sound from Intent")
                 if (intent.hasExtra("SESSION_TYPE")) {
                     currentSessionType = intent.getStringExtra("SESSION_TYPE")
