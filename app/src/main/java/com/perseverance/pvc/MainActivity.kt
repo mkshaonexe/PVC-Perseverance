@@ -33,6 +33,7 @@ import com.perseverance.pvc.ui.screens.*
 import com.perseverance.pvc.ui.theme.PerseverancePVCTheme
 import com.perseverance.pvc.ui.viewmodel.SettingsViewModel
 import com.perseverance.pvc.ui.viewmodel.PomodoroViewModel
+import com.perseverance.pvc.utils.AnalyticsHelper
 import com.perseverance.pvc.utils.PermissionManager
 
 class MainActivity : ComponentActivity() {
@@ -51,6 +52,10 @@ class MainActivity : ComponentActivity() {
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Initialize Firebase Analytics
+        AnalyticsHelper.initialize(this)
+        AnalyticsHelper.logEvent("app_launch")
         
         // Request notification permission on first launch
         requestNotificationPermissionIfNeeded()
