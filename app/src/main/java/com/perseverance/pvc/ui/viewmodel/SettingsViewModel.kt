@@ -210,6 +210,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     }
     
     fun completeOnboarding() {
+        viewModelScope.launch {
             _onboardingCompleted.value = true
             repository.setOnboardingCompleted(true)
         }
