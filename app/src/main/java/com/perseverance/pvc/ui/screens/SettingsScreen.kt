@@ -58,7 +58,7 @@ fun SettingsScreen(
 
 
     androidx.compose.runtime.LaunchedEffect(Unit) {
-        com.perseverance.pvc.utils.AnalyticsHelper.logScreenView("SettingsScreen")
+        // com.perseverance.pvc.utils.AnalyticsHelper.logScreenView("SettingsScreen")
     }
 
     Box(

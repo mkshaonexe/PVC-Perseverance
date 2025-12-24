@@ -9,8 +9,8 @@ class DaylineApp : Application() {
         // Firebase is typically initialized automatically by the ContentProvider, 
         // but explicit initialization can be useful for debugging or specific configurations.
         try {
-            FirebaseApp.initializeApp(this)
-            android.widget.Toast.makeText(this, "Firebase Initialized Successfully", android.widget.Toast.LENGTH_SHORT).show()
+            // FirebaseApp.initializeApp(this)
+            // android.widget.Toast.makeText(this, "Firebase Initialized Successfully", android.widget.Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             android.util.Log.e("DaylineApp", "Failed to initialize Firebase", e)
             android.widget.Toast.makeText(this, "Firebase Init FAILED: ${e.message}", android.widget.Toast.LENGTH_LONG).show()

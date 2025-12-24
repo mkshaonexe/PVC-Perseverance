@@ -39,7 +39,7 @@ fun GroupScreen(
     val uiState by socialViewModel.uiState.collectAsState()
     
     LaunchedEffect(Unit) {
-        AnalyticsHelper.logScreenView("GroupScreen")
+        // AnalyticsHelper.logScreenView("GroupScreen")
     }
     
     Box(
