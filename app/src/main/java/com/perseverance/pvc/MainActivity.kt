@@ -36,6 +36,9 @@ import com.perseverance.pvc.ui.viewmodel.SettingsViewModel
 import com.perseverance.pvc.ui.viewmodel.PomodoroViewModel
 import com.perseverance.pvc.utils.AnalyticsHelper
 import com.perseverance.pvc.utils.PermissionManager
+import com.perseverance.pvc.util.SupabaseConnectionTester
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     private var pomodoroViewModel: PomodoroViewModel? = null
@@ -58,6 +61,12 @@ class MainActivity : ComponentActivity() {
         
         // Log App Open
         AnalyticsHelper.logEvent(FirebaseAnalytics.Event.APP_OPEN)
+        
+        // Test Supabase Connection (for debugging)
+        lifecycleScope.launch {
+            val isConnected = SupabaseConnectionTester.testConnection()
+            android.util.Log.d("MainActivity", "Supabase Connection Status: $isConnected")
+        }
         
         // Request notification permission on first launch
         requestNotificationPermissionIfNeeded()

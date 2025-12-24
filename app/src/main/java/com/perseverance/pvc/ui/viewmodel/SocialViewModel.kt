@@ -8,8 +8,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.perseverance.pvc.data.SocialRepository
 import com.perseverance.pvc.data.SocialUser
-import com.perseverance.pvc.utils.GoogleAuthClient
-import com.perseverance.pvc.utils.SignInResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,7 +26,7 @@ data class SocialUiState(
 
 class SocialViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = SocialRepository()
-    private val authClient = GoogleAuthClient(application)
+    private val authRepository = com.perseverance.pvc.data.repository.AuthRepository(application)
     
     private val _uiState = MutableStateFlow(SocialUiState())
     val uiState: StateFlow<SocialUiState> = _uiState.asStateFlow()
@@ -38,15 +36,15 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
     }
     
     private fun checkSignInStatus() {
-        val user = authClient.getSignedInUser()
+        val user = authRepository.getCurrentUser()
         if (user != null) {
             _uiState.value = _uiState.value.copy(
                 isSignedIn = true,
                 currentUser = SocialUser(
-                    uid = user.uid,
-                    displayName = user.displayName ?: "User",
+                    uid = user.id,
+                    displayName = user.userMetadata?.get("full_name")?.toString() ?: "User",
                     email = user.email ?: "",
-                    photoUrl = user.photoUrl?.toString() ?: ""
+                    photoUrl = user.userMetadata?.get("avatar_url")?.toString() ?: ""
                 )
             )
             // Start listening to friends status
@@ -54,37 +52,47 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
     
-    fun onSignInResult(result: SignInResult) {
-        if (result.data != null) {
-            _uiState.value = _uiState.value.copy(
-                isSignedIn = true,
-                currentUser = SocialUser(
-                    uid = result.data.userId,
-                    displayName = result.data.username ?: "User",
-                    email = result.data.email ?: "",
-                    photoUrl = result.data.profilePictureUrl ?: ""
-                ),
-                error = null
-            )
-            
-            viewModelScope.launch {
-                repository.updateCurrentUserProfile()
-            }
-            startFriendsListener()
-        } else {
-            _uiState.value = _uiState.value.copy(
-                error = result.errorMessage
-            )
-        }
+    fun handleGoogleSignInResult(data: Intent?) {
+         viewModelScope.launch {
+             _uiState.value = _uiState.value.copy(isLoading = true)
+             val result = authRepository.signInWithGoogle(data)
+             
+             if (result.isSuccess) {
+                 val user = result.getOrNull()!!
+                 _uiState.value = _uiState.value.copy(
+                     isSignedIn = true,
+                     currentUser = SocialUser(
+                         uid = user.id,
+                         displayName = user.userMetadata?.get("full_name")?.toString() ?: "User",
+                         email = user.email ?: "",
+                         photoUrl = user.userMetadata?.get("avatar_url")?.toString() ?: ""
+                     ),
+                     error = null,
+                     isLoading = false
+                 )
+                 
+                 launch {
+                     repository.updateCurrentUserProfile()
+                 }
+                 startFriendsListener()
+             } else {
+                 _uiState.value = _uiState.value.copy(
+                     error = result.exceptionOrNull()?.message,
+                     isLoading = false
+                 )
+             }
+         }
     }
     
     fun getSignInIntent(): Intent {
-        return authClient.getSignInIntent()
+        return authRepository.getGoogleSignInIntent()
     }
     
-    suspend fun signOut() {
-        authClient.signOut()
-        _uiState.value = SocialUiState(isSignedIn = false)
+    fun signOut() {
+        viewModelScope.launch {
+            authRepository.signOut()
+            _uiState.value = SocialUiState(isSignedIn = false)
+        }
     }
     
     private fun startFriendsListener() {

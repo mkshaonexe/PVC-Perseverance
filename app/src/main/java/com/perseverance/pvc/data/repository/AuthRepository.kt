@@ -12,6 +12,7 @@ import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.builtin.IDToken
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.user.UserInfo
+import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -159,6 +160,27 @@ class AuthRepository(private val context: Context) {
                 Result.success(Unit)
             } catch (e: Exception) {
                 Log.e("AuthRepository", "Reset password error", e)
+                Result.failure(e)
+            }
+        }
+    }
+
+    // Save selected study group to profile
+    suspend fun saveUserGroup(group: String): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val user = supabase.auth.currentUserOrNull()
+                if (user != null) {
+                    val profile = mapOf("id" to user.id, "study_group" to group)
+                    // Assuming a 'profiles' table exists. 
+                    // Using upsert to create or update.
+                    supabase.postgrest.from("profiles").upsert(profile)
+                    Result.success(Unit)
+                } else {
+                    Result.failure(Exception("User not logged in"))
+                }
+            } catch (e: Exception) {
+                Log.e("AuthRepository", "Save user group error", e)
                 Result.failure(e)
             }
         }

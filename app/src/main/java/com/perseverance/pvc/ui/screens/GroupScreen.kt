@@ -10,7 +10,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material3.*
-import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -43,29 +42,12 @@ fun GroupScreen(
         contract = androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == android.app.Activity.RESULT_OK) {
-            val task = com.google.android.gms.auth.api.signin.GoogleSignIn.getSignedInAccountFromIntent(result.data)
-            scope.launch {
-                try {
-                    val account = task.getResult(com.google.android.gms.common.api.ApiException::class.java)
-                    val credential = com.google.firebase.auth.GoogleAuthProvider.getCredential(account.idToken, null)
-                    val authResult = FirebaseAuth.getInstance().signInWithCredential(credential).await()
-                    
-                    val signInResult = com.perseverance.pvc.utils.SignInResult(
-                        data = authResult.user?.let { user ->
-                            com.perseverance.pvc.utils.UserData(
-                                userId = user.uid,
-                                username = user.displayName,
-                                profilePictureUrl = user.photoUrl?.toString(),
-                                email = user.email
-                            )
-                        },
-                        errorMessage = null
-                    )
-                    socialViewModel.onSignInResult(signInResult)
-                } catch (e: Exception) {
-                     socialViewModel.onSignInResult(com.perseverance.pvc.utils.SignInResult(null, e.message))
-                }
-            }
+             socialViewModel.handleGoogleSignInResult(result.data)
+        } else {
+             // Handle cancellation or error if needed?
+             // Maybe socialViewModel can handle null intent to show error?
+             // But existing code just ignored it.
+             // We can pass it anyway: socialViewModel.handleGoogleSignInResult(result.data)
         }
     }
 

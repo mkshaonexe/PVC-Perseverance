@@ -1,16 +1,14 @@
 package com.perseverance.pvc.data
 
 import android.util.Log
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.SetOptions
-import com.google.firebase.firestore.FirebaseFirestore
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.tasks.await
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import kotlinx.serialization.Serializable
 
 data class SocialUser(
     val uid: String = "",
@@ -31,8 +29,7 @@ data class FriendRequest(
 )
 
 class SocialRepository {
-    private val db = FirebaseFirestore.getInstance()
-    private val auth = FirebaseAuth.getInstance()
+    private val supabase = com.perseverance.pvc.data.remote.SupabaseClient.client
     
     private val TAG = "SocialRepository"
 
@@ -40,42 +37,42 @@ class SocialRepository {
 
     // Create or update user profile upon login
     suspend fun updateCurrentUserProfile() {
-        val user = auth.currentUser ?: return
+        val user = supabase.auth.currentUserOrNull() ?: return
         
-        val userData = hashMapOf(
-            "uid" to user.uid,
-            "displayName" to (user.displayName ?: "Unknown"),
+        val userData = mapOf(
+            "id" to user.id,
+            "display_name" to (user.userMetadata?.get("full_name")?.toString() ?: "Unknown"),
             "email" to (user.email ?: ""),
-            "photoUrl" to (user.photoUrl?.toString() ?: ""),
-            "lastActive" to System.currentTimeMillis()
+            "photo_url" to (user.userMetadata?.get("avatar_url")?.toString() ?: ""),
+            "last_active" to System.currentTimeMillis()
         )
         
         try {
-            db.collection("users").document(user.uid)
-                .set(userData, SetOptions.merge())
-                .await()
+            supabase.postgrest.from("profiles").upsert(userData)
         } catch (e: Exception) {
             Log.e(TAG, "Error updating profile", e)
         }
     }
 
-    // --- Status Signaling (The "P2P" Logic) ---
+    // --- Status Signaling ---
 
     // Call this when Timer Starts
     suspend fun setStatusStudying(subject: String, durationSeconds: Long) {
-        val user = auth.currentUser ?: return
+        val user = supabase.auth.currentUserOrNull() ?: return
         
-        val updates = hashMapOf(
+        val updates = mapOf(
             "status" to "STUDYING",
-            "currentSubject" to subject,
-            "studyStartTime" to System.currentTimeMillis(),
-            "studyDuration" to durationSeconds
+            "current_subject" to subject,
+            "study_start_time" to System.currentTimeMillis(),
+            "study_duration" to durationSeconds
         )
         
         try {
-            db.collection("users").document(user.uid)
-                .update(updates as Map<String, Any>)
-                .await()
+            supabase.postgrest.from("profiles").update(updates) {
+                filter {
+                    eq("id", user.id)
+                }
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Error setting status", e)
         }
@@ -83,150 +80,157 @@ class SocialRepository {
 
     // Call this when Timer Stops
     suspend fun setStatusIdle() {
-        val user = auth.currentUser ?: return
+        val user = supabase.auth.currentUserOrNull() ?: return
         
-        val updates = hashMapOf(
+        val updates = mapOf(
             "status" to "IDLE",
-            "studyStartTime" to 0
+            "study_start_time" to 0
         )
         
         try {
-            db.collection("users").document(user.uid)
-                .update(updates as Map<String, Any>)
-                .await()
+            supabase.postgrest.from("profiles").update(updates) {
+                filter {
+                    eq("id", user.id)
+                }
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Error setting status", e)
         }
     }
 
-    // --- Friend System (10 Friend Limit) ---
+    // --- Friend System ---
 
-    // Send Friend Request (Check limit first)
+    // Send Friend Request
     suspend fun sendFriendRequest(email: String): Result<String> {
-        val currentUser = auth.currentUser ?: return Result.failure(Exception("Not logged in"))
+        val currentUser = supabase.auth.currentUserOrNull() ?: return Result.failure(Exception("Not logged in"))
         
-        // 1. Find user by email
-        val snapshot = db.collection("users")
-            .whereEqualTo("email", email)
-            .get()
-            .await()
+        try {
+            // 1. Find user by email
+            val users = supabase.postgrest.from("profiles").select {
+                filter {
+                    eq("email", email)
+                }
+            }.decodeList<SocialProfile>()
             
-        if (snapshot.isEmpty) {
-            return Result.failure(Exception("User not found"))
-        }
-        
-        val targetUser = snapshot.documents[0]
-        val targetUid = targetUser.getString("uid") ?: return Result.failure(Exception("Invalid user"))
-
-        if (targetUid == currentUser.uid) {
-            return Result.failure(Exception("Cannot add yourself"))
-        }
-
-        // 2. Check my friend count
-        val myFriends = db.collection("users").document(currentUser.uid)
-            .collection("friends")
-            .get()
-            .await()
+            if (users.isEmpty()) {
+                return Result.failure(Exception("User not found"))
+            }
             
-        if (myFriends.size() >= 10) {
-            return Result.failure(Exception("You have reached the 10 friend limit."))
-        }
-
-        // 3. Send Request
-        val request = hashMapOf(
-            "fromUid" to currentUser.uid,
-            "fromName" to (currentUser.displayName ?: "Unknown"),
-            "status" to "PENDING"
-        )
-        
-        db.collection("users").document(targetUid)
-            .collection("friendRequests")
-            .document(currentUser.uid)
-            .set(request)
-            .await()
+            val targetUser = users[0]
+            val targetUid = targetUser.id
             
-        return Result.success("Request sent to ${targetUser.getString("displayName")}")
+            if (targetUid == currentUser.id) {
+                return Result.failure(Exception("Cannot add yourself"))
+            }
+
+            // 2. Check my friend count (simplified check)
+            val friends = supabase.postgrest.from("friends").select {
+                filter {
+                    eq("user_id", currentUser.id)
+                }
+            }.decodeList<FriendRelation>().size
+            
+            if (friends >= 10) {
+                return Result.failure(Exception("You have reached the 10 friend limit."))
+            }
+
+            // 3. Send Request
+            val request = mapOf(
+                "from_uid" to currentUser.id,
+                "to_uid" to targetUid,
+                "status" to "PENDING"
+            )
+            
+            supabase.postgrest.from("friend_requests").insert(request)
+                
+            return Result.success("Request sent to ${targetUser.displayName}")
+        } catch (e: Exception) {
+            return Result.failure(e)
+        }
     }
     
-    // Accept Friend Request
-    suspend fun acceptFriendRequest(requestFromUid: String, requestFromName: String) {
-        val currentUser = auth.currentUser ?: return
-        
-        // Add to MY friends
-        val myFriendData = hashMapOf(
-            "uid" to requestFromUid,
-            "displayName" to requestFromName,
-            "since" to System.currentTimeMillis()
-        )
-        
-        db.collection("users").document(currentUser.uid)
-            .collection("friends")
-            .document(requestFromUid)
-            .set(myFriendData)
-            .await()
-            
-        // Add ME to THEIR friends
-        val theirFriendData = hashMapOf(
-            "uid" to currentUser.uid,
-            "displayName" to (currentUser.displayName ?: "Unknown"),
-            "since" to System.currentTimeMillis()
-        )
-        
-        db.collection("users").document(requestFromUid)
-            .collection("friends")
-            .document(currentUser.uid)
-            .set(theirFriendData)
-            .await()
-            
-        // Delete request
-        db.collection("users").document(currentUser.uid)
-            .collection("friendRequests")
-            .document(requestFromUid)
-            .delete()
-            .await()
+    // Accept Friend Request (Not implemented in UI yet but good to have)
+    suspend fun acceptFriendRequest(requestId: String) {
+         // TODO: Implement
     }
 
     // --- Real-time Listeners ---
 
-    // Listen to my friends' status
+    // Poll friend status (Realtime is better but Polling is easier to start with Postgrest)
+    // Supabase Realtime requires enabling replication on tables.
     fun getFriendsStatusWaitList(): Flow<List<SocialUser>> = callbackFlow {
-        val currentUser = auth.currentUser
+        val currentUser = supabase.auth.currentUserOrNull()
         if (currentUser == null) {
             close()
             return@callbackFlow
         }
         
-        // 1. Get List of Friend UIDs
-        val friendsSnapshot = db.collection("users").document(currentUser.uid)
-            .collection("friends")
-            .get()
-            .await()
-            
-        val friendIds = friendsSnapshot.documents.map { it.id }
-        
-        if (friendIds.isEmpty()) {
-            trySend(emptyList())
-            // Keep flow open but with empty list
-            awaitClose { }
-            return@callbackFlow
-        }
-        
-        // 2. Query users where UID is in my friend list
-        // Firestore 'in' query supports up to 10 items, perfect for our limit!
-        val subscription = db.collection("users")
-            .whereIn("uid", friendIds)
-            .addSnapshotListener { snapshot, e ->
-                if (e != null) {
-                    Log.w(TAG, "Listen failed.", e)
-                    return@addSnapshotListener
-                }
+        // Polling loop
+        while(true) {
+            try {
+                // 1. Get List of Friend UIDs
+                // Assuming 'friends' table: user_id, friend_id
+                val friendsRelations = supabase.postgrest.from("friends").select {
+                    filter {
+                        eq("user_id", currentUser.id)
+                    }
+                }.decodeList<FriendRelation>()
                 
-                if (snapshot != null) {
-                    val friends = snapshot.toObjects(SocialUser::class.java)
-                    trySend(friends)
+                val friendIds = friendsRelations.map { it.friendId }
+                
+                if (friendIds.isEmpty()) {
+                    trySend(emptyList())
+                } else {
+                    // 2. Query profiles
+                    // Using filter with 'in'
+                    val friendProfiles = supabase.postgrest.from("profiles").select {
+                        filter {
+                            isIn("id", friendIds)
+                        }
+                    }.decodeList<SocialProfile>()
+                    
+                    // Map back to SocialUser for UI
+                    val socialUsers = friendProfiles.map { profile ->
+                        SocialUser(
+                            uid = profile.id,
+                            displayName = profile.displayName,
+                            email = profile.email,
+                            photoUrl = profile.photoUrl,
+                            status = profile.status,
+                            currentSubject = profile.currentSubject,
+                            lastActive = profile.lastActive,
+                            studyStartTime = profile.studyStartTime,
+                            studyDuration = profile.studyDuration
+                        )
+                    }
+                    trySend(socialUsers)
                 }
+            } catch (e: Exception) {
+                Log.e(TAG, "Polling error", e)
             }
             
-        awaitClose { subscription.remove() }
+            // Poll every 10 seconds
+            kotlinx.coroutines.delay(10000)
+        }
     }
 }
+
+@kotlinx.serialization.Serializable
+data class SocialProfile(
+    val id: String,
+    @kotlinx.serialization.SerialName("display_name") val displayName: String = "",
+    val email: String = "",
+    @kotlinx.serialization.SerialName("photo_url") val photoUrl: String = "",
+    val status: String = "IDLE",
+    @kotlinx.serialization.SerialName("current_subject") val currentSubject: String = "",
+    @kotlinx.serialization.SerialName("last_active") val lastActive: Long = 0,
+    @kotlinx.serialization.SerialName("study_start_time") val studyStartTime: Long = 0,
+    @kotlinx.serialization.SerialName("study_duration") val studyDuration: Long = 0
+)
+
+@kotlinx.serialization.Serializable
+data class FriendRelation(
+    val id: String = "",
+    @kotlinx.serialization.SerialName("user_id") val userId: String,
+    @kotlinx.serialization.SerialName("friend_id") val friendId: String
+)

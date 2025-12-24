@@ -108,4 +108,15 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     fun resetAuthState() {
         _authState.value = AuthState.Idle
     }
+
+    fun updateStudyGroup(group: String) {
+        viewModelScope.launch {
+            // We can optionally track a loading state for this specific action if needed
+            val result = authRepository.saveUserGroup(group)
+            if (result.isFailure) {
+                // Log failure, maybe use a separate state or keeping simple for now
+                android.util.Log.e("AuthViewModel", "Failed to save group", result.exceptionOrNull())
+            }
+        }
+    }
 }
