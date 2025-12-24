@@ -23,11 +23,20 @@ data class SocialUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val addFriendEmail: String = "",
-    val showAddFriendDialog: Boolean = false
+    val showAddFriendDialog: Boolean = false,
+    // Mission State
+    val globalMission: com.perseverance.pvc.data.Mission? = null,
+    val globalMissionProgress: Long = 0,
+    val customMissions: List<com.perseverance.pvc.data.Mission> = emptyList(),
+    val showAddMissionDialog: Boolean = false,
+    val newMissionTitle: String = "",
+    val newMissionTargetHours: String = ""
 )
 
 class SocialViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = SocialRepository()
+    private val studyRepository = com.perseverance.pvc.data.StudyRepository(application)
+    private val missionRepository = com.perseverance.pvc.data.MissionRepository(application, studyRepository)
     private val authClient = GoogleAuthClient(application)
     
     private val _uiState = MutableStateFlow(SocialUiState())
@@ -35,6 +44,30 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
     
     init {
         checkSignInStatus()
+        loadMissions()
+    }
+    
+    private fun loadMissions() {
+        viewModelScope.launch {
+            // Load Global Mission
+            launch {
+                missionRepository.getGlobalMission().collectLatest { mission ->
+                    _uiState.value = _uiState.value.copy(globalMission = mission)
+                    
+                    // Track progress if loaded
+                    missionRepository.getMissionProgress(mission).collectLatest { progress ->
+                        _uiState.value = _uiState.value.copy(globalMissionProgress = progress)
+                    }
+                }
+            }
+            
+            // Load Custom Missions
+            launch {
+                missionRepository.getCustomMissions().collectLatest { missions ->
+                    _uiState.value = _uiState.value.copy(customMissions = missions)
+                }
+            }
+        }
     }
     
     private fun checkSignInStatus() {
@@ -127,6 +160,54 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
             } else {
                 Toast.makeText(getApplication(), "Error: ${result.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
             }
+        }
+    }
+
+    // --- Mission Management ---
+
+    fun joinGlobalMission() {
+        viewModelScope.launch {
+            missionRepository.joinGlobalMission()
+            Toast.makeText(getApplication(), "Joined the 101 Hours Challenge!", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun showAddMissionDialog() {
+        _uiState.value = _uiState.value.copy(showAddMissionDialog = true)
+    }
+
+    fun hideAddMissionDialog() {
+        _uiState.value = _uiState.value.copy(
+            showAddMissionDialog = false,
+            newMissionTitle = "",
+            newMissionTargetHours = ""
+        )
+    }
+
+    fun updateNewMissionTitle(title: String) {
+        _uiState.value = _uiState.value.copy(newMissionTitle = title)
+    }
+
+    fun updateNewMissionTargetHours(hours: String) {
+        _uiState.value = _uiState.value.copy(newMissionTargetHours = hours)
+    }
+
+    fun createCustomMission() {
+        val title = _uiState.value.newMissionTitle
+        val hoursStr = _uiState.value.newMissionTargetHours
+        
+        if (title.isBlank() || hoursStr.isBlank()) return
+        
+        val hours = hoursStr.toIntOrNull()
+        if (hours == null || hours <= 0) {
+            Toast.makeText(getApplication(), "Please enter valid hours", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        viewModelScope.launch {
+            missionRepository.addCustomMission(title, hours, null) // No deadline for custom for now
+            hideAddMissionDialog()
+            Toast.makeText(getApplication(), "Mission Created!", Toast.LENGTH_SHORT).show()
         }
     }
 }

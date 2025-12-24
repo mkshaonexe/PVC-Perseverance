@@ -106,6 +106,18 @@ class StudyRepository(private val context: Context) {
                 }
         }
     }
+
+    // Get total study time in a specific time window (seconds)
+    fun getTotalStudyTimeInWindow(start: LocalDateTime, end: LocalDateTime): Flow<Long> {
+        return getAllStudySessions().map { sessions ->
+            sessions.filter { session ->
+                session.startTime != null &&
+                !session.startTime.isBefore(start) &&
+                !session.startTime.isAfter(end)
+            }.sumOf { it.durationSeconds.toLong() }
+        }
+    }
+
     
     // Save custom subjects
     suspend fun saveSubjects(subjects: List<String>) {
