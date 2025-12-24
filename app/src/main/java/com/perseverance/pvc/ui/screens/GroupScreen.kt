@@ -407,7 +407,7 @@ fun CustomMissionItem(mission: com.perseverance.pvc.data.Mission) {
                 }
                 
                 Icon(
-                    imageVector = androidx.compose.material.icons.filled.Star,
+                    imageVector = Icons.Filled.Star,
                     contentDescription = null,
                     tint = Color(0xFFFFD700).copy(alpha = 0.5f)
                 )

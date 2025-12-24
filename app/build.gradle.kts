@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     id("com.google.gms.google-services")
+    id("com.google.firebase.crashlytics")
 }
 
 android {
@@ -56,6 +57,7 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-crashlytics")
     implementation("com.google.firebase:firebase-messaging-ktx")
     
     // Google Sign-In
