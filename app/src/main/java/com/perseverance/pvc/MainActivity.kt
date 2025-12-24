@@ -69,6 +69,21 @@ class MainActivity : ComponentActivity() {
         // Log App Open
         com.perseverance.pvc.utils.AnalyticsHelper.logEvent("app_open")
         
+        // Get FCM Token for debugging
+        try {
+            com.google.firebase.messaging.FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+                if (!task.isSuccessful) {
+                    android.util.Log.w("MainActivity", "Fetching FCM registration token failed", task.exception)
+                    return@addOnCompleteListener
+                }
+                val token = task.result
+                android.util.Log.d("MainActivity", "FCM Token: $token")
+                android.widget.Toast.makeText(this, "FCM Token retrieved (Check Logcat)", android.widget.Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+             android.util.Log.e("MainActivity", "Error fetching FCM token", e)
+        }
+        
         setContent {
             // Observe user's theme preference from settings
             val context = LocalContext.current
