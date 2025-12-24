@@ -108,34 +108,144 @@ fun SettingsScreen(
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 )
 
-            // Settings Items
-            Column(
-                modifier = Modifier.padding(horizontal = 12.dp)
-            ) {
-                // General App Settings Section
+                // Preferences Section
                 SettingsSection(
-                    title = "General App Settings",
+                    title = "Preferences",
+                    items = {
+                        SettingsToggleItem(
+                            icon = Icons.Filled.DarkMode,
+                            title = "Dark Mode",
+                            checked = darkMode == "Dark",
+                            onCheckedChange = { isChecked ->
+                                viewModel.updateDarkMode(if (isChecked) "Dark" else "Light")
+                            }
+                        )
+                    }
+                )
+
+                // Early Access Section
+                SettingsSection(
+                    title = "Early Access",
+                    items = {
+                        SettingsItem(
+                            icon = Icons.Filled.Shop,
+                            title = "Install from Play Store",
+                            action = {
+                                val intent = Intent(Intent.ACTION_VIEW).apply {
+                                    data = Uri.parse("https://docs.google.com/forms/d/e/1FAIpQLSdobkWF2CPUIH5JKAkWsqRfevK7eJNVb4E6USbIOYrn2gTgiA/viewform")
+                                }
+                                try {
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Could not open form", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        )
+                    }
+                )
+
+                // Community Section
+                SettingsSection(
+                    title = "Community",
+                    items = {
+                        SettingsItem(
+                            icon = Icons.Filled.Group,
+                            title = "Public Group",
+                            action = {
+                                val intent = Intent(Intent.ACTION_VIEW).apply {
+                                    data = Uri.parse("https://t.me/your_telegram_group_link") // Placeholder, update if user provides link
+                                }
+                                try {
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Could not open link", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        )
+                        SettingsItem(
+                            icon = Icons.Filled.Apps,
+                            title = "Other Apps",
+                            action = {
+                                val intent = Intent(Intent.ACTION_VIEW).apply {
+                                    data = Uri.parse("https://mkshaon.com/all_app")
+                                }
+                                try {
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Could not open website", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        )
+                    }
+                )
+
+                // About Section
+                SettingsSection(
+                    title = "About",
+                    items = {
+                        SettingsInfoItem(
+                            icon = Icons.Filled.Info,
+                            title = "Version 0.7.5",
+                            value = "Check for updates"
+                        )
+                        
+                        SettingsInfoItem(
+                            icon = Icons.Filled.Update,
+                            title = "Last Update",
+                            value = "24 Dec 10:40 PM"
+                        )
+                    }
+                )
+
+                // Contact Support Section
+                SettingsSection(
+                    title = "Support",
+                    items = {
+                        SettingsItem(
+                            icon = Icons.Filled.SupportAgent,
+                            title = "Contact Support",
+                            action = {
+                                val intent = Intent(Intent.ACTION_SENDTO).apply {
+                                    data = Uri.parse("mailto:")
+                                    putExtra(Intent.EXTRA_EMAIL, arrayOf("support@perseverance.com")) // Placeholder
+                                    putExtra(Intent.EXTRA_SUBJECT, "Support Request - PVC v0.7.5")
+                                }
+                                try {
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "No email client found", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        )
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                Text(
+                    text = "App Configuration",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+
+                // General App Settings (Remaining items)
+                SettingsSection(
+                    title = "General",
                     items = {
                         SettingsItem(
                             icon = Icons.Filled.Security,
                             title = "Manage Permissions",
                             action = { 
-                                // Open app settings page
                                 val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                                     data = Uri.fromParts("package", context.packageName, null)
                                 }
                                 context.startActivity(intent)
                             }
                         )
-
-                        SettingsDropdownItem(
-                            icon = Icons.Filled.DarkMode,
-                            title = "Dark Mode",
-                            value = darkMode,
-                            options = listOf("Light", "Dark", "System"),
-                            onValueChange = { viewModel.updateDarkMode(it) }
-                        )
-
                         SettingsItem(
                             icon = Icons.Filled.Palette,
                             title = "Theme Settings",
@@ -251,34 +361,8 @@ fun SettingsScreen(
                     }
                 )
 
-                // Account Section
-                SettingsSection(
-                    title = "Account",
-                    items = {
-                        // Account items would go here
-                    }
-                )
-
-                // App Info Section
-                SettingsSection(
-                    title = "App Information",
-                    items = {
-                        SettingsInfoItem(
-                            icon = Icons.Filled.Info,
-                            title = "App Version",
-                            value = "0.4.5"
-                        )
-                        
-                        SettingsInfoItem(
-                            icon = Icons.Filled.Update,
-                            title = "Last Update",
-                            value = "25 Oct 9:01 PM"
-                        )
-                    }
-                )
-
                 Spacer(modifier = Modifier.height(80.dp)) // Space for bottom navigation
-            }
+
             }
         }
     }
