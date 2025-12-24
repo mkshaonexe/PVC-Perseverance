@@ -2,16 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.kotlin.serialization)
-}
-
-import java.util.Properties
-import java.io.FileInputStream
-
-val env = Properties()
-val envFile = rootProject.file(".env")
-if (envFile.exists()) {
-    env.load(FileInputStream(envFile))
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -26,11 +17,6 @@ android {
         versionName = "0.4.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        // Inject .env variables
-        buildConfigField("String", "SUPABASE_URL", "\"${env.getProperty("SUPABASE_URL") ?: ""}\"")
-        buildConfigField("String", "SUPABASE_ANON_KEY", "\"${env.getProperty("SUPABASE_ANON_KEY") ?: ""}\"")
-        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${env.getProperty("GOOGLE_WEB_CLIENT_ID") ?: ""}\"")
     }
 
     buildTypes {
@@ -51,7 +37,6 @@ android {
     }
     buildFeatures {
         compose = true
-        buildConfig = true
     }
 }
 
@@ -66,8 +51,20 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     
+    // Firebase BoM
+    implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-messaging-ktx")
+    
+    // Google Sign-In
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
+    
     // Material icons (for pause/stop icons)
     implementation("androidx.compose.material:material-icons-extended")
+    
+    // Video dependencies removed - no longer needed
     
     // ViewModel and Compose integration
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
@@ -83,21 +80,7 @@ dependencies {
     
     // Gson for JSON serialization
     implementation("com.google.code.gson:gson:2.10.1")
-
-    // Supabase
-    implementation(platform(libs.supabase.bom))
-    implementation(libs.supabase.auth)
-    implementation(libs.supabase.postgrest)
-    implementation(libs.supabase.realtime)
-    implementation(libs.ktor.client.cio)
-
-    // Google Auth
-    implementation(libs.play.services.auth)
     
-    // Serialization
-    implementation(libs.kotlinx.serialization.json)
-    implementation(libs.kotlinx.coroutines.play.services)
-
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

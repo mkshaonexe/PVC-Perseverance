@@ -1,331 +1,309 @@
 package com.perseverance.pvc.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Group
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.perseverance.pvc.data.model.Group
-import com.perseverance.pvc.data.model.Message
 import com.perseverance.pvc.ui.components.TopHeader
-import com.perseverance.pvc.ui.viewmodel.GroupViewModel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun GroupScreen(
+    socialViewModel: com.perseverance.pvc.ui.viewmodel.SocialViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
     onNavigateToSettings: () -> Unit = {},
     onNavigateToInsights: () -> Unit = {},
-    onNavigateToMenu: () -> Unit = {},
-    viewModel: GroupViewModel = viewModel()
+    onNavigateToMenu: () -> Unit = {}
 ) {
-    val user by viewModel.user.collectAsState()
-    val groups by viewModel.groups.collectAsState()
-    val selectedGroupId by viewModel.selectedGroupId.collectAsState()
-    val messages by viewModel.messages.collectAsState()
+    val uiState by socialViewModel.uiState.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
+    
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    // Launcher for Google Sign In
+    val launcher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val task = com.google.android.gms.auth.api.signin.GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            scope.launch {
+                try {
+                    val account = task.getResult(com.google.android.gms.common.api.ApiException::class.java)
+                    val credential = com.google.firebase.auth.GoogleAuthProvider.getCredential(account.idToken, null)
+                    val authResult = Firebase.auth.signInWithCredential(credential).await()
+                    
+                    val signInResult = com.perseverance.pvc.utils.SignInResult(
+                        data = authResult.user?.let { user ->
+                            com.perseverance.pvc.utils.UserData(
+                                userId = user.uid,
+                                username = user.displayName,
+                                profilePictureUrl = user.photoUrl?.toString(),
+                                email = user.email
+                            )
+                        },
+                        errorMessage = null
+                    )
+                    socialViewModel.onSignInResult(signInResult)
+                } catch (e: Exception) {
+                     socialViewModel.onSignInResult(com.perseverance.pvc.utils.SignInResult(null, e.message))
+                }
+            }
+        }
+    }
 
-    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        Column(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        // Simple background
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+        )
+        
+        // Semi-transparent overlay
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    if (MaterialTheme.colorScheme.background.luminance() < 0.5f)
+                        Color.Black.copy(alpha = 0.5f)
+                    else
+                        Color.Transparent
+                )
+        )
+        
+        // Content
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // Top header
             TopHeader(
                 onNavigateToSettings = onNavigateToSettings,
                 onNavigateToInsights = onNavigateToInsights,
                 onHamburgerClick = onNavigateToMenu
             )
-
-            if (user == null) {
-                // Not Logged In
-                LoginContent(
-                    onEmailSignIn = { email, password ->
-                        viewModel.signInWithEmail(email, password)
-                    },
-                    onEmailSignUp = { email, password ->
-                        viewModel.signUpWithEmail(email, password)
-                    }
-                )
-            } else {
-                // Logged In
-                if (selectedGroupId == null) {
-                    // No Group Selected
-                    GroupSelectionContent(
-                        groups = groups,
-                        onGroupSelect = { groupId ->
-                            viewModel.joinGroup(groupId)
-                        },
-                        onSignOut = { viewModel.signOut() }
+            
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Header Icon
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .background(Color(0xFFFFD700).copy(alpha = 0.2f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Group,
+                        contentDescription = "Group",
+                        tint = Color(0xFFFFD700),
+                        modifier = Modifier.size(40.dp)
                     )
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text(
+                    text = "Study Friends",
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                
+                Spacer(modifier = Modifier.height(32.dp))
+
+                if (!uiState.isSignedIn) {
+                    // Sign In UI
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        shape = RoundedCornerShape(16.dp),
+                         border = com.perseverance.pvc.ui.theme.glassBorder(MaterialTheme.colorScheme.background.luminance() >= 0.5f),
+                         elevation = com.perseverance.pvc.ui.theme.glassElevation(MaterialTheme.colorScheme.background.luminance() >= 0.5f)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                "Connect with Friends",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                "Sign in with Google to see when your friends are studying.",
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            )
+                            Spacer(modifier = Modifier.height(24.dp))
+                            Button(
+                                onClick = { 
+                                     val intent = socialViewModel.getSignInIntent()
+                                     launcher.launch(intent)
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD700), contentColor = Color.Black)
+                            ) {
+                                Text("Sign In with Google")
+                            }
+                        }
+                    }
                 } else {
-                    // Group Selected
-                    val selectedGroup = groups.find { it.id == selectedGroupId }
-                    if (selectedGroup != null) {
-                        GroupDetailContent(
-                            group = selectedGroup,
-                            messages = messages,
-                            onSendMessage = { content -> viewModel.sendMessage(content) },
-                            onBack = { /* No back from group selection usually, but maybe helpful? Only if we allow changing groups easily. For now, selection is sticky per logic. */ }
+                    // Logged In UI
+                    
+                    // Add Friend Button
+                    Button(
+                        onClick = { socialViewModel.showAddFriendDialog() },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                    ) {
+                        Icon(Icons.Filled.Add, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Add Friend (${uiState.friends.size}/10)")
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    if (uiState.friends.isEmpty()) {
+                        Text(
+                            "No friends yet. Add someone to see their status!",
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                            textAlign = TextAlign.Center
+                        )
+                    } else {
+                        uiState.friends.forEach { friend ->
+                            FriendItem(friend)
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                    }
+                }
+            }
+        }
+        
+        if (uiState.showAddFriendDialog) {
+            AlertDialog(
+                onDismissRequest = { socialViewModel.hideAddFriendDialog() },
+                title = { Text("Add Friend") },
+                text = {
+                    Column {
+                        Text("Enter your friend's email address:")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = uiState.addFriendEmail,
+                            onValueChange = { socialViewModel.updateAddFriendEmail(it) },
+                            singleLine = true,
+                            label = { Text("Email") }
                         )
                     }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun LoginContent(
-    onEmailSignIn: (String, String) -> Unit = { _, _ -> },
-    onEmailSignUp: (String, String) -> Unit = { _, _ -> }
-) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var isSignUp by remember { mutableStateOf(false) }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            imageVector = Icons.Filled.Lock,
-            contentDescription = null,
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.primary
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        Text(
-            if (isSignUp) "Create Account" else "Sign In",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            "Join a community to stay consistent",
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-        )
-        Spacer(modifier = Modifier.height(32.dp))
-        
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Password") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation()
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        
-        Button(
-            onClick = {
-                if (isSignUp) {
-                    onEmailSignUp(email, password)
-                } else {
-                    onEmailSignIn(email, password)
-                }
-            },
-            modifier = Modifier.fillMaxWidth().height(50.dp),
-            enabled = email.isNotBlank() && password.isNotBlank()
-        ) {
-            Text(if (isSignUp) "Sign Up" else "Sign In")
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        TextButton(onClick = { isSignUp = !isSignUp }) {
-            Text(
-                if (isSignUp) "Already have an account? Sign In" else "Don't have an account? Sign Up",
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
-    }
-}
-
-@Composable
-fun GroupSelectionContent(
-    groups: List<Group>,
-    onGroupSelect: (String) -> Unit,
-    onSignOut: () -> Unit
-) {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            "Select a Group",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.weight(1f)
-        ) {
-            items(groups) { group ->
-                GroupCard(group = group, onClick = { onGroupSelect(group.id) })
-            }
-        }
-        
-        TextButton(onClick = onSignOut) {
-            Text("Sign Out", color = MaterialTheme.colorScheme.error)
-        }
-    }
-}
-
-@Composable
-fun GroupCard(group: Group, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable { onClick() },
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
-        Column(modifier = Modifier.padding(24.dp)) {
-            Text(
-                text = group.name,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-            if (group.description != null) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = group.description,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun GroupDetailContent(
-    group: Group,
-    messages: List<Message>,
-    onSendMessage: (String) -> Unit,
-    onBack: () -> Unit
-) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-             Text(
-                text = group.name,
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.align(Alignment.Center)
-            )
-        }
-
-        if (group.name == "The Launch") {
-            ChatInterface(messages, onSendMessage)
-        } else {
-            // Static content for other groups
-            Column(
-                modifier = Modifier.fillMaxSize().padding(32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Icon(
-                    imageVector = if (group.name == "Consistency Club") Icons.Filled.CheckCircle else Icons.Filled.Warning,
-                    contentDescription = null,
-                    modifier = Modifier.size(80.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.height(24.dp))
-                Text(
-                    text = "Welcome to ${group.name}",
-                    style = MaterialTheme.typography.headlineMedium,
-                    textAlign = TextAlign.Center
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = group.description ?: "",
-                    style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun ChatInterface(messages: List<Message>, onSendMessage: (String) -> Unit) {
-    var text by remember { mutableStateOf("") }
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            modifier = Modifier.weight(1f).padding(horizontal = 16.dp),
-            reverseLayout = true
-        ) {
-            items(messages.reversed()) { message ->
-                // Basic message bubble
-                // Ideally we check if it's me or other user to align left/right
-                // For now, simple list
-                Card(
-                    modifier = Modifier.padding(vertical = 4.dp).fillMaxWidth(0.8f),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                ) {
-                    Text(
-                        text = message.content,
-                        modifier = Modifier.padding(12.dp)
-                    )
-                }
-            }
-        }
-        
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            TextField(
-                value = text,
-                onValueChange = { text = it },
-                modifier = Modifier.weight(1f),
-                placeholder = { Text("Type a message...") },
-                shape = RoundedCornerShape(24.dp),
-                colors = TextFieldDefaults.colors(
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
-                )
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            IconButton(
-                onClick = {
-                    if (text.isNotBlank()) {
-                        onSendMessage(text)
-                        text = ""
+                },
+                confirmButton = {
+                    TextButton(onClick = { socialViewModel.sendFriendRequest() }) {
+                        Text("Send Request")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { socialViewModel.hideAddFriendDialog() }) {
+                        Text("Cancel")
                     }
                 }
+            )
+        }
+    }
+}
+
+@Composable
+fun FriendItem(user: com.perseverance.pvc.data.SocialUser) {
+    val isStudying = user.status == "STUDYING"
+    
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isStudying) Color(0xFF4CAF50).copy(alpha = 0.2f) else MaterialTheme.colorScheme.surface
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Setup simple avatar placeholder
+            Box(
+                modifier = Modifier.size(40.dp).background(Color.Gray, CircleShape),
+                contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Filled.Send, "Send", tint = MaterialTheme.colorScheme.primary)
+                 Text(user.displayName.first().toString(), color = Color.White)
+            }
+            
+            Spacer(modifier = Modifier.width(16.dp))
+            
+            Column {
+                Text(user.displayName, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                if (isStudying) {
+                    Text("Studying ${user.currentSubject}", color = Color(0xFF4CAF50))
+                } else {
+                    Text("Idle", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                }
             }
         }
     }
 }
+
+@Composable
+fun BenefitItem(
+    emoji: String,
+    title: String,
+    description: String
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Start,
+        verticalAlignment = Alignment.Top
+    ) {
+        Text(
+            text = emoji,
+            fontSize = 24.sp,
+            modifier = Modifier.padding(end = 12.dp)
+        )
+        Column {
+            Text(
+                text = title,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = description,
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+        }
+    }
+}
+
