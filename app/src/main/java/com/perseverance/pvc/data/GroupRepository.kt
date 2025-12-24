@@ -6,6 +6,7 @@ import com.perseverance.pvc.data.model.Message
 import com.perseverance.pvc.data.model.UserGroup
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.postgrest.query.Order
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
@@ -56,7 +57,7 @@ class GroupRepository {
                 filter {
                     eq("group_id", groupId)
                 }
-                order("created_at", ascending = true)
+                order("created_at", order = Order.ASCENDING)
             }
             .decodeList<Message>()
     }
