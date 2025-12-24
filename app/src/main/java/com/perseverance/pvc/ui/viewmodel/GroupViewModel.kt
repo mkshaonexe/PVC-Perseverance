@@ -6,8 +6,8 @@ import com.perseverance.pvc.data.AuthRepository
 import com.perseverance.pvc.data.GroupRepository
 import com.perseverance.pvc.data.model.Group
 import com.perseverance.pvc.data.model.Message
-import io.github.jan.supabase.gotrue.SessionStatus
-import io.github.jan.supabase.gotrue.user.UserInfo
+import io.github.jan.supabase.auth.status.SessionStatus
+import io.github.jan.supabase.auth.user.UserInfo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
