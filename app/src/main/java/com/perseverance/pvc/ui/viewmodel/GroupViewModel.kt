@@ -73,6 +73,26 @@ class GroupViewModel : ViewModel() {
         }
     }
 
+    fun signInWithEmail(email: String, password: String) {
+        viewModelScope.launch {
+            try {
+                authRepository.signInWithEmail(email, password)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun signUpWithEmail(email: String, password: String) {
+        viewModelScope.launch {
+            try {
+                authRepository.signUpWithEmail(email, password)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
     fun signOut() {
         viewModelScope.launch {
             authRepository.signOut()

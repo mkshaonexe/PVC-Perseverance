@@ -1,8 +1,5 @@
 package com.perseverance.pvc.ui.screens
 
-import android.app.Activity
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -19,19 +16,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.perseverance.pvc.auth.GoogleAuthClient
-import com.perseverance.pvc.auth.SignInResult
 import com.perseverance.pvc.data.model.Group
 import com.perseverance.pvc.data.model.Message
 import com.perseverance.pvc.ui.components.TopHeader
 import com.perseverance.pvc.ui.viewmodel.GroupViewModel
-import kotlinx.coroutines.launch
 
 @Composable
 fun GroupScreen(
@@ -40,28 +33,10 @@ fun GroupScreen(
     onNavigateToMenu: () -> Unit = {},
     viewModel: GroupViewModel = viewModel()
 ) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val googleAuthClient = remember { GoogleAuthClient(context) }
-    
     val user by viewModel.user.collectAsState()
     val groups by viewModel.groups.collectAsState()
     val selectedGroupId by viewModel.selectedGroupId.collectAsState()
     val messages by viewModel.messages.collectAsState()
-
-    // Google Sign In Launcher
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            scope.launch {
-                val signInResult = googleAuthClient.signInWithIntent(result.data ?: return@launch)
-                if (signInResult is SignInResult.Success) {
-                    viewModel.signInWithGoogle(signInResult.idToken)
-                }
-            }
-        }
-    }
 
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -74,8 +49,11 @@ fun GroupScreen(
             if (user == null) {
                 // Not Logged In
                 LoginContent(
-                    onSignInClick = {
-                        launcher.launch(googleAuthClient.getSignInIntent())
+                    onEmailSignIn = { email, password ->
+                        viewModel.signInWithEmail(email, password)
+                    },
+                    onEmailSignUp = { email, password ->
+                        viewModel.signUpWithEmail(email, password)
                     }
                 )
             } else {
@@ -107,9 +85,18 @@ fun GroupScreen(
 }
 
 @Composable
-fun LoginContent(onSignInClick: () -> Unit) {
+fun LoginContent(
+    onEmailSignIn: (String, String) -> Unit = { _, _ -> },
+    onEmailSignUp: (String, String) -> Unit = { _, _ -> }
+) {
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var isSignUp by remember { mutableStateOf(false) }
+
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -121,7 +108,7 @@ fun LoginContent(onSignInClick: () -> Unit) {
         )
         Spacer(modifier = Modifier.height(24.dp))
         Text(
-            "Access Study Groups",
+            if (isSignUp) "Create Account" else "Sign In",
             style = MaterialTheme.typography.headlineMedium,
             color = MaterialTheme.colorScheme.onBackground
         )
@@ -132,11 +119,46 @@ fun LoginContent(onSignInClick: () -> Unit) {
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
         )
         Spacer(modifier = Modifier.height(32.dp))
+        
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Email") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Password") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation()
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+        
         Button(
-            onClick = onSignInClick,
-            modifier = Modifier.height(50.dp)
+            onClick = {
+                if (isSignUp) {
+                    onEmailSignUp(email, password)
+                } else {
+                    onEmailSignIn(email, password)
+                }
+            },
+            modifier = Modifier.fillMaxWidth().height(50.dp),
+            enabled = email.isNotBlank() && password.isNotBlank()
         ) {
-            Text("Sign in with Google")
+            Text(if (isSignUp) "Sign Up" else "Sign In")
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        TextButton(onClick = { isSignUp = !isSignUp }) {
+            Text(
+                if (isSignUp) "Already have an account? Sign In" else "Don't have an account? Sign Up",
+                color = MaterialTheme.colorScheme.primary
+            )
         }
     }
 }
