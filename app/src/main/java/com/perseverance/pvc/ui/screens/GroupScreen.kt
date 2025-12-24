@@ -26,6 +26,9 @@ import com.perseverance.pvc.ui.components.TopHeader
 import kotlinx.coroutines.launch
 import androidx.lifecycle.viewmodel.compose.viewModel
 
+import androidx.compose.runtime.LaunchedEffect
+import com.perseverance.pvc.utils.AnalyticsHelper
+
 @Composable
 fun GroupScreen(
     socialViewModel: com.perseverance.pvc.ui.viewmodel.SocialViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
@@ -34,6 +37,10 @@ fun GroupScreen(
     onNavigateToMenu: () -> Unit = {}
 ) {
     val uiState by socialViewModel.uiState.collectAsState()
+    
+    LaunchedEffect(Unit) {
+        AnalyticsHelper.logScreenView("GroupScreen")
+    }
     
     Box(
         modifier = Modifier.fillMaxSize()

@@ -66,6 +66,9 @@ class MainActivity : ComponentActivity() {
             systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
         
+        // Log App Open
+        com.perseverance.pvc.utils.AnalyticsHelper.logEvent("app_open")
+        
         setContent {
             // Observe user's theme preference from settings
             val context = LocalContext.current
