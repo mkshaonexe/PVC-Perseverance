@@ -1,5 +1,6 @@
 package com.perseverance.pvc.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,16 +11,21 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.perseverance.pvc.ui.components.TopHeader
 import com.perseverance.pvc.ui.viewmodel.AuthViewModel
 
 @Composable
 fun StudyGroupSelectionScreen(
     authViewModel: AuthViewModel,
-    onGroupSelected: (String) -> Unit
+    onGroupSelected: (String) -> Unit,
+    onNavigateToSettings: () -> Unit = {},
+    onNavigateToInsights: () -> Unit = {},
+    onNavigateToMenu: () -> Unit = {}
 ) {
     // We could use this to store the selection to Supabase later
     // val scope = rememberCoroutineScope() 
@@ -32,61 +38,93 @@ fun StudyGroupSelectionScreen(
     
     var selectedGroup by remember { mutableStateOf<String?>(null) }
     
-    Scaffold { paddingValues ->
-        Column(
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        // Simple background
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "Choose Your Study Group",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            
-            Text(
-                text = "Select a group to join for your study journey.",
-                fontSize = 16.sp,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 32.dp)
-            )
-            
-            groups.forEach { groupName ->
-                StudyGroupCard(
-                    groupName = groupName,
-                    isSelected = selectedGroup == groupName,
-                    onClick = { selectedGroup = groupName }
+                .background(MaterialTheme.colorScheme.background)
+        )
+        
+        // Semi-transparent overlay
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    if (MaterialTheme.colorScheme.background.luminance() < 0.5f)
+                        Color.Black.copy(alpha = 0.5f)
+                    else
+                        Color.Transparent
                 )
-                Spacer(modifier = Modifier.height(16.dp))
-            }
+        )
+        
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // Top header
+            TopHeader(
+                onNavigateToSettings = onNavigateToSettings,
+                onNavigateToInsights = onNavigateToInsights,
+                onHamburgerClick = onNavigateToMenu
+            )
             
-            Spacer(modifier = Modifier.height(32.dp))
-            
-            Button(
-                onClick = {
-                    selectedGroup?.let { group ->
-                        // TODO: Save selection to Supabase or Preference
-                        onGroupSelected(group)
-                    }
-                },
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                enabled = selectedGroup != null,
-                shape = RoundedCornerShape(16.dp)
+                    .fillMaxSize()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "Continue",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
+                    text = "Choose Your Study Group",
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 8.dp)
                 )
+                
+                Text(
+                    text = "Select a group to join for your study journey.",
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 32.dp)
+                )
+                
+                groups.forEach { groupName ->
+                    StudyGroupCard(
+                        groupName = groupName,
+                        isSelected = selectedGroup == groupName,
+                        onClick = { selectedGroup = groupName }
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+                
+                Spacer(modifier = Modifier.height(32.dp))
+                
+                Button(
+                    onClick = {
+                        selectedGroup?.let { group ->
+                            // Save selection to Supabase
+                            authViewModel.updateStudyGroup(group)
+                            onGroupSelected(group)
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    enabled = selectedGroup != null,
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text(
+                        text = "Continue",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }

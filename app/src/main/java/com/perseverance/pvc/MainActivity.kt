@@ -183,10 +183,11 @@ fun AppNavigation(
         showOnboarding = !onboardingCompleted
     }
     
-    // Determine start destination based on auth state
-    // We can check this synchronously for simplicity or use the Flow
-    val isUserLoggedIn = authViewModel.isUserLoggedIn()
-    
+    // Observe auth state for reactive UI updates
+    val authState by authViewModel.authState.collectAsState()
+    val currentUser by authViewModel.currentUser.collectAsState()
+    val isUserLoggedIn = currentUser != null
+
     // Default to Home (Offline First)
     var currentRoute by remember { 
         mutableStateOf(Screen.Home.route) 
@@ -203,7 +204,7 @@ fun AppNavigation(
     // Update bottom bar visibility based on route
     LaunchedEffect(currentRoute) {
         showBottomBar = when(currentRoute) {
-             Screen.Login.route, Screen.StudyGroupSelection.route -> false 
+             Screen.Login.route -> false 
              else -> true
         }
     }
@@ -299,16 +300,20 @@ fun AppNavigation(
                 Screen.Login.route -> LoginScreen(
                     authViewModel = authViewModel,
                     onLoginSuccess = {
-                        // After login, go to Study Group Selection
+                        // After login, decide where to go. 
+                        // If we came from Group attempt, maybe go to selection of Group.
                         navigateToRoute(Screen.StudyGroupSelection.route)
                     }
                 )
                 Screen.StudyGroupSelection.route -> StudyGroupSelectionScreen(
                     authViewModel = authViewModel,
                     onGroupSelected = { groupName ->
-                        // After selection, go to Home
-                        navigateToRoute(Screen.Home.route)
-                    }
+                        // After selection, go to Group Page
+                        navigateToRoute(Screen.Group.route)
+                    },
+                    onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
+                    onNavigateToInsights = { navigateToRoute(Screen.Insights.route) },
+                    onNavigateToMenu = { navigateToRoute(Screen.Menu.route) }
                 )
                 Screen.Dashboard.route -> Page2Screen(
                     onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
@@ -327,11 +332,26 @@ fun AppNavigation(
                     },
                     onViewModelCreated = onPomodoroViewModelCreated
                 ) // Home = Pomodoro timer
-                Screen.Group.route -> GroupScreen(
-                    onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
-                    onNavigateToInsights = { navigateToRoute(Screen.Insights.route) },
-                    onNavigateToMenu = { navigateToRoute(Screen.Menu.route) }
-                ) // Group = GroupScreen (Study Groups)
+                Screen.Group.route -> {
+                    // Gate this screen
+                    if (isUserLoggedIn) {
+                        GroupScreen(
+                            onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
+                            onNavigateToInsights = { navigateToRoute(Screen.Insights.route) },
+                            onNavigateToMenu = { navigateToRoute(Screen.Menu.route) }
+                        ) 
+                    } else {
+                        // Redirect to Login if not logged in
+                        // We use a side effect to navigate to avoid composition issues
+                        LaunchedEffect(Unit) {
+                             navigateToRoute(Screen.Login.route)
+                        }
+                        // Show a loader or empty box while redirecting
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
+                    }
+                }
                 Screen.Settings.route -> SettingsScreen(
                     onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
                     onNavigateToInsights = { navigateToRoute(Screen.Insights.route) },
