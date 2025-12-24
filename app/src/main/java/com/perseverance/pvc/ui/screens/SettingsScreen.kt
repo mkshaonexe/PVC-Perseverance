@@ -132,7 +132,7 @@ fun SettingsScreen(
                             title = "Install from Play Store",
                             action = {
                                 val intent = Intent(Intent.ACTION_VIEW).apply {
-                                    data = Uri.parse("https://docs.google.com/forms/d/e/1FAIpQLSdobkWF2CPUIH5JKAkWsqRfevK7eJNVb4E6USbIOYrn2gTgiA/viewform")
+                                    data = Uri.parse("https://docs.google.com/forms/d/e/1FAIpQLSdobkWF2CPUIH5JKAkWsqRfevK7eJNVb4E6USbIOYrn2gTgiA/viewform?embedded=true")
                                 }
                                 try {
                                     context.startActivity(intent)
