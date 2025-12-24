@@ -4,6 +4,15 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+import java.util.Properties
+import java.io.FileInputStream
+
+val env = Properties()
+val envFile = rootProject.file(".env")
+if (envFile.exists()) {
+    env.load(FileInputStream(envFile))
+}
+
 android {
     namespace = "com.perseverance.pvc"
     compileSdk = 36
@@ -16,6 +25,11 @@ android {
         versionName = "0.4.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Inject .env variables
+        buildConfigField("String", "SUPABASE_URL", "\"${env.getProperty("SUPABASE_URL") ?: ""}\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"${env.getProperty("SUPABASE_ANON_KEY") ?: ""}\"")
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${env.getProperty("GOOGLE_WEB_CLIENT_ID") ?: ""}\"")
     }
 
     buildTypes {
@@ -36,6 +50,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -53,8 +68,6 @@ dependencies {
     // Material icons (for pause/stop icons)
     implementation("androidx.compose.material:material-icons-extended")
     
-    // Video dependencies removed - no longer needed
-    
     // ViewModel and Compose integration
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
     implementation("androidx.compose.runtime:runtime-livedata:1.5.8")
@@ -69,6 +82,16 @@ dependencies {
     
     // Gson for JSON serialization
     implementation("com.google.code.gson:gson:2.10.1")
+
+    // Supabase
+    implementation(platform(libs.supabase.bom))
+    implementation(libs.supabase.gotrue)
+    implementation(libs.supabase.postgrest)
+    implementation(libs.supabase.realtime)
+    implementation(libs.ktor.client.cio)
+
+    // Google Auth
+    implementation(libs.play.services.auth)
     
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
