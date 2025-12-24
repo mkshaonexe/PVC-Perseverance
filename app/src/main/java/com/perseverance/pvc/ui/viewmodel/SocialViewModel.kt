@@ -10,6 +10,7 @@ import com.perseverance.pvc.data.SocialRepository
 import com.perseverance.pvc.data.SocialUser
 import com.perseverance.pvc.utils.GoogleAuthClient
 import com.perseverance.pvc.utils.SignInResult
+import com.perseverance.pvc.utils.AnalyticsHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -104,6 +105,8 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
                 repository.updateCurrentUserProfile()
             }
             startFriendsListener()
+            
+            AnalyticsHelper.logEvent("login", mapOf("method" to "google"))
         } else {
             _uiState.value = _uiState.value.copy(
                 error = result.errorMessage
@@ -118,6 +121,7 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
     suspend fun signOut() {
         authClient.signOut()
         _uiState.value = SocialUiState(isSignedIn = false)
+        AnalyticsHelper.logEvent("logout")
     }
     
     private fun startFriendsListener() {
@@ -157,6 +161,7 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
             if (result.isSuccess) {
                 Toast.makeText(getApplication(), result.getOrNull(), Toast.LENGTH_SHORT).show()
                 hideAddFriendDialog()
+                AnalyticsHelper.logEvent("friend_request_send")
             } else {
                 Toast.makeText(getApplication(), "Error: ${result.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
             }
@@ -169,6 +174,7 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             missionRepository.joinGlobalMission()
             Toast.makeText(getApplication(), "Joined the 101 Hours Challenge!", Toast.LENGTH_SHORT).show()
+            AnalyticsHelper.logEvent("mission_join", mapOf("mission_title" to "101 Hours Challenge"))
         }
     }
 
@@ -208,6 +214,11 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
             missionRepository.addCustomMission(title, hours, null) // No deadline for custom for now
             hideAddMissionDialog()
             Toast.makeText(getApplication(), "Mission Created!", Toast.LENGTH_SHORT).show()
+            
+            AnalyticsHelper.logEvent("mission_create", mapOf(
+                "title" to title, 
+                "target_hours" to hours.toString()
+            ))
         }
     }
 }

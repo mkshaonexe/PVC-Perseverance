@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.perseverance.pvc.data.SettingsRepository
+import com.perseverance.pvc.utils.AnalyticsHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -117,6 +118,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _darkMode.value = mode
             repository.setDarkMode(mode)
         }
+        AnalyticsHelper.logEvent("settings_change", mapOf("setting" to "dark_mode", "value" to mode))
     }
     
     fun updateUseTimerInBackground(enabled: Boolean) {
@@ -124,6 +126,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _useTimerInBackground.value = enabled
             repository.setUseTimerInBackground(enabled)
         }
+        AnalyticsHelper.logEvent("settings_change", mapOf("setting" to "bg_timer", "value" to enabled.toString()))
     }
     
     fun updateResetSessionEveryDay(enabled: Boolean) {
@@ -131,6 +134,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _resetSessionEveryDay.value = enabled
             repository.setResetSessionEveryDay(enabled)
         }
+        AnalyticsHelper.logEvent("settings_change", mapOf("setting" to "reset_session", "value" to enabled.toString()))
     }
     
     fun updateHideNavigationBar(enabled: Boolean) {
@@ -138,6 +142,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _hideNavigationBar.value = enabled
             repository.setHideNavigationBar(enabled)
         }
+        AnalyticsHelper.logEvent("settings_change", mapOf("setting" to "hide_nav", "value" to enabled.toString()))
     }
     
     fun updateHideStatusBarDuringFocus(enabled: Boolean) {
@@ -145,6 +150,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _hideStatusBarDuringFocus.value = enabled
             repository.setHideStatusBarDuringFocus(enabled)
         }
+        AnalyticsHelper.logEvent("settings_change", mapOf("setting" to "hide_status_bar", "value" to enabled.toString()))
     }
     
     fun updateFollowSystemFontSettings(enabled: Boolean) {
@@ -152,6 +158,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _followSystemFontSettings.value = enabled
             repository.setFollowSystemFontSettings(enabled)
         }
+        AnalyticsHelper.logEvent("settings_change", mapOf("setting" to "system_font", "value" to enabled.toString()))
     }
     
     fun updateDayStartTime(time: String) {
@@ -159,6 +166,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _dayStartTime.value = time
             repository.setDayStartTime(time)
         }
+        AnalyticsHelper.logEvent("settings_change", mapOf("setting" to "day_start", "value" to time))
     }
     
     fun updateLanguage(language: String) {
@@ -166,6 +174,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _language.value = language
             repository.setLanguage(language)
         }
+        AnalyticsHelper.logEvent("settings_change", mapOf("setting" to "language", "value" to language))
     }
     
     fun updateUseDNDDuringFocus(enabled: Boolean) {
@@ -173,6 +182,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _useDNDDuringFocus.value = enabled
             repository.setUseDNDDuringFocus(enabled)
         }
+        AnalyticsHelper.logEvent("settings_change", mapOf("setting" to "dnd", "value" to enabled.toString()))
     }
     
     fun updateTimerDuration(duration: String) {
@@ -180,6 +190,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _timerDuration.value = duration
             repository.setTimerDuration(duration)
         }
+        AnalyticsHelper.logEvent("settings_change", mapOf("setting" to "timer_duration", "value" to duration))
     }
     
     fun updateBreakDuration(duration: String) {
@@ -187,6 +198,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _breakDuration.value = duration
             repository.setBreakDuration(duration)
         }
+        AnalyticsHelper.logEvent("settings_change", mapOf("setting" to "break_duration", "value" to duration))
     }
     
     fun updateEnableTimerNotifications(enabled: Boolean) {
@@ -194,13 +206,14 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _enableTimerNotifications.value = enabled
             repository.setEnableTimerNotifications(enabled)
         }
+        AnalyticsHelper.logEvent("settings_change", mapOf("setting" to "notifications", "value" to enabled.toString()))
     }
     
     fun completeOnboarding() {
-        viewModelScope.launch {
             _onboardingCompleted.value = true
             repository.setOnboardingCompleted(true)
         }
+        AnalyticsHelper.logEvent("onboarding_complete")
     }
 }
 

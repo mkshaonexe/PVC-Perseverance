@@ -30,6 +30,7 @@ import android.app.PendingIntent
 import com.perseverance.pvc.receivers.TimerExpiredReceiver
 import android.os.SystemClock
 import java.time.LocalDateTime
+import com.perseverance.pvc.utils.AnalyticsHelper
 
 data class PomodoroUiState(
     val timeDisplay: String = "50:00",
@@ -215,6 +216,11 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         // Schedule AlarmManager for exact wake-up
         scheduleTimerAlarm(remainingTimeInSeconds * 1000L)
 
+        AnalyticsHelper.logEvent("timer_start", mapOf(
+            "subject" to _uiState.value.selectedSubject,
+            "session_type" to _uiState.value.currentSessionType.name
+        ))
+
         _uiState.value = _uiState.value.copy(isPlaying = true, isPaused = false)
         
         timerJob = viewModelScope.launch {
@@ -310,6 +316,11 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         timerJob?.cancel()
         timerJob = null
         
+        AnalyticsHelper.logEvent("timer_pause", mapOf(
+            "time_remaining" to remainingTimeInSeconds.toString(),
+            "subject" to _uiState.value.selectedSubject
+        ))
+        
         // Auto-save timer state when pausing
         saveTimerState()
         
@@ -347,6 +358,11 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
             // For break sessions, just reset
             resetTimer()
         }
+        
+        AnalyticsHelper.logEvent("timer_manual_complete", mapOf(
+            "subject" to _uiState.value.selectedSubject,
+            "session_type" to _uiState.value.currentSessionType.name
+        ))
     }
     
     fun resetTimer() {
@@ -398,6 +414,11 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
             isTimerCompleted = true,
             isWaitingForAcknowledgment = true
         )
+
+        AnalyticsHelper.logEvent("timer_finished", mapOf(
+            "session_type" to _uiState.value.currentSessionType.name,
+            "subject" to _uiState.value.selectedSubject
+        ))
         
         // Start infinite sound
         Log.d("PomodoroViewModel", "Timer completed, starting sound. Service bound: $isSoundServiceBound, Service: $soundService")
@@ -610,6 +631,8 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
             viewModelScope.launch {
                 repository.saveSubjects(newSubjects)
             }
+
+            AnalyticsHelper.logEvent("subject_added", mapOf("subject" to subject))
         }
     }
     
@@ -625,6 +648,8 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
             viewModelScope.launch {
                 settingsRepository.setTimerDuration(minutes.toString())
             }
+
+            AnalyticsHelper.logEvent("timer_duration_update", mapOf("minutes" to minutes.toString()))
         }
     }
     

@@ -34,6 +34,7 @@ import com.perseverance.pvc.ui.theme.PerseverancePVCTheme
 import com.perseverance.pvc.ui.viewmodel.SettingsViewModel
 import com.perseverance.pvc.ui.viewmodel.PomodoroViewModel
 import com.perseverance.pvc.utils.PermissionManager
+import com.perseverance.pvc.utils.AnalyticsHelper
 
 class MainActivity : ComponentActivity() {
     private var pomodoroViewModel: PomodoroViewModel? = null
@@ -68,7 +69,7 @@ class MainActivity : ComponentActivity() {
         
         // Log App Open
         // Log App Open
-        // com.perseverance.pvc.utils.AnalyticsHelper.logEvent("app_open")
+        AnalyticsHelper.logEvent("app_open")
         
         // Get FCM Token for debugging
         try {
@@ -189,6 +190,7 @@ fun AppNavigation(
         if (route != currentRoute) {
             previousRoute = currentRoute
             currentRoute = route
+            AnalyticsHelper.logScreenView(route)
         }
     }
     

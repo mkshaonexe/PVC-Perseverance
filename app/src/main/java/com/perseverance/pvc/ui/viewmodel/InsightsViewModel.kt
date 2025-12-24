@@ -9,6 +9,7 @@ import com.perseverance.pvc.data.WeeklyChartData
 import com.perseverance.pvc.data.TodayStudyData
 import com.perseverance.pvc.data.PeriodInsights
 import com.perseverance.pvc.ui.components.SubjectRadarData
+import com.perseverance.pvc.utils.AnalyticsHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -57,6 +58,7 @@ class InsightsViewModel(application: Application) : AndroidViewModel(application
     
     fun selectPeriod(period: PeriodType) {
         _uiState.value = _uiState.value.copy(selectedPeriod = period)
+        AnalyticsHelper.logEvent("insights_view_period", mapOf("period" to period.name))
         
         // Load data based on selected period
         when (period) {
@@ -83,12 +85,14 @@ class InsightsViewModel(application: Application) : AndroidViewModel(application
         val newMonth = _uiState.value.currentMonth.minusMonths(1)
         _uiState.value = _uiState.value.copy(currentMonth = newMonth)
         loadMonthData()
+        AnalyticsHelper.logEvent("insights_navigate", mapOf("direction" to "prev", "scope" to "month"))
     }
     
     fun nextMonth() {
         val newMonth = _uiState.value.currentMonth.plusMonths(1)
         _uiState.value = _uiState.value.copy(currentMonth = newMonth)
         loadMonthData()
+        AnalyticsHelper.logEvent("insights_navigate", mapOf("direction" to "next", "scope" to "month"))
     }
     
     private fun loadMonthData() {
@@ -201,6 +205,8 @@ class InsightsViewModel(application: Application) : AndroidViewModel(application
         val currentWeekStart = _uiState.value.weeklyData?.weekStartDate ?: return
         val previousWeekStart = currentWeekStart.minusWeeks(1)
         
+        AnalyticsHelper.logEvent("insights_navigate", mapOf("direction" to "prev", "scope" to "week"))
+        
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
             
@@ -222,6 +228,8 @@ class InsightsViewModel(application: Application) : AndroidViewModel(application
     fun navigateToNextWeek() {
         val currentWeekStart = _uiState.value.weeklyData?.weekStartDate ?: return
         val nextWeekStart = currentWeekStart.plusWeeks(1)
+        
+        AnalyticsHelper.logEvent("insights_navigate", mapOf("direction" to "next", "scope" to "week"))
         
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)

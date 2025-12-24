@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.perseverance.pvc.data.*
 import com.perseverance.pvc.data.SettingsRepository
+import com.perseverance.pvc.utils.AnalyticsHelper
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -76,6 +77,7 @@ class StudyViewModel(application: Application) : AndroidViewModel(application) {
         if (timerJob?.isActive == true) return
         
         _uiState.value = _uiState.value.copy(isTimerRunning = true)
+        AnalyticsHelper.logEvent("dashboard_timer_start")
         
         timerJob = viewModelScope.launch {
             while (_uiState.value.remainingSeconds > 0 && _uiState.value.isTimerRunning) {
@@ -94,10 +96,12 @@ class StudyViewModel(application: Application) : AndroidViewModel(application) {
     fun pauseTimer() {
         _uiState.value = _uiState.value.copy(isTimerRunning = false)
         timerJob?.cancel()
+        AnalyticsHelper.logEvent("dashboard_timer_pause")
     }
     
     fun resetTimer() {
         pauseTimer()
+        AnalyticsHelper.logEvent("dashboard_timer_reset")
         val minutes = workDuration / 60
         val seconds = workDuration % 60
         _uiState.value = _uiState.value.copy(
@@ -120,6 +124,7 @@ class StudyViewModel(application: Application) : AndroidViewModel(application) {
             completedSessions = _uiState.value.completedSessions + 1
         )
         timerJob?.cancel()
+        AnalyticsHelper.logEvent("dashboard_timer_complete")
         
         // Reset timer for next session
         val minutes = workDuration / 60
