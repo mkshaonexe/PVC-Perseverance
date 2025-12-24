@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "493935700462",
+    "project_id": "pvc-study-app",
+    "storage_bucket": "pvc-study-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:493935700462:android:5332f301e0180e96cb86ff",
+        "android_client_info": {
+          "package_name": "com.perseverance.pvc"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBaBVQ_IchWtONXh9gJmyb5QAHZNCgAcro"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
