@@ -158,7 +158,7 @@ fun SettingsScreen(
                             title = "Public Group",
                             action = {
                                 val intent = Intent(Intent.ACTION_VIEW).apply {
-                                    data = Uri.parse("https://t.me/your_telegram_group_link") // Placeholder, update if user provides link
+                                    data = Uri.parse("https://t.me/PVCPerseverance")
                                 }
                                 try {
                                     context.startActivity(intent)
@@ -188,16 +188,34 @@ fun SettingsScreen(
                 SettingsSection(
                     title = "About",
                     items = {
-                        SettingsInfoItem(
+                        SettingsItem(
                             icon = Icons.Filled.Info,
                             title = "Version 0.7.5",
-                            value = "Check for updates"
+                            action = {
+                                val intent = Intent(Intent.ACTION_VIEW).apply {
+                                    data = Uri.parse("https://t.me/PVCPerseverance")
+                                }
+                                try {
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Could not open link", Toast.LENGTH_SHORT).show()
+                                }
+                            }
                         )
                         
-                        SettingsInfoItem(
+                        SettingsItem(
                             icon = Icons.Filled.Update,
                             title = "Last Update",
-                            value = "24 Dec 10:40 PM"
+                            action = {
+                                val intent = Intent(Intent.ACTION_VIEW).apply {
+                                    data = Uri.parse("https://t.me/PVCPerseverance")
+                                }
+                                try {
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Could not open link", Toast.LENGTH_SHORT).show()
+                                }
+                            }
                         )
                     }
                 )
