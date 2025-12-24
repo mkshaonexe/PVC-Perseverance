@@ -20,10 +20,10 @@ import java.util.concurrent.CancellationException
 class GoogleAuthClient(
     private val context: Context
 ) {
-    private val auth: FirebaseAuth = Firebase.auth
+    private val auth: FirebaseAuth? = try { Firebase.auth } catch (e: Exception) { null }
     
     // Get the current signed-in user or null
-    fun getSignedInUser() = auth.currentUser
+    fun getSignedInUser() = auth?.currentUser
 
     // Configure Google Sign In
     private fun getGoogleSignInClient(): GoogleSignInClient {
@@ -44,7 +44,7 @@ class GoogleAuthClient(
     // Sign out
     suspend fun signOut() {
         try {
-            auth.signOut()
+            auth?.signOut()
             getGoogleSignInClient().signOut().await()
         } catch (e: Exception) {
             e.printStackTrace()
@@ -53,6 +53,8 @@ class GoogleAuthClient(
 
     // Process the result from the activity
     suspend fun signInWithIntent(intent: Intent): SignInResult {
+        if (auth == null) return SignInResult(null, "Authentication service unavailable (Offline Mode)")
+        
         val task = GoogleSignIn.getSignedInAccountFromIntent(intent)
         try {
             val account = task.getResult(ApiException::class.java)

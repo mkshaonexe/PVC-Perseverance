@@ -32,8 +32,9 @@ data class FriendRequest(
 )
 
 class SocialRepository {
-    private val db = Firebase.firestore
-    private val auth = Firebase.auth
+    // Make Firebase instances nullable and safe catch initialization
+    private val db = try { Firebase.firestore } catch (e: Exception) { null }
+    private val auth = try { Firebase.auth } catch (e: Exception) { null }
     
     private val TAG = "SocialRepository"
 
@@ -41,7 +42,8 @@ class SocialRepository {
 
     // Create or update user profile upon login
     suspend fun updateCurrentUserProfile() {
-        val user = auth.currentUser ?: return
+        val user = auth?.currentUser ?: return
+        val database = db ?: return
         
         val userData = hashMapOf(
             "uid" to user.uid,
@@ -52,7 +54,7 @@ class SocialRepository {
         )
         
         try {
-            db.collection("users").document(user.uid)
+            database.collection("users").document(user.uid)
                 .set(userData, SetOptions.merge())
                 .await()
         } catch (e: Exception) {
@@ -64,7 +66,8 @@ class SocialRepository {
 
     // Call this when Timer Starts
     suspend fun setStatusStudying(subject: String, durationSeconds: Long) {
-        val user = auth.currentUser ?: return
+        val user = auth?.currentUser ?: return
+        val database = db ?: return
         
         val updates = hashMapOf(
             "status" to "STUDYING",
@@ -74,7 +77,7 @@ class SocialRepository {
         )
         
         try {
-            db.collection("users").document(user.uid)
+            database.collection("users").document(user.uid)
                 .update(updates as Map<String, Any>)
                 .await()
         } catch (e: Exception) {
@@ -84,7 +87,8 @@ class SocialRepository {
 
     // Call this when Timer Stops
     suspend fun setStatusIdle() {
-        val user = auth.currentUser ?: return
+        val user = auth?.currentUser ?: return
+        val database = db ?: return
         
         val updates = hashMapOf(
             "status" to "IDLE",
@@ -92,7 +96,7 @@ class SocialRepository {
         )
         
         try {
-            db.collection("users").document(user.uid)
+            database.collection("users").document(user.uid)
                 .update(updates as Map<String, Any>)
                 .await()
         } catch (e: Exception) {
@@ -104,130 +108,149 @@ class SocialRepository {
 
     // Send Friend Request (Check limit first)
     suspend fun sendFriendRequest(email: String): Result<String> {
-        val currentUser = auth.currentUser ?: return Result.failure(Exception("Not logged in"))
+        val currentUser = auth?.currentUser ?: return Result.failure(Exception("Not logged in (Offline Mode)"))
+        val database = db ?: return Result.failure(Exception("Database unavailable (Offline Mode)"))
         
-        // 1. Find user by email
-        val snapshot = db.collection("users")
-            .whereEqualTo("email", email)
-            .get()
-            .await()
+        try {
+            // 1. Find user by email
+            val snapshot = database.collection("users")
+                .whereEqualTo("email", email)
+                .get()
+                .await()
+                
+            if (snapshot.isEmpty) {
+                return Result.failure(Exception("User not found"))
+            }
             
-        if (snapshot.isEmpty) {
-            return Result.failure(Exception("User not found"))
-        }
-        
-        val targetUser = snapshot.documents[0]
-        val targetUid = targetUser.getString("uid") ?: return Result.failure(Exception("Invalid user"))
+            val targetUser = snapshot.documents[0]
+            val targetUid = targetUser.getString("uid") ?: return Result.failure(Exception("Invalid user"))
 
-        if (targetUid == currentUser.uid) {
-            return Result.failure(Exception("Cannot add yourself"))
-        }
+            if (targetUid == currentUser.uid) {
+                return Result.failure(Exception("Cannot add yourself"))
+            }
 
-        // 2. Check my friend count
-        val myFriends = db.collection("users").document(currentUser.uid)
-            .collection("friends")
-            .get()
-            .await()
+            // 2. Check my friend count
+            val myFriends = database.collection("users").document(currentUser.uid)
+                .collection("friends")
+                .get()
+                .await()
+                
+            if (myFriends.size() >= 10) {
+                return Result.failure(Exception("You have reached the 10 friend limit."))
+            }
+
+            // 3. Send Request
+            val request = hashMapOf(
+                "fromUid" to currentUser.uid,
+                "fromName" to (currentUser.displayName ?: "Unknown"),
+                "status" to "PENDING"
+            )
             
-        if (myFriends.size() >= 10) {
-            return Result.failure(Exception("You have reached the 10 friend limit."))
+            database.collection("users").document(targetUid)
+                .collection("friendRequests")
+                .document(currentUser.uid)
+                .set(request)
+                .await()
+                
+            return Result.success("Request sent to ${targetUser.getString("displayName")}")
+        } catch (e: Exception) {
+             return Result.failure(Exception("Network error: ${e.message}"))
         }
-
-        // 3. Send Request
-        val request = hashMapOf(
-            "fromUid" to currentUser.uid,
-            "fromName" to (currentUser.displayName ?: "Unknown"),
-            "status" to "PENDING"
-        )
-        
-        db.collection("users").document(targetUid)
-            .collection("friendRequests")
-            .document(currentUser.uid)
-            .set(request)
-            .await()
-            
-        return Result.success("Request sent to ${targetUser.getString("displayName")}")
     }
     
     // Accept Friend Request
     suspend fun acceptFriendRequest(requestFromUid: String, requestFromName: String) {
-        val currentUser = auth.currentUser ?: return
+        val currentUser = auth?.currentUser ?: return
+        val database = db ?: return
         
-        // Add to MY friends
-        val myFriendData = hashMapOf(
-            "uid" to requestFromUid,
-            "displayName" to requestFromName,
-            "since" to System.currentTimeMillis()
-        )
-        
-        db.collection("users").document(currentUser.uid)
-            .collection("friends")
-            .document(requestFromUid)
-            .set(myFriendData)
-            .await()
+        try {
+            // Add to MY friends
+            val myFriendData = hashMapOf(
+                "uid" to requestFromUid,
+                "displayName" to requestFromName,
+                "since" to System.currentTimeMillis()
+            )
             
-        // Add ME to THEIR friends
-        val theirFriendData = hashMapOf(
-            "uid" to currentUser.uid,
-            "displayName" to (currentUser.displayName ?: "Unknown"),
-            "since" to System.currentTimeMillis()
-        )
-        
-        db.collection("users").document(requestFromUid)
-            .collection("friends")
-            .document(currentUser.uid)
-            .set(theirFriendData)
-            .await()
+            database.collection("users").document(currentUser.uid)
+                .collection("friends")
+                .document(requestFromUid)
+                .set(myFriendData)
+                .await()
+                
+            // Add ME to THEIR friends
+            val theirFriendData = hashMapOf(
+                "uid" to currentUser.uid,
+                "displayName" to (currentUser.displayName ?: "Unknown"),
+                "since" to System.currentTimeMillis()
+            )
             
-        // Delete request
-        db.collection("users").document(currentUser.uid)
-            .collection("friendRequests")
-            .document(requestFromUid)
-            .delete()
-            .await()
+            database.collection("users").document(requestFromUid)
+                .collection("friends")
+                .document(currentUser.uid)
+                .set(theirFriendData)
+                .await()
+                
+            // Delete request
+            database.collection("users").document(currentUser.uid)
+                .collection("friendRequests")
+                .document(requestFromUid)
+                .delete()
+                .await()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error accepting friend request", e)
+        }
     }
 
     // --- Real-time Listeners ---
 
     // Listen to my friends' status
     fun getFriendsStatusWaitList(): Flow<List<SocialUser>> = callbackFlow {
-        val currentUser = auth.currentUser
-        if (currentUser == null) {
-            close()
+        val currentUser = auth?.currentUser
+        val database = db
+        
+        if (currentUser == null || database == null) {
+            trySend(emptyList()) // Cleanly return empty list in offline mode
+            // Keep flow open to avoid immediate completion if downstream expects stream
+            awaitClose { } 
             return@callbackFlow
         }
         
-        // 1. Get List of Friend UIDs
-        val friendsSnapshot = db.collection("users").document(currentUser.uid)
-            .collection("friends")
-            .get()
-            .await()
-            
-        val friendIds = friendsSnapshot.documents.map { it.id }
-        
-        if (friendIds.isEmpty()) {
-            trySend(emptyList())
-            // Keep flow open but with empty list
-            awaitClose { }
-            return@callbackFlow
-        }
-        
-        // 2. Query users where UID is in my friend list
-        // Firestore 'in' query supports up to 10 items, perfect for our limit!
-        val subscription = db.collection("users")
-            .whereIn("uid", friendIds)
-            .addSnapshotListener { snapshot, e ->
-                if (e != null) {
-                    Log.w(TAG, "Listen failed.", e)
-                    return@addSnapshotListener
-                }
+        try {
+            // 1. Get List of Friend UIDs
+            val friendsSnapshot = database.collection("users").document(currentUser.uid)
+                .collection("friends")
+                .get()
+                .await()
                 
-                if (snapshot != null) {
-                    val friends = snapshot.toObjects(SocialUser::class.java)
-                    trySend(friends)
-                }
+            val friendIds = friendsSnapshot.documents.map { it.id }
+            
+            if (friendIds.isEmpty()) {
+                trySend(emptyList())
+                awaitClose { }
+                return@callbackFlow
             }
             
-        awaitClose { subscription.remove() }
+            // 2. Query users where UID is in my friend list
+            // Firestore 'in' query supports up to 10 items, perfect for our limit!
+            val subscription = database.collection("users")
+                .whereIn("uid", friendIds)
+                .addSnapshotListener { snapshot, e ->
+                    if (e != null) {
+                        Log.w(TAG, "Listen failed.", e)
+                        return@addSnapshotListener
+                    }
+                    
+                    if (snapshot != null) {
+                        val friends = snapshot.toObjects(SocialUser::class.java)
+                        trySend(friends)
+                    }
+                }
+                
+            awaitClose { subscription.remove() }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting friends status", e)
+            trySend(emptyList())
+            awaitClose { }
+        }
     }
 }
