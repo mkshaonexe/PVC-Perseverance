@@ -1,11 +1,10 @@
 package com.perseverance.pvc.data
 
 import android.util.Log
-import com.google.firebase.auth.ktx.auth
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.SetOptions
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -32,8 +31,8 @@ data class FriendRequest(
 )
 
 class SocialRepository {
-    private val db = Firebase.firestore
-    private val auth = Firebase.auth
+    private val db = FirebaseFirestore.getInstance()
+    private val auth = FirebaseAuth.getInstance()
     
     private val TAG = "SocialRepository"
 
