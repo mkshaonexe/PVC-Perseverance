@@ -29,7 +29,6 @@ class SettingsRepository(private val context: Context) {
         private val BREAK_DURATION_KEY = stringPreferencesKey("break_duration")
         private val ENABLE_TIMER_NOTIFICATIONS_KEY = booleanPreferencesKey("enable_timer_notifications")
         private val ONBOARDING_COMPLETED_KEY = booleanPreferencesKey("onboarding_completed")
-        private val ALLOW_APP_ROTATION_KEY = booleanPreferencesKey("allow_app_rotation")
     }
     
     // Dark Mode
@@ -198,19 +197,6 @@ class SettingsRepository(private val context: Context) {
     fun getOnboardingCompleted(): Flow<Boolean> {
         return context.settingsDataStore.data.map { preferences ->
             preferences[ONBOARDING_COMPLETED_KEY] ?: false
-        }
-    }
-    
-    // Allow App Rotation
-    suspend fun setAllowAppRotation(enabled: Boolean) {
-        context.settingsDataStore.edit { preferences ->
-            preferences[ALLOW_APP_ROTATION_KEY] = enabled
-        }
-    }
-    
-    fun getAllowAppRotation(): Flow<Boolean> {
-        return context.settingsDataStore.data.map { preferences ->
-            preferences[ALLOW_APP_ROTATION_KEY] ?: false
         }
     }
 }

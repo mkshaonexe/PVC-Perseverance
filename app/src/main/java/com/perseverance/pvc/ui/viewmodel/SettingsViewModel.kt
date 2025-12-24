@@ -65,10 +65,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _onboardingCompleted = MutableStateFlow(false)
     val onboardingCompleted: StateFlow<Boolean> = _onboardingCompleted.asStateFlow()
     
-    // Allow App Rotation
-    private val _allowAppRotation = MutableStateFlow(false)
-    val allowAppRotation: StateFlow<Boolean> = _allowAppRotation.asStateFlow()
-    
     init {
         loadSettings()
     }
@@ -112,9 +108,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
         viewModelScope.launch {
             repository.getOnboardingCompleted().collect { _onboardingCompleted.value = it }
-        }
-        viewModelScope.launch {
-            repository.getAllowAppRotation().collect { _allowAppRotation.value = it }
         }
     }
     
@@ -207,13 +200,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             _onboardingCompleted.value = true
             repository.setOnboardingCompleted(true)
-        }
-    }
-    
-    fun updateAllowAppRotation(enabled: Boolean) {
-        viewModelScope.launch {
-            _allowAppRotation.value = enabled
-            repository.setAllowAppRotation(enabled)
         }
     }
 }

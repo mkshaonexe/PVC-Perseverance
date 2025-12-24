@@ -13,8 +13,3 @@
 .externalNativeBuild
 .cxx
 local.properties
-
-# Environment variables (Supabase credentials)
-.env
-.env.local
-.env.*.local

@@ -28,7 +28,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
-import com.perseverance.pvc.utils.AnalyticsHelper
 
 data class OnboardingPage(
     val title: String,
@@ -78,13 +77,6 @@ fun OnboardingScreen(
 
     val pagerState = rememberPagerState(pageCount = { pages.size })
     val coroutineScope = rememberCoroutineScope()
-    
-    // Analytics: Onboarding Page Views
-    LaunchedEffect(pagerState.currentPage) {
-        if (pagerState.currentPage < pages.size) {
-            AnalyticsHelper.logScreenView("Onboarding_${pages[pagerState.currentPage].title.replace(" ", "_")}")
-        }
-    }
 
     Box(
         modifier = Modifier

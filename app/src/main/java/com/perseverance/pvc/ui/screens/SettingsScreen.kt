@@ -55,7 +55,6 @@ fun SettingsScreen(
     val timerDuration by viewModel.timerDuration.collectAsState()
     val breakDuration by viewModel.breakDuration.collectAsState()
     val enableTimerNotifications by viewModel.enableTimerNotifications.collectAsState()
-    val allowAppRotation by viewModel.allowAppRotation.collectAsState()
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -206,13 +205,6 @@ fun SettingsScreen(
                             title = "Hide status bar during focus",
                             checked = hideStatusBarDuringFocus,
                             onCheckedChange = { viewModel.updateHideStatusBarDuringFocus(it) }
-                        )
-
-                        SettingsToggleItem(
-                            icon = Icons.Filled.PhoneAndroid,
-                            title = "App Rotate",
-                            checked = allowAppRotation,
-                            onCheckedChange = { viewModel.updateAllowAppRotation(it) }
                         )
                     }
                 )
