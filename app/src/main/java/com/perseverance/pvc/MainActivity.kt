@@ -80,7 +80,7 @@ class MainActivity : ComponentActivity() {
                 }
                 val token = task.result
                 android.util.Log.d("MainActivity", "FCM Token: $token")
-                android.widget.Toast.makeText(this, "FCM Token retrieved (Check Logcat)", android.widget.Toast.LENGTH_SHORT).show()
+                // android.widget.Toast.makeText(this, "FCM Token retrieved (Check Logcat)", android.widget.Toast.LENGTH_SHORT).show()
             }
         } catch (e: Exception) {
              android.util.Log.e("MainActivity", "Error fetching FCM token", e)
