@@ -85,6 +85,19 @@ class MainActivity : ComponentActivity() {
         } catch (e: Exception) {
              android.util.Log.e("MainActivity", "Error fetching FCM token", e)
         }
+
+        // Get Firebase Installation ID for In-App Messaging testing
+        try {
+            com.google.firebase.installations.FirebaseInstallations.getInstance().id.addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    android.util.Log.d("MainActivity", "Firebase Installation ID: ${task.result}")
+                } else {
+                    android.util.Log.e("MainActivity", "Unable to get Installation ID", task.exception)
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Error fetching Installation ID", e)
+        }
         
         setContent {
             // Observe user's theme preference from settings
