@@ -81,6 +81,14 @@ class MainActivity : ComponentActivity() {
                     context.applicationContext as android.app.Application
                 )
             )
+            
+            // Auth ViewModel
+            val authViewModel: com.perseverance.pvc.ui.viewmodel.AuthViewModel = viewModel(
+                factory = ViewModelProvider.AndroidViewModelFactory.getInstance(
+                    context.applicationContext as android.app.Application
+                )
+            )
+
             val darkMode by settingsViewModel.darkMode.collectAsState()
             val useDarkTheme = when (darkMode) {
                 "Dark" -> true
@@ -88,20 +96,35 @@ class MainActivity : ComponentActivity() {
                 "System" -> isSystemInDarkTheme()
                 else -> true // Default to dark theme for new users
             }
+            
+            // Observe app rotation setting and update screen orientation
+            val allowAppRotation by settingsViewModel.allowAppRotation.collectAsState()
+            
+            LaunchedEffect(allowAppRotation) {
+                requestedOrientation = if (allowAppRotation) {
+                    android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR
+                } else {
+                    android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                }
+            }
 
             PerseverancePVCTheme(darkTheme = useDarkTheme) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AppNavigation(onPomodoroViewModelCreated = { viewModel ->
-                        pomodoroViewModel = viewModel
-                    })
+                    AppNavigation(
+                        onPomodoroViewModelCreated = { viewModel ->
+                            pomodoroViewModel = viewModel
+                        },
+                        authViewModel = authViewModel
+                    )
                 }
             }
         }
     }
     
+    // ... (Lifecycle methods remain the same)
     override fun onPause() {
         super.onPause()
         // Auto-save timer state when app goes to background
@@ -142,7 +165,8 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun AppNavigation(
-    onPomodoroViewModelCreated: (PomodoroViewModel) -> Unit = {}
+    onPomodoroViewModelCreated: (PomodoroViewModel) -> Unit = {},
+    authViewModel: com.perseverance.pvc.ui.viewmodel.AuthViewModel
 ) {
     val context = LocalContext.current
     val settingsViewModel: SettingsViewModel = viewModel(
@@ -159,8 +183,14 @@ fun AppNavigation(
         showOnboarding = !onboardingCompleted
     }
     
-    var currentRoute by remember { mutableStateOf(Screen.Home.route) }
-    var previousRoute by remember { mutableStateOf(Screen.Home.route) }
+    // Determine start destination based on auth state
+    // We can check this synchronously for simplicity or use the Flow
+    val isUserLoggedIn = authViewModel.isUserLoggedIn()
+    
+    var currentRoute by remember { 
+        mutableStateOf(if (isUserLoggedIn) Screen.Home.route else Screen.Login.route) 
+    }
+    var previousRoute by remember { mutableStateOf(Screen.Home.route) } // Default previous
     
     // Track screen views
     LaunchedEffect(currentRoute) {
@@ -168,6 +198,15 @@ fun AppNavigation(
     }
 
     var showBottomBar by remember { mutableStateOf(true) }
+    
+    // Update bottom bar visibility based on route
+    LaunchedEffect(currentRoute) {
+        showBottomBar = when(currentRoute) {
+             Screen.Login.route, Screen.StudyGroupSelection.route -> false 
+             else -> true
+        }
+    }
+
     var lastSwipeTime by remember { mutableStateOf(0L) }
     
     // Define the navigation order for swipe gestures
@@ -242,7 +281,8 @@ fun AppNavigation(
                         // Swipe right (negative drag) = go to next page
                         // Swipe left (positive drag) = go to previous page
                         val currentTime = System.currentTimeMillis()
-                        if (currentTime - lastSwipeTime > 300) { // Debounce: 300ms between swipes
+                        // Only allow swipe navigation on main screens
+                        if (navigationOrder.contains(currentRoute) && currentTime - lastSwipeTime > 300) { 
                             if (dragAmount < -50) { // Swipe right = next page
                                 navigateNext()
                                 lastSwipeTime = currentTime
@@ -255,6 +295,20 @@ fun AppNavigation(
                 }
         ) {
             when (currentRoute) {
+                Screen.Login.route -> LoginScreen(
+                    authViewModel = authViewModel,
+                    onLoginSuccess = {
+                        // After login, go to Study Group Selection
+                        navigateToRoute(Screen.StudyGroupSelection.route)
+                    }
+                )
+                Screen.StudyGroupSelection.route -> StudyGroupSelectionScreen(
+                    authViewModel = authViewModel,
+                    onGroupSelected = { groupName ->
+                        // After selection, go to Home
+                        navigateToRoute(Screen.Home.route)
+                    }
+                )
                 Screen.Dashboard.route -> Page2Screen(
                     onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
                     onNavigateToInsights = { navigateToRoute(Screen.Insights.route) },
@@ -264,8 +318,11 @@ fun AppNavigation(
                     onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
                     onNavigateToInsights = { navigateToRoute(Screen.Insights.route) },
                     onNavigateToMenu = { navigateToRoute(Screen.Menu.route) },
+                    // Only hide bottom bar if timer playing, AND we are on a screen that shows it
                     onTimerStateChanged = { isPlaying -> 
-                        showBottomBar = !isPlaying 
+                         if (navigationOrder.contains(currentRoute)) {
+                             showBottomBar = !isPlaying
+                         }
                     },
                     onViewModelCreated = onPomodoroViewModelCreated
                 ) // Home = Pomodoro timer
@@ -302,10 +359,12 @@ fun AppNavigation(
     }
 }
 
+/*
 @Preview(showBackground = true)
 @Composable
 fun AppNavigationPreview() {
     PerseverancePVCTheme {
-        AppNavigation()
+        // AppNavigation() // Requires AuthViewModel
     }
 }
+*/
