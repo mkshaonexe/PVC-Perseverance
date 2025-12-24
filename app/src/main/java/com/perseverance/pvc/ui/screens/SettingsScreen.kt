@@ -230,8 +230,9 @@ fun SettingsScreen(
                             action = {
                                 val intent = Intent(Intent.ACTION_SENDTO).apply {
                                     data = Uri.parse("mailto:")
-                                    putExtra(Intent.EXTRA_EMAIL, arrayOf("support@perseverance.com")) // Placeholder
-                                    putExtra(Intent.EXTRA_SUBJECT, "Support Request - PVC v0.7.5")
+                                    putExtra(Intent.EXTRA_EMAIL, arrayOf("mkshaonnew31@gmail.com"))
+                                    putExtra(Intent.EXTRA_SUBJECT, "PVC-Perservance study app issu / report / support")
+                                    putExtra(Intent.EXTRA_TEXT, "Write here\n\nThank you")
                                 }
                                 try {
                                     context.startActivity(intent)
