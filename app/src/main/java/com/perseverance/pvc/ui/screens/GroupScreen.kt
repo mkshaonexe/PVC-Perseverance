@@ -39,6 +39,10 @@ fun GroupScreen(
     val context = androidx.compose.ui.platform.LocalContext.current
     
     val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val supabaseAuthManager = androidx.compose.runtime.remember { 
+        com.perseverance.pvc.utils.SupabaseAuthManager(context) 
+    }
+    
     // Launcher for Google Sign In
     val launcher = androidx.activity.compose.rememberLauncherForActivityResult(
         contract = androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
@@ -48,8 +52,19 @@ fun GroupScreen(
             scope.launch {
                 try {
                     val account = task.getResult(com.google.android.gms.common.api.ApiException::class.java)
-                    val credential = com.google.firebase.auth.GoogleAuthProvider.getCredential(account.idToken, null)
+                    val idToken = account.idToken
+                    
+                    // Sign in to Firebase
+                    val credential = com.google.firebase.auth.GoogleAuthProvider.getCredential(idToken, null)
                     val authResult = Firebase.auth.signInWithCredential(credential).await()
+                    
+                    // Sign in to Supabase with the same Google ID token
+                    if (idToken != null) {
+                        val supabaseResult = supabaseAuthManager.signInWithGoogle(idToken)
+                        if (supabaseResult.isFailure) {
+                            android.util.Log.e("GroupScreen", "Supabase sign-in failed", supabaseResult.exceptionOrNull())
+                        }
+                    }
                     
                     val signInResult = com.perseverance.pvc.utils.SignInResult(
                         data = authResult.user?.let { user ->

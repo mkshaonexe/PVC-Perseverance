@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     id("com.google.gms.google-services")
     id("com.google.firebase.crashlytics")
+    id("org.jetbrains.kotlin.plugin.serialization")
 }
 
 android {
@@ -18,6 +19,10 @@ android {
         versionName = "0.4.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        // Supabase configuration from .env file
+        buildConfigField("String", "SUPABASE_URL", "\"https://whsozcurdtbcwpsohxok.supabase.co\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indoc296Y3VyZHRiY3dwc29oeG9rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1MTkzNTYsImV4cCI6MjA4MjA5NTM1Nn0.JuNrg8eGAuq48dOnJI4obYc5Fmyxkq3lkrxj7E1KY5M\"")
     }
 
     buildTypes {
@@ -38,6 +43,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -83,6 +89,15 @@ dependencies {
     
     // Gson for JSON serialization
     implementation("com.google.code.gson:gson:2.10.1")
+    
+    // Supabase
+    implementation("io.github.jan-tennert.supabase:postgrest-kt:2.0.3")
+    implementation("io.github.jan-tennert.supabase:gotrue-kt:2.0.3")
+    implementation("io.github.jan-tennert.supabase:realtime-kt:2.0.3")
+    implementation("io.ktor:ktor-client-android:2.3.7")
+    implementation("io.ktor:ktor-client-core:2.3.7")
+    implementation("io.ktor:ktor-utils:2.3.7")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
     
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

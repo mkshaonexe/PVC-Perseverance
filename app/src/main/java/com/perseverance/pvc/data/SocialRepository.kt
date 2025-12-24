@@ -2,101 +2,167 @@ package com.perseverance.pvc.data
 
 import android.util.Log
 import com.google.firebase.auth.ktx.auth
-import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.SetOptions
-import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import kotlinx.coroutines.channels.awaitClose
+import io.github.jan.supabase.gotrue.auth
+import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.realtime.PostgresAction
+import io.github.jan.supabase.realtime.channel
+import io.github.jan.supabase.realtime.postgresChangeFlow
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.tasks.await
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+import kotlinx.coroutines.flow.map
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class SocialUser(
+    @SerialName("id")
+    val id: String = "",
+    @SerialName("firebase_uid")
     val uid: String = "",
+    @SerialName("display_name")
     val displayName: String = "",
+    @SerialName("email")
     val email: String = "",
+    @SerialName("photo_url")
     val photoUrl: String = "",
+    @SerialName("status")
     val status: String = "IDLE", // IDLE, STUDYING
+    @SerialName("current_subject")
     val currentSubject: String = "",
-    val lastActive: Long = 0,
+    @SerialName("last_active")
+    val lastActive: String = "",
     val studyStartTime: Long = 0,
     val studyDuration: Long = 0
 )
 
+@Serializable
 data class FriendRequest(
-    val fromUid: String = "",
-    val fromName: String = "",
-    val status: String = "PENDING" // PENDING, ACCEPTED
+    @SerialName("id")
+    val id: String = "",
+    @SerialName("from_user_id")
+    val fromUserId: String = "",
+    @SerialName("to_user_email")
+    val toUserEmail: String = "",
+    @SerialName("status")
+    val status: String = "PENDING" // PENDING, ACCEPTED, REJECTED
+)
+
+@Serializable
+data class Friendship(
+    @SerialName("id")
+    val id: String = "",
+    @SerialName("user_id")
+    val userId: String = "",
+    @SerialName("friend_id")
+    val friendId: String = ""
 )
 
 class SocialRepository {
-    private val db = Firebase.firestore
-    private val auth = Firebase.auth
+    private val supabase = SupabaseClient.client
+    private val firebaseAuth = Firebase.auth
     
     private val TAG = "SocialRepository"
 
     // --- User Management ---
 
     // Create or update user profile upon login
-    suspend fun updateCurrentUserProfile() {
-        val user = auth.currentUser ?: return
-        
-        val userData = hashMapOf(
-            "uid" to user.uid,
-            "displayName" to (user.displayName ?: "Unknown"),
-            "email" to (user.email ?: ""),
-            "photoUrl" to (user.photoUrl?.toString() ?: ""),
-            "lastActive" to System.currentTimeMillis()
-        )
-        
-        try {
-            db.collection("users").document(user.uid)
-                .set(userData, SetOptions.merge())
-                .await()
+    suspend fun updateCurrentUserProfile(): Result<Unit> {
+        return try {
+            val firebaseUser = firebaseAuth.currentUser ?: return Result.failure(Exception("Not logged in"))
+            val supabaseUser = supabase.auth.currentUserOrNull() ?: return Result.failure(Exception("Not signed in to Supabase"))
+            
+            // Check if user exists
+            val existingUsers = supabase.from("users")
+                .select(Columns.list("id")) {
+                    filter {
+                        eq("firebase_uid", firebaseUser.uid)
+                    }
+                }
+                .decodeList<Map<String, String>>()
+            
+            if (existingUsers.isEmpty()) {
+                // Insert new user
+                supabase.from("users").insert(
+                    mapOf(
+                        "firebase_uid" to firebaseUser.uid,
+                        "email" to (firebaseUser.email ?: ""),
+                        "display_name" to (firebaseUser.displayName ?: "User"),
+                        "photo_url" to (firebaseUser.photoUrl?.toString() ?: ""),
+                        "status" to "IDLE"
+                    )
+                )
+                Log.d(TAG, "Created new user profile in Supabase")
+            } else {
+                // Update existing user
+                supabase.from("users").update(
+                    mapOf(
+                        "display_name" to (firebaseUser.displayName ?: "User"),
+                        "photo_url" to (firebaseUser.photoUrl?.toString() ?: ""),
+                        "last_active" to "NOW()"
+                    )
+                ) {
+                    filter {
+                        eq("firebase_uid", firebaseUser.uid)
+                    }
+                }
+                Log.d(TAG, "Updated user profile in Supabase")
+            }
+            
+            Result.success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Error updating profile", e)
+            Result.failure(e)
         }
     }
 
-    // --- Status Signaling (The "P2P" Logic) ---
+    // --- Status Signaling ---
 
     // Call this when Timer Starts
-    suspend fun setStatusStudying(subject: String, durationSeconds: Long) {
-        val user = auth.currentUser ?: return
-        
-        val updates = hashMapOf(
-            "status" to "STUDYING",
-            "currentSubject" to subject,
-            "studyStartTime" to System.currentTimeMillis(),
-            "studyDuration" to durationSeconds
-        )
-        
-        try {
-            db.collection("users").document(user.uid)
-                .update(updates as Map<String, Any>)
-                .await()
+    suspend fun setStatusStudying(subject: String, durationSeconds: Long): Result<Unit> {
+        return try {
+            val firebaseUser = firebaseAuth.currentUser ?: return Result.failure(Exception("Not logged in"))
+            
+            supabase.from("users").update(
+                mapOf(
+                    "status" to "STUDYING",
+                    "current_subject" to subject
+                )
+            ) {
+                filter {
+                    eq("firebase_uid", firebaseUser.uid)
+                }
+            }
+            
+            Log.d(TAG, "Status set to STUDYING")
+            Result.success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Error setting status", e)
+            Result.failure(e)
         }
     }
 
     // Call this when Timer Stops
-    suspend fun setStatusIdle() {
-        val user = auth.currentUser ?: return
-        
-        val updates = hashMapOf(
-            "status" to "IDLE",
-            "studyStartTime" to 0
-        )
-        
-        try {
-            db.collection("users").document(user.uid)
-                .update(updates as Map<String, Any>)
-                .await()
+    suspend fun setStatusIdle(): Result<Unit> {
+        return try {
+            val firebaseUser = firebaseAuth.currentUser ?: return Result.failure(Exception("Not logged in"))
+            
+            supabase.from("users").update(
+                mapOf(
+                    "status" to "IDLE",
+                    "current_subject" to ""
+                )
+            ) {
+                filter {
+                    eq("firebase_uid", firebaseUser.uid)
+                }
+            }
+            
+            Log.d(TAG, "Status set to IDLE")
+            Result.success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Error setting status", e)
+            Result.failure(e)
         }
     }
 
@@ -104,130 +170,145 @@ class SocialRepository {
 
     // Send Friend Request (Check limit first)
     suspend fun sendFriendRequest(email: String): Result<String> {
-        val currentUser = auth.currentUser ?: return Result.failure(Exception("Not logged in"))
-        
-        // 1. Find user by email
-        val snapshot = db.collection("users")
-            .whereEqualTo("email", email)
-            .get()
-            .await()
+        return try {
+            val firebaseUser = firebaseAuth.currentUser ?: return Result.failure(Exception("Not logged in"))
             
-        if (snapshot.isEmpty) {
-            return Result.failure(Exception("User not found"))
-        }
-        
-        val targetUser = snapshot.documents[0]
-        val targetUid = targetUser.getString("uid") ?: return Result.failure(Exception("Invalid user"))
-
-        if (targetUid == currentUser.uid) {
-            return Result.failure(Exception("Cannot add yourself"))
-        }
-
-        // 2. Check my friend count
-        val myFriends = db.collection("users").document(currentUser.uid)
-            .collection("friends")
-            .get()
-            .await()
-            
-        if (myFriends.size() >= 10) {
-            return Result.failure(Exception("You have reached the 10 friend limit."))
-        }
-
-        // 3. Send Request
-        val request = hashMapOf(
-            "fromUid" to currentUser.uid,
-            "fromName" to (currentUser.displayName ?: "Unknown"),
-            "status" to "PENDING"
-        )
-        
-        db.collection("users").document(targetUid)
-            .collection("friendRequests")
-            .document(currentUser.uid)
-            .set(request)
-            .await()
-            
-        return Result.success("Request sent to ${targetUser.getString("displayName")}")
-    }
-    
-    // Accept Friend Request
-    suspend fun acceptFriendRequest(requestFromUid: String, requestFromName: String) {
-        val currentUser = auth.currentUser ?: return
-        
-        // Add to MY friends
-        val myFriendData = hashMapOf(
-            "uid" to requestFromUid,
-            "displayName" to requestFromName,
-            "since" to System.currentTimeMillis()
-        )
-        
-        db.collection("users").document(currentUser.uid)
-            .collection("friends")
-            .document(requestFromUid)
-            .set(myFriendData)
-            .await()
-            
-        // Add ME to THEIR friends
-        val theirFriendData = hashMapOf(
-            "uid" to currentUser.uid,
-            "displayName" to (currentUser.displayName ?: "Unknown"),
-            "since" to System.currentTimeMillis()
-        )
-        
-        db.collection("users").document(requestFromUid)
-            .collection("friends")
-            .document(currentUser.uid)
-            .set(theirFriendData)
-            .await()
-            
-        // Delete request
-        db.collection("users").document(currentUser.uid)
-            .collection("friendRequests")
-            .document(requestFromUid)
-            .delete()
-            .await()
-    }
-
-    // --- Real-time Listeners ---
-
-    // Listen to my friends' status
-    fun getFriendsStatusWaitList(): Flow<List<SocialUser>> = callbackFlow {
-        val currentUser = auth.currentUser
-        if (currentUser == null) {
-            close()
-            return@callbackFlow
-        }
-        
-        // 1. Get List of Friend UIDs
-        val friendsSnapshot = db.collection("users").document(currentUser.uid)
-            .collection("friends")
-            .get()
-            .await()
-            
-        val friendIds = friendsSnapshot.documents.map { it.id }
-        
-        if (friendIds.isEmpty()) {
-            trySend(emptyList())
-            // Keep flow open but with empty list
-            awaitClose { }
-            return@callbackFlow
-        }
-        
-        // 2. Query users where UID is in my friend list
-        // Firestore 'in' query supports up to 10 items, perfect for our limit!
-        val subscription = db.collection("users")
-            .whereIn("uid", friendIds)
-            .addSnapshotListener { snapshot, e ->
-                if (e != null) {
-                    Log.w(TAG, "Listen failed.", e)
-                    return@addSnapshotListener
+            // Get current user's Supabase ID
+            val currentUserData = supabase.from("users")
+                .select(Columns.list("id")) {
+                    filter {
+                        eq("firebase_uid", firebaseUser.uid)
+                    }
                 }
-                
-                if (snapshot != null) {
-                    val friends = snapshot.toObjects(SocialUser::class.java)
-                    trySend(friends)
+                .decodeSingleOrNull<Map<String, String>>() ?: return Result.failure(Exception("User not found"))
+            
+            val currentUserId = currentUserData["id"] ?: return Result.failure(Exception("Invalid user"))
+            
+            // Check if target user exists
+            val targetUser = supabase.from("users")
+                .select(Columns.list("id", "email", "display_name")) {
+                    filter {
+                        eq("email", email)
+                    }
                 }
+                .decodeSingleOrNull<Map<String, String>>()
+            
+            if (targetUser == null) {
+                return Result.failure(Exception("User with email $email not found"))
             }
             
-        awaitClose { subscription.remove() }
+            if (targetUser["email"] == firebaseUser.email) {
+                return Result.failure(Exception("Cannot add yourself"))
+            }
+            
+            // Check friend count
+            val friendCount = supabase.from("friends")
+                .select(Columns.list("id")) {
+                    filter {
+                        eq("user_id", currentUserId)
+                    }
+                }
+                .decodeList<Map<String, String>>()
+                .size
+            
+            if (friendCount >= 10) {
+                return Result.failure(Exception("You have reached the 10 friend limit"))
+            }
+            
+            // Check if request already exists
+            val existingRequest = supabase.from("friend_requests")
+                .select(Columns.list("id")) {
+                    filter {
+                        eq("from_user_id", currentUserId)
+                        eq("to_user_email", email)
+                    }
+                }
+                .decodeList<Map<String, String>>()
+            
+            if (existingRequest.isNotEmpty()) {
+                return Result.failure(Exception("Friend request already sent"))
+            }
+            
+            // Send request
+            supabase.from("friend_requests").insert(
+                mapOf(
+                    "from_user_id" to currentUserId,
+                    "to_user_email" to email,
+                    "status" to "PENDING"
+                )
+            )
+            
+            Result.success("Request sent to ${targetUser["display_name"]}")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error sending friend request", e)
+            Result.failure(e)
+        }
+    }
+
+    // Get Friends Status with periodic updates
+    fun getFriendsStatusWaitList(): Flow<List<SocialUser>> = kotlinx.coroutines.flow.flow {
+        val firebaseUser = firebaseAuth.currentUser
+        if (firebaseUser == null) {
+            emit(emptyList())
+            return@flow
+        }
+        
+        // Emit initial friends list
+        emit(getFriendsList(firebaseUser.uid))
+        
+        // Poll for updates every 10 seconds
+        while (true) {
+            kotlinx.coroutines.delay(10000)
+            try {
+                emit(getFriendsList(firebaseUser.uid))
+            } catch (e: Exception) {
+                Log.e(TAG, "Error fetching friends update", e)
+            }
+        }
+    }
+    
+    // Helper function to get friends list
+    private suspend fun getFriendsList(firebaseUid: String): List<SocialUser> {
+        return try {
+            // Get current user's Supabase ID
+            val currentUserData = supabase.from("users")
+                .select(Columns.list("id")) {
+                    filter {
+                        eq("firebase_uid", firebaseUid)
+                    }
+                }
+                .decodeSingleOrNull<Map<String, String>>() ?: return emptyList()
+            
+            val currentUserId = currentUserData["id"] ?: return emptyList()
+            
+            // Get friend IDs
+            val friendships = supabase.from("friends")
+                .select(Columns.list("friend_id")) {
+                    filter {
+                        eq("user_id", currentUserId)
+                    }
+                }
+                .decodeList<Map<String, String>>()
+            
+            if (friendships.isEmpty()) {
+                return emptyList()
+            }
+            
+            val friendIds = friendships.mapNotNull { it["friend_id"] }
+            
+            // Get friend profiles
+            val friends = supabase.from("users")
+                .select() {
+                    filter {
+                        isIn("id", friendIds)
+                    }
+                }
+                .decodeList<SocialUser>()
+            
+            friends
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching friends list", e)
+            emptyList()
+        }
     }
 }
