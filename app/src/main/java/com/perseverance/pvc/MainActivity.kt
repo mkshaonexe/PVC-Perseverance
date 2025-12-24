@@ -332,26 +332,11 @@ fun AppNavigation(
                     },
                     onViewModelCreated = onPomodoroViewModelCreated
                 ) // Home = Pomodoro timer
-                Screen.Group.route -> {
-                    // Gate this screen
-                    if (isUserLoggedIn) {
-                        GroupScreen(
-                            onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
-                            onNavigateToInsights = { navigateToRoute(Screen.Insights.route) },
-                            onNavigateToMenu = { navigateToRoute(Screen.Menu.route) }
-                        ) 
-                    } else {
-                        // Redirect to Login if not logged in
-                        // We use a side effect to navigate to avoid composition issues
-                        LaunchedEffect(Unit) {
-                             navigateToRoute(Screen.Login.route)
-                        }
-                        // Show a loader or empty box while redirecting
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
-                            CircularProgressIndicator()
-                        }
-                    }
-                }
+                Screen.Group.route -> GroupScreen(
+                    onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
+                    onNavigateToInsights = { navigateToRoute(Screen.Insights.route) },
+                    onNavigateToMenu = { navigateToRoute(Screen.Menu.route) }
+                )
                 Screen.Settings.route -> SettingsScreen(
                     onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
                     onNavigateToInsights = { navigateToRoute(Screen.Insights.route) },
