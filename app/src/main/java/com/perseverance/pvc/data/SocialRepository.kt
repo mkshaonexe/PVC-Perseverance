@@ -1,11 +1,10 @@
 package com.perseverance.pvc.data
 
 import android.util.Log
-import com.google.firebase.auth.ktx.auth
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.SetOptions
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -33,8 +32,8 @@ data class FriendRequest(
 
 class SocialRepository {
     // Make Firebase instances nullable and safe catch initialization
-    private val db = try { Firebase.firestore } catch (e: Exception) { null }
-    private val auth = try { Firebase.auth } catch (e: Exception) { null }
+    private val db = try { FirebaseFirestore.getInstance() } catch (e: Exception) { null }
+    private val auth = try { FirebaseAuth.getInstance() } catch (e: Exception) { null }
     
     private val TAG = "SocialRepository"
 

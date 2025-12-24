@@ -3,15 +3,15 @@ package com.perseverance.pvc.utils
 import android.os.Bundle
 import android.util.Log
 import com.google.firebase.analytics.FirebaseAnalytics
-import com.google.firebase.analytics.ktx.analytics
-import com.google.firebase.ktx.Firebase
+import com.google.firebase.FirebaseApp
 
 object AnalyticsHelper {
     private var firebaseAnalytics: FirebaseAnalytics? = null
 
     init {
         try {
-            firebaseAnalytics = Firebase.analytics
+            val context = FirebaseApp.getInstance().applicationContext
+            firebaseAnalytics = FirebaseAnalytics.getInstance(context)
         } catch (e: Exception) {
             Log.e("AnalyticsHelper", "Firebase Analytics not available", e)
         }

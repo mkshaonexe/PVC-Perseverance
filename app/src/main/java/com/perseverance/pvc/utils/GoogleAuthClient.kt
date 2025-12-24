@@ -12,15 +12,13 @@ import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.tasks.await
 import java.util.concurrent.CancellationException
 
 class GoogleAuthClient(
     private val context: Context
 ) {
-    private val auth: FirebaseAuth? = try { Firebase.auth } catch (e: Exception) { null }
+    private val auth: FirebaseAuth? = try { FirebaseAuth.getInstance() } catch (e: Exception) { null }
     
     // Get the current signed-in user or null
     fun getSignedInUser() = auth?.currentUser
