@@ -68,18 +68,9 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
             )
             
             viewModelScope.launch {
-                // Update user profile in Supabase
-                val updateResult = repository.updateCurrentUserProfile()
-                if (updateResult.isFailure) {
-                    Log.e("SocialViewModel", "Failed to update Supabase profile", updateResult.exceptionOrNull())
-                    _uiState.value = _uiState.value.copy(
-                        error = "Failed to sync with server: ${updateResult.exceptionOrNull()?.message}"
-                    )
-                } else {
-                    // Start listening to friends status
-                    startFriendsListener()
-                }
+                repository.updateCurrentUserProfile()
             }
+            startFriendsListener()
         } else {
             _uiState.value = _uiState.value.copy(
                 error = result.errorMessage

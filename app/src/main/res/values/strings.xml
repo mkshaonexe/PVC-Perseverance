@@ -2,6 +2,4 @@
     <string name="app_name">PVC-Perseverance</string>
     <string name="widget_study_time_description">Today\'s Total Study Time Widget</string>
     <string name="widget_pomodoro_timer_description">Pomodoro Timer Widget</string>
-    <!-- Placeholder for Google Sign-In. To enable, add OAuth 2.0 Client ID in Firebase Console -->
-    <string name="default_web_client_id">YOUR_WEB_CLIENT_ID</string>
 </resources>
