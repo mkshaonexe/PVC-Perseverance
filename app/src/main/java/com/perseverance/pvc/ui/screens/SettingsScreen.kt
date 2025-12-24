@@ -56,7 +56,6 @@ fun SettingsScreen(
     val breakDuration by viewModel.breakDuration.collectAsState()
     val enableTimerNotifications by viewModel.enableTimerNotifications.collectAsState()
 
-    val enableTimerNotifications by viewModel.enableTimerNotifications.collectAsState()
 
     androidx.compose.runtime.LaunchedEffect(Unit) {
         com.perseverance.pvc.utils.AnalyticsHelper.logScreenView("SettingsScreen")
