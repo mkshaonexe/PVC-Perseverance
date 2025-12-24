@@ -8,6 +8,10 @@ class DaylineApp : Application() {
         super.onCreate()
         // Firebase is typically initialized automatically by the ContentProvider, 
         // but explicit initialization can be useful for debugging or specific configurations.
-        FirebaseApp.initializeApp(this)
+        try {
+            FirebaseApp.initializeApp(this)
+        } catch (e: Exception) {
+            android.util.Log.e("DaylineApp", "Failed to initialize Firebase", e)
+        }
     }
 }
