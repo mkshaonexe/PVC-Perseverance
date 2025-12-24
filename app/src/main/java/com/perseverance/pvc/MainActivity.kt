@@ -187,8 +187,9 @@ fun AppNavigation(
     // We can check this synchronously for simplicity or use the Flow
     val isUserLoggedIn = authViewModel.isUserLoggedIn()
     
+    // Default to Home (Offline First)
     var currentRoute by remember { 
-        mutableStateOf(if (isUserLoggedIn) Screen.Home.route else Screen.Login.route) 
+        mutableStateOf(Screen.Home.route) 
     }
     var previousRoute by remember { mutableStateOf(Screen.Home.route) } // Default previous
     
