@@ -2,6 +2,7 @@ package com.perseverance.pvc
 
 import android.Manifest
 import android.content.pm.PackageManager
+import com.google.firebase.analytics.FirebaseAnalytics
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
@@ -33,6 +34,7 @@ import com.perseverance.pvc.ui.screens.*
 import com.perseverance.pvc.ui.theme.PerseverancePVCTheme
 import com.perseverance.pvc.ui.viewmodel.SettingsViewModel
 import com.perseverance.pvc.ui.viewmodel.PomodoroViewModel
+import com.perseverance.pvc.utils.AnalyticsHelper
 import com.perseverance.pvc.utils.PermissionManager
 
 class MainActivity : ComponentActivity() {
@@ -44,13 +46,18 @@ class MainActivity : ComponentActivity() {
     ) { isGranted ->
         if (isGranted) {
             // Permission granted, notifications are now enabled
+            AnalyticsHelper.logEvent("permission_notification_granted")
         } else {
             // Permission denied, user will need to enable manually in settings
+            AnalyticsHelper.logEvent("permission_notification_denied")
         }
     }
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Log App Open
+        AnalyticsHelper.logEvent(FirebaseAnalytics.Event.APP_OPEN)
         
         // Request notification permission on first launch
         requestNotificationPermissionIfNeeded()
@@ -154,6 +161,12 @@ fun AppNavigation(
     
     var currentRoute by remember { mutableStateOf(Screen.Home.route) }
     var previousRoute by remember { mutableStateOf(Screen.Home.route) }
+    
+    // Track screen views
+    LaunchedEffect(currentRoute) {
+        AnalyticsHelper.logScreenView(currentRoute)
+    }
+
     var showBottomBar by remember { mutableStateOf(true) }
     var lastSwipeTime by remember { mutableStateOf(0L) }
     

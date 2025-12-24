@@ -43,6 +43,7 @@ import com.perseverance.pvc.ui.components.TopHeader
 import com.perseverance.pvc.ui.theme.PerseverancePVCTheme
 import com.perseverance.pvc.ui.viewmodel.PomodoroViewModel
 import com.perseverance.pvc.ui.viewmodel.SessionType
+import com.perseverance.pvc.utils.AnalyticsHelper
 
 @Composable
 fun PomodoroScreen(
@@ -60,6 +61,21 @@ fun PomodoroScreen(
     )
     val uiState by viewModel.uiState.collectAsState()
     var showDurationDialog by remember { mutableStateOf(false) }
+    
+    // Analytics: Timer Events
+    LaunchedEffect(uiState.isPlaying) {
+        if (uiState.isPlaying) {
+            AnalyticsHelper.logEvent("timer_started")
+        } else if (uiState.isPaused) { // Check if paused when not playing
+            AnalyticsHelper.logEvent("timer_paused")
+        }
+    }
+    
+    LaunchedEffect(uiState.isTimerCompleted) {
+        if (uiState.isTimerCompleted) {
+            AnalyticsHelper.logEvent("timer_completed")
+        }
+    }
     
     // Notify parent about ViewModel creation (only once)
     androidx.compose.runtime.LaunchedEffect(viewModel) {
