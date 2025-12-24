@@ -39,6 +39,14 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+
+        <!-- Disable Firebase Auto-Init to handle it manually/safely in DaylineApp -->
+        <provider
+            android:name="com.google.firebase.provider.FirebaseInitProvider"
+            android:authorities="${applicationId}.firebaseinitprovider"
+            android:exported="false"
+            tools:node="remove" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
