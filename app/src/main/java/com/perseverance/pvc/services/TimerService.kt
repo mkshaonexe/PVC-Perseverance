@@ -93,8 +93,13 @@ class TimerService : Service() {
                     isStudySession = intent.getBooleanExtra(EXTRA_IS_STUDY_SESSION, false)
                 }
 
-                // If duration is passed and we are not running/resuming, update it.
-                // Logic: If paused, we resume from current state. If reset/fresh, we might use duration.
+                // If duration is passed and we are not running, update it.
+                // Logic: VM passes the correct starting time (whether fresh or resume).
+                // We MUST update _remainingSeconds before starting to respect custom durations.
+                if (duration > 0 && !_isTimerRunning.value) {
+                    _remainingSeconds.value = duration
+                }
+                
                 startTimer()
             }
             ACTION_PAUSE -> pauseTimer()
@@ -198,7 +203,8 @@ class TimerService : Service() {
         }
         
         val intent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            // Use SINGLE_TOP to reuse existing activity instance instead of clearing task
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
         val pendingIntent = PendingIntent.getActivity(
             this, 0, intent,
