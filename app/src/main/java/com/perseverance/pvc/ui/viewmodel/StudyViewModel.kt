@@ -50,10 +50,13 @@ class StudyViewModel(application: Application) : AndroidViewModel(application) {
             settingsRepository.getTimerDuration().collect { durationString ->
                 val durationMinutes = durationString.toIntOrNull() ?: 50
                 workDuration = durationMinutes * 60
-                // Update remaining time if not currently running
-                if (!_uiState.value.isTimerRunning) {
+                
+                // If timer is NOT running, update the display and local service state
+                if (!com.perseverance.pvc.services.TimerService.isTimerRunning.value) {
                     _uiState.value = _uiState.value.copy(remainingSeconds = workDuration)
                     updateTimerDisplay()
+                    // Update service static state so it starts from correct time if started
+                    com.perseverance.pvc.services.TimerService.updateRemainingTimeLocally(workDuration)
                 }
             }
         }
@@ -62,6 +65,24 @@ class StudyViewModel(application: Application) : AndroidViewModel(application) {
     private fun loadStudyData() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
+            
+            // Observe TimerService state
+            launch {
+                com.perseverance.pvc.services.TimerService.remainingSeconds.collect { seconds ->
+                    _uiState.value = _uiState.value.copy(remainingSeconds = seconds)
+                    updateTimerDisplay()
+                }
+            }
+            
+            launch {
+                com.perseverance.pvc.services.TimerService.isTimerRunning.collect { isRunning ->
+                    _uiState.value = _uiState.value.copy(isTimerRunning = isRunning)
+                    // If it just stopped and reached 0, handle completion
+                    if (!isRunning && _uiState.value.remainingSeconds <= 0) {
+                         onTimerComplete()
+                    }
+                }
+            }
             
             // Load real data from repository
             repository.getStudyChartData(days = 7).collect { chartData ->
@@ -74,39 +95,47 @@ class StudyViewModel(application: Application) : AndroidViewModel(application) {
     }
     
     fun startTimer() {
-        if (timerJob?.isActive == true) return
-        
-        _uiState.value = _uiState.value.copy(isTimerRunning = true)
-        AnalyticsHelper.logEvent("dashboard_timer_start")
-        
-        timerJob = viewModelScope.launch {
-            while (_uiState.value.remainingSeconds > 0 && _uiState.value.isTimerRunning) {
-                delay(1000)
-                val newRemainingSeconds = _uiState.value.remainingSeconds - 1
-                _uiState.value = _uiState.value.copy(remainingSeconds = newRemainingSeconds)
-                updateTimerDisplay()
-            }
-            
-            if (_uiState.value.remainingSeconds <= 0) {
-                onTimerComplete()
-            }
+        // Start Service
+        val context = getApplication<Application>().applicationContext
+        val intent = android.content.Intent(context, com.perseverance.pvc.services.TimerService::class.java).apply {
+            action = com.perseverance.pvc.services.TimerService.ACTION_START
+            putExtra(com.perseverance.pvc.services.TimerService.EXTRA_DURATION, workDuration)
         }
+        
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            context.startForegroundService(intent)
+        } else {
+            context.startService(intent)
+        }
+        
+        AnalyticsHelper.logEvent("dashboard_timer_start")
     }
     
     fun pauseTimer() {
-        _uiState.value = _uiState.value.copy(isTimerRunning = false)
-        timerJob?.cancel()
+        val context = getApplication<Application>().applicationContext
+        val intent = android.content.Intent(context, com.perseverance.pvc.services.TimerService::class.java).apply {
+            action = com.perseverance.pvc.services.TimerService.ACTION_PAUSE
+        }
+        context.startService(intent)
         AnalyticsHelper.logEvent("dashboard_timer_pause")
     }
     
     fun resetTimer() {
-        pauseTimer()
         AnalyticsHelper.logEvent("dashboard_timer_reset")
+        val context = getApplication<Application>().applicationContext
+        val intent = android.content.Intent(context, com.perseverance.pvc.services.TimerService::class.java).apply {
+            action = com.perseverance.pvc.services.TimerService.ACTION_RESET
+            putExtra(com.perseverance.pvc.services.TimerService.EXTRA_DURATION, workDuration)
+        }
+        context.startService(intent)
+        
+        // Immediate UI update
         val minutes = workDuration / 60
         val seconds = workDuration % 60
         _uiState.value = _uiState.value.copy(
             remainingSeconds = workDuration,
-            timerDisplay = String.format("%02d:%02d", minutes, seconds)
+            timerDisplay = String.format("%02d:%02d", minutes, seconds),
+            isTimerRunning = false
         )
     }
     
@@ -119,24 +148,27 @@ class StudyViewModel(application: Application) : AndroidViewModel(application) {
     }
     
     private fun onTimerComplete() {
-        _uiState.value = _uiState.value.copy(
-            isTimerRunning = false,
-            completedSessions = _uiState.value.completedSessions + 1
-        )
-        timerJob?.cancel()
+        // Only trigger if we haven't already processed this completion
+        // (Simple check: if remainingSeconds is 0)
         AnalyticsHelper.logEvent("dashboard_timer_complete")
         
-        // Reset timer for next session
-        val minutes = workDuration / 60
-        val seconds = workDuration % 60
         _uiState.value = _uiState.value.copy(
+             completedSessions = _uiState.value.completedSessions + 1
+        )
+        // Reset Logic is handled by user action or separate flow usually, 
+        // but here we just reset the timer for next round in UI
+         val minutes = workDuration / 60
+        val seconds = workDuration % 60
+         _uiState.value = _uiState.value.copy(
             remainingSeconds = workDuration,
             timerDisplay = String.format("%02d:%02d", minutes, seconds)
         )
+        // Also ensure service state is reset locally if needed
+        com.perseverance.pvc.services.TimerService.updateRemainingTimeLocally(workDuration)
     }
     
     fun refreshData() {
-        loadStudyData()
+        // loadStudyData() // Don't re-subscribe to flows multiple times
         loadTodayTotalStudyTime()
     }
     
