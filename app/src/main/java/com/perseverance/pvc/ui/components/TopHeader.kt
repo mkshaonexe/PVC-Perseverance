@@ -71,31 +71,8 @@ fun TopHeader(
                     .clickable { onBackClick() }
             )
         } else {
-            // Settings and Insights icons when on main pages
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Insights icon
-                Icon(
-                    imageVector = Icons.Filled.Insights,
-                    contentDescription = "Insights",
-                    tint = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier
-                        .size(20.dp)
-                        .clickable { onNavigateToInsights() }
-                )
-                
-                // Settings icon
-                Icon(
-                    imageVector = Icons.Filled.Settings,
-                    contentDescription = "Settings",
-                    tint = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier
-                        .size(20.dp)
-                        .clickable { onNavigateToSettings() }
-                )
-            }
+            // Icons removed as per user request
+        }
         }
     }
 }

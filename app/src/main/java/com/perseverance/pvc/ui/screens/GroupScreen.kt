@@ -258,13 +258,7 @@ fun GroupScreen(
                     
                     Spacer(modifier = Modifier.height(32.dp))
                     
-                    // Logout button for debugging/UX
-                    Button(
-                        onClick = { socialViewModel.signOut() },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer, contentColor = MaterialTheme.colorScheme.error)
-                    ) {
-                        Text("Sign Out")
-                    }
+                    Spacer(modifier = Modifier.height(32.dp))
                 }
             }
         }
