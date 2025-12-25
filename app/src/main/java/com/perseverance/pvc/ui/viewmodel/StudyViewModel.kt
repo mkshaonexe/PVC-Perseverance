@@ -97,18 +97,35 @@ class StudyViewModel(application: Application) : AndroidViewModel(application) {
     fun startTimer() {
         // Start Service
         val context = getApplication<Application>().applicationContext
-        val intent = android.content.Intent(context, com.perseverance.pvc.services.TimerService::class.java).apply {
-            action = com.perseverance.pvc.services.TimerService.ACTION_START
-            putExtra(com.perseverance.pvc.services.TimerService.EXTRA_DURATION, workDuration)
-        }
         
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            context.startForegroundService(intent)
-        } else {
-            context.startService(intent)
+        // Get data for notification
+        val dailyTotal = try {
+            // Need to run blocking or launch separate, but here we are in Main thread.
+            // Ideally we get this from UI state or flow.
+            // For now, let's use a simple approximate or launch a coroutine to start service
+            // Better: launch in viewModelScope
+             0 // Placeholder, handled inside launch below
+        } catch (e: Exception) { 0 }
+
+        viewModelScope.launch {
+            val actualDailyTotal = repository.getTodayTotalSecondsOnce()
+            
+            val intent = android.content.Intent(context, com.perseverance.pvc.services.TimerService::class.java).apply {
+                action = com.perseverance.pvc.services.TimerService.ACTION_START
+                putExtra(com.perseverance.pvc.services.TimerService.EXTRA_DURATION, workDuration)
+                putExtra(com.perseverance.pvc.services.TimerService.EXTRA_DAILY_TOTAL_SECONDS, actualDailyTotal)
+                putExtra(com.perseverance.pvc.services.TimerService.EXTRA_SESSION_INITIAL_SECONDS, workDuration) // In Dashboard, we restart from full duration
+                putExtra(com.perseverance.pvc.services.TimerService.EXTRA_IS_STUDY_SESSION, true)
+            }
+            
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
+            
+            AnalyticsHelper.logEvent("dashboard_timer_start")
         }
-        
-        AnalyticsHelper.logEvent("dashboard_timer_start")
     }
     
     fun pauseTimer() {

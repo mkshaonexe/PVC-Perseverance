@@ -105,6 +105,44 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         loadTodayTotalStudyTime()
         restoreTimerState()
         bindSoundService()
+        
+        // Observe TimerService
+        viewModelScope.launch {
+            launch {
+                com.perseverance.pvc.services.TimerService.remainingSeconds.collect { seconds ->
+                    remainingTimeInSeconds = seconds
+                    updateTimeDisplay()
+                    // Real-time update of total study time while running
+                    if (_uiState.value.isPlaying) {
+                        launch {
+                             val savedSeconds = repository.getTodayTotalSecondsOnce()
+                             updateTotalStudyTimeDisplay(savedSeconds)
+                        }
+                    }
+                }
+            }
+            
+            launch {
+                com.perseverance.pvc.services.TimerService.isTimerRunning.collect { isRunning ->
+                     // Check if state changed from running to not running with 0 seconds -> Completion
+                    val wasRunning = _uiState.value.isPlaying
+                    
+                    _uiState.value = _uiState.value.copy(isPlaying = isRunning, isPaused = !isRunning && remainingTimeInSeconds < getDurationForSessionType(_uiState.value.currentSessionType) && remainingTimeInSeconds > 0)
+
+                    if (wasRunning && !isRunning && remainingTimeInSeconds <= 0 && !_uiState.value.isTimerCompleted) {
+                        onTimerComplete()
+                    }
+                }
+            }
+        }
+    }
+    
+    private fun getDurationForSessionType(type: SessionType): Int {
+        return when (type) {
+            SessionType.WORK -> workDuration
+            SessionType.SHORT_BREAK -> breakDuration
+            SessionType.LONG_BREAK -> breakDuration
+        }
     }
     
     private fun bindSoundService() {
@@ -198,7 +236,7 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
     }
     
     fun startTimer(activity: Activity? = null) {
-        if (timerJob?.isActive == true) return
+        if (_uiState.value.isPlaying) return
         
         // Request background permissions when timer starts
         activity?.let { 
@@ -213,40 +251,34 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
             saveTimerState()
         }
         
-        // Schedule AlarmManager for exact wake-up
-        scheduleTimerAlarm(remainingTimeInSeconds * 1000L)
+        // Get current total daily seconds to pass to service
+        val dailyTotal = repository.getTodayTotalSecondsOnce()
+
+        // Start Service
+        val context = getApplication<Application>().applicationContext
+        val intent = Intent(context, com.perseverance.pvc.services.TimerService::class.java).apply {
+            action = com.perseverance.pvc.services.TimerService.ACTION_START
+            putExtra(com.perseverance.pvc.services.TimerService.EXTRA_DURATION, remainingTimeInSeconds)
+            
+            // Pass study time calculation data
+            putExtra(com.perseverance.pvc.services.TimerService.EXTRA_DAILY_TOTAL_SECONDS, dailyTotal)
+            putExtra(com.perseverance.pvc.services.TimerService.EXTRA_SESSION_INITIAL_SECONDS, sessionInitialDuration)
+            putExtra(com.perseverance.pvc.services.TimerService.EXTRA_IS_STUDY_SESSION, 
+                _uiState.value.currentSessionType == SessionType.WORK && !_uiState.value.selectedSubject.equals("Break", ignoreCase = true))
+        }
+        
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            context.startForegroundService(intent)
+        } else {
+            context.startService(intent)
+        }
 
         AnalyticsHelper.logEvent("timer_start", mapOf(
             "subject" to _uiState.value.selectedSubject,
             "session_type" to _uiState.value.currentSessionType.name
         ))
 
-        _uiState.value = _uiState.value.copy(isPlaying = true, isPaused = false)
-        
-        timerJob = viewModelScope.launch {
-            var secondsCounter = 0
-            while (remainingTimeInSeconds > 0 && _uiState.value.isPlaying) {
-                delay(1000)
-                if (!_uiState.value.isPlaying) break
-                remainingTimeInSeconds--
-                secondsCounter++
-                updateTimeDisplay()
-                
-                // Auto-save timer state every 5 seconds while running
-                if (secondsCounter % 5 == 0) {
-                    saveTimerState()
-                }
-                
-                // Update total study time display in real-time (without blocking)
-                val savedSeconds = repository.getTodayTotalSecondsOnce()
-                updateTotalStudyTimeDisplay(savedSeconds)
-            }
-            
-            // Only complete automatically if still in playing state
-            if (remainingTimeInSeconds <= 0 && _uiState.value.isPlaying) {
-                onTimerComplete()
-            }
-        }
+        // UI update happens via observing TimerService flows
     }
     
     private fun scheduleTimerAlarm(durationMillis: Long) {
@@ -306,15 +338,16 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
     }
     
     fun pauseTimer() {
-        // Set isPlaying to false FIRST so the while loop in startTimer stops naturally
+        // Send pause command to service
+        val context = getApplication<Application>().applicationContext
+        val intent = Intent(context, com.perseverance.pvc.services.TimerService::class.java).apply {
+            action = com.perseverance.pvc.services.TimerService.ACTION_PAUSE
+        }
+        context.startService(intent)
+        
+        // Local logic
         _uiState.value = _uiState.value.copy(isPlaying = false, isPaused = true)
-        
-        // Cancel Alarm
         cancelTimerAlarm()
-        
-        // Then cancel the job
-        timerJob?.cancel()
-        timerJob = null
         
         AnalyticsHelper.logEvent("timer_pause", mapOf(
             "time_remaining" to remainingTimeInSeconds.toString(),
@@ -324,8 +357,6 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         // Auto-save timer state when pausing
         saveTimerState()
         
-        // Don't save the session when pausing - wait until user clicks "Done" or timer completes
-        // Just refresh the display
         viewModelScope.launch {
             val savedSeconds = repository.getTodayTotalSecondsOnce()
             updateTotalStudyTimeDisplay(savedSeconds)
@@ -333,7 +364,13 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
     }
     
     fun completeSession() {
-        // Stop the timer
+        // Stop service
+        val context = getApplication<Application>().applicationContext
+        val intent = Intent(context, com.perseverance.pvc.services.TimerService::class.java).apply {
+            action = com.perseverance.pvc.services.TimerService.ACTION_PAUSE // Stop timer
+        }
+        context.startService(intent)
+        
         timerJob?.cancel()
         timerJob = null
         cancelTimerAlarm()
@@ -366,6 +403,19 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
     }
     
     fun resetTimer() {
+        // Reset Service
+        val context = getApplication<Application>().applicationContext
+        val intent = Intent(context, com.perseverance.pvc.services.TimerService::class.java).apply {
+            action = com.perseverance.pvc.services.TimerService.ACTION_RESET
+             val resetDuration = when (_uiState.value.currentSessionType) {
+                SessionType.WORK -> workDuration
+                SessionType.SHORT_BREAK -> breakDuration
+                SessionType.LONG_BREAK -> breakDuration
+            }
+            putExtra(com.perseverance.pvc.services.TimerService.EXTRA_DURATION, resetDuration)
+        }
+        context.startService(intent)
+        
         timerJob?.cancel()
         timerJob = null
         cancelTimerAlarm()
