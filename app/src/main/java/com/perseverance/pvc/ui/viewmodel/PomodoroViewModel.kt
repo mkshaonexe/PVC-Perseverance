@@ -779,8 +779,9 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
     // Restore timer state on app restart
     private fun restoreTimerState() {
         // Skip if already restored and timer is currently running
-        if (hasRestoredState && _uiState.value.isPlaying) {
-            Log.d("PomodoroViewModel", "Timer already running, skipping restore")
+        // Skip if already restored and timer is currently running or completed locally
+        if (hasRestoredState && (_uiState.value.isPlaying || _uiState.value.isTimerCompleted)) {
+            Log.d("PomodoroViewModel", "Timer already running or completed, skipping restore")
             return
         }
         
