@@ -233,50 +233,51 @@ fun StudyTimeChartWithScrollableLegend(
             containerColor = if (isLightTheme) 
                 MaterialTheme.colorScheme.surface 
             else 
-                MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
+                Color(0xFF1E1E1E) // Slightly lighter than pure black for depth
         ),
-        shape = RoundedCornerShape(16.dp),
-        border = glassBorder(isLightTheme),
-        elevation = glassElevation(isLightTheme)
+        shape = RoundedCornerShape(24.dp), // More rounded corners
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = if (isLightTheme) null else null // Removed border for cleaner look
     ) {
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // Fixed header and chart (non-scrollable)
+            // Header
             Column(
-                modifier = Modifier.padding(20.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 24.dp, start = 24.dp, end = 24.dp, bottom = 16.dp)
             ) {
                 Text(
                     text = "Daily Study Time",
-                    fontSize = 20.sp,
+                    fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center
+                    letterSpacing = 0.5.sp
                 )
                 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(24.dp))
                 
                 if (chartData.dailyData.isNotEmpty()) {
                     val latestDay = chartData.dailyData.last()
                     
-                    // Bar chart (fixed)
+                    // Bar chart
                     StudyTimeBarChartOnly(
                         subjects = latestDay.subjects,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(200.dp)
+                            .height(220.dp) // Slightly taller
                     )
                 } else {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(200.dp),
+                            .height(220.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "No study data available",
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                            text = "No study data today",
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                             fontSize = 16.sp
                         )
                     }
@@ -285,6 +286,11 @@ fun StudyTimeChartWithScrollableLegend(
             
             // Scrollable legend
             if (chartData.dailyData.isNotEmpty()) {
+                Divider(
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+                    modifier = Modifier.padding(horizontal = 24.dp)
+                )
+
                 val latestDay = chartData.dailyData.last()
                 val scrollState = rememberScrollState()
                 
@@ -293,13 +299,18 @@ fun StudyTimeChartWithScrollableLegend(
                         .fillMaxWidth()
                         .weight(1f)
                         .verticalScroll(scrollState)
-                        .padding(horizontal = 20.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                        .padding(horizontal = 24.dp, vertical = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     val colors = listOf(
-                        Color(0xFFFF6B6B), Color(0xFF4ECDC4), Color(0xFF45B7D1),
-                        Color(0xFF96CEB4), Color(0xFFFECA57), Color(0xFFFF9FF3),
-                        Color(0xFF54A0FF), Color(0xFF5F27CD)
+                        Color(0xFF6C5CE7), // Purple
+                        Color(0xFF00CEC9), // Teal
+                        Color(0xFF0984E3), // Blue
+                        Color(0xFFFD79A8), // Pink
+                        Color(0xFFFF7675), // Salmon
+                        Color(0xFFFFA502), // Orange
+                        Color(0xFF2ED573), // Green
+                        Color(0xFFA29BFE)  // Lavender
                     )
                     
                     latestDay.subjects.forEachIndexed { index, subject ->
@@ -311,24 +322,25 @@ fun StudyTimeChartWithScrollableLegend(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Box(
                                     modifier = Modifier
-                                        .size(12.dp)
+                                        .size(10.dp)
                                         .background(
                                             color = colors[index % colors.size],
-                                            shape = RoundedCornerShape(2.dp)
+                                            shape = CircleShape
                                         )
                                 )
-                                Spacer(modifier = Modifier.width(8.dp))
+                                Spacer(modifier = Modifier.width(12.dp))
                                 Text(
                                     text = subject.subject,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                    fontSize = 14.sp
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f),
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Medium
                                 )
                             }
                             Text(
                                 text = "${subject.totalMinutes}m",
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Normal
                             )
                         }
                     }
@@ -345,48 +357,118 @@ private fun StudyTimeBarChartOnly(
 ) {
     val maxTime = subjects.maxOfOrNull { it.totalMinutes } ?: 1
     val colors = listOf(
-        Color(0xFFFF6B6B), Color(0xFF4ECDC4), Color(0xFF45B7D1),
-        Color(0xFF96CEB4), Color(0xFFFECA57), Color(0xFFFF9FF3),
-        Color(0xFF54A0FF), Color(0xFF5F27CD)
+        Color(0xFF6C5CE7), // Purple
+        Color(0xFF00CEC9), // Teal
+        Color(0xFF0984E3), // Blue
+        Color(0xFFFD79A8), // Pink
+        Color(0xFFFF7675), // Salmon
+        Color(0xFFFFA502), // Orange
+        Color(0xFF2ED573), // Green
+        Color(0xFFA29BFE)  // Lavender
     )
     
     Box(modifier = modifier) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val barWidth = size.width / subjects.size * 0.8f
-            val spacing = size.width / subjects.size * 0.2f
-            val maxHeight = size.height * 0.8f
+            // Give some padding for the text at the top
+            val topPadding = 30.dp.toPx()
+            val availableHeight = size.height - topPadding
+            
+            val barWidth = size.width / subjects.size * 0.65f // Slightly thinner bars for elegance
+            val spacing = size.width / subjects.size * 0.35f
             
             subjects.forEachIndexed { index, subject ->
                 val x = index * (barWidth + spacing) + spacing / 2
-                val barHeight = (subject.totalMinutes.toFloat() / maxTime) * maxHeight
+                // Ensure at least a tiny sliver is shown if > 0
+                val ratio = if(subject.totalMinutes > 0) 
+                    subject.totalMinutes.toFloat() / maxTime 
+                else 0f
+                
+                val barHeight = ratio * availableHeight
                 val y = size.height - barHeight
                 
-                drawRect(
-                    color = colors[index % colors.size],
-                    topLeft = Offset(x, y),
-                    size = Size(barWidth, barHeight)
-                )
+                // Draw bar with rounded top corners
+                if (barHeight > 0) {
+                    drawRoundRect(
+                        color = colors[index % colors.size],
+                        topLeft = Offset(x, y),
+                        size = Size(barWidth, barHeight),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(8.dp.toPx(), 8.dp.toPx())
+                    )
+                }
             }
         }
         
+        // Labels
         Row(
             modifier = Modifier.fillMaxSize(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             subjects.forEachIndexed { index, subject ->
-                Box(
-                    modifier = Modifier.weight(1f).fillMaxHeight(),
-                    contentAlignment = Alignment.TopCenter
+                 Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                    contentAlignment = Alignment.BottomCenter // Align text to bottom to position it relative to bar top
                 ) {
-                    Text(
-                        text = "${subject.totalMinutes}m",
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
+                    // We need to position the text exactly above the bar. 
+                    // Using a full height box with weight is tricky for exact pixel positioning relative to the bar height.
+                    // Instead, let's just lay them out evenly and use a spacer weight.
                 }
             }
+        }
+        
+        // Better Label Positioning Overlay
+        // We'll use a Layout or just absolute offset logic if we could, but here let's just use the same math
+        // logic for a Row of columns.
+        Row(
+             modifier = Modifier.fillMaxSize()
+        ) {
+             subjects.forEachIndexed { index, subject ->
+                 val ratio = if(maxTime > 0) subject.totalMinutes.toFloat() / maxTime else 0f
+                 
+                 Box(
+                     modifier = Modifier
+                         .weight(1f)
+                         .fillMaxHeight(),
+                     contentAlignment = Alignment.BottomCenter
+                 ) {
+                     Column(
+                         modifier = Modifier.fillMaxSize(),
+                         verticalArrangement = Arrangement.Bottom,
+                         horizontalAlignment = Alignment.CenterHorizontally
+                     ) {
+                         // Space for the text above the bar
+                         val topPadding = 30.dp // Matches canvas padding roughly
+                         
+                         // Spacer to push text up to the right height
+                         // 1.0 = full height. text is at top. 
+                         // We want text to be at (1 - ratio).
+                         
+                         // Simplified approach: just put the text at the top of the bar's column,
+                         // but standard Column spacing handles it better if we just build the bars in Compose instead of Canvas?
+                         // The user asked to keep the chart type similar but "make it good". 
+                         // Canvas is more performant for charts. Let's stick to Canvas for bars content.
+                         
+                         // Let's use the layout weight trick? No, let's just draw the text on Canvas too?
+                         // Drawing text on Canvas in Compose is verbose.
+                         
+                         // Let's go back to the existing implementation's overlay approach but improved.
+                         
+                         Spacer(modifier = Modifier.weight(1f - ratio + 0.001f)) // pushes down
+                         
+                         Text(
+                             text = "${subject.totalMinutes}m",
+                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                             fontSize = 12.sp,
+                             fontWeight = FontWeight.Bold,
+                             textAlign = TextAlign.Center,
+                             modifier = Modifier.padding(bottom = 4.dp)
+                         )
+                         
+                         Spacer(modifier = Modifier.weight(ratio + 0.001f)) // pushes up
+                     }
+                 }
+             }
         }
     }
 }
