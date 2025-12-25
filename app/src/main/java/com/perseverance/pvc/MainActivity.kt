@@ -59,15 +59,14 @@ class MainActivity : ComponentActivity() {
         // Request notification permission on first launch
         requestNotificationPermissionIfNeeded()
         
-        // Enable full screen mode
+        // Enable edge-to-edge display with visible status bar
         enableEdgeToEdge()
         WindowCompat.setDecorFitsSystemWindows(window, false)
         
-        // Hide status bar
+        // Configure status bar to be visible with light icons (for dark theme)
         val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
         windowInsetsController.apply {
-            hide(WindowInsetsCompat.Type.statusBars())
-            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            isAppearanceLightStatusBars = false // Use light icons on dark background
         }
         
         // Log App Open
