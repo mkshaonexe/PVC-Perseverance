@@ -73,13 +73,28 @@ class TimerService : Service() {
         }
     }
 
+    private var dailyTotalSeconds = 0
+    private var sessionInitialDuration = 0
+    private var isStudySession = false
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_START -> {
                 val duration = intent.getIntExtra(EXTRA_DURATION, -1)
+                
+                // Read extras for study tracking
+                if (intent.hasExtra(EXTRA_DAILY_TOTAL_SECONDS)) {
+                    dailyTotalSeconds = intent.getIntExtra(EXTRA_DAILY_TOTAL_SECONDS, 0)
+                }
+                if (intent.hasExtra(EXTRA_SESSION_INITIAL_SECONDS)) {
+                    sessionInitialDuration = intent.getIntExtra(EXTRA_SESSION_INITIAL_SECONDS, 0)
+                }
+                if (intent.hasExtra(EXTRA_IS_STUDY_SESSION)) {
+                    isStudySession = intent.getBooleanExtra(EXTRA_IS_STUDY_SESSION, false)
+                }
+
                 // If duration is passed and we are not running/resuming, update it.
                 // Logic: If paused, we resume from current state. If reset/fresh, we might use duration.
-                // For simplicity, ViewModel manages state injection usually, but here we just start.
                 startTimer()
             }
             ACTION_PAUSE -> pauseTimer()
@@ -106,9 +121,6 @@ class TimerService : Service() {
             
             if (_remainingSeconds.value <= 0) {
                 stopTimer()
-                // Here you might trigger the "Session Complete" notification/logic
-                // via broadcast or another service call if complex logic is needed.
-                // For now, let's just mark as done.
                 _isTimerRunning.value = false
                 stopForeground(STOP_FOREGROUND_REMOVE)
             }
@@ -118,11 +130,8 @@ class TimerService : Service() {
     private fun pauseTimer() {
         _isTimerRunning.value = false
         timerJob?.cancel()
-        // Determine if we should keep notification or remove it. 
-        // User asked for persistent notification when RUNNING.
-        // Usually, when paused, we might want to downgrade to normal notification or remove foreground.
-        // Let's keep it visible but update text to "Paused".
         updateNotification()
+        // We keep the notification (detached), but update text
         stopForeground(STOP_FOREGROUND_DETACH) 
     }
 
@@ -130,7 +139,7 @@ class TimerService : Service() {
         pauseTimer()
         _remainingSeconds.value = duration
         updateNotification()
-        stopSelf() // Stop service if fully reset
+        stopSelf() 
     }
 
     private fun stopTimer() {
@@ -146,7 +155,12 @@ class TimerService : Service() {
         
         // Start foreground with type if needed (Android 14+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-             startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+             try {
+                startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+             } catch (e: Exception) {
+                // Fallback or log if permission missing (though we added it)
+                startForeground(NOTIFICATION_ID, notification)
+             }
         } else {
              startForeground(NOTIFICATION_ID, notification)
         }
@@ -164,7 +178,20 @@ class TimerService : Service() {
         val seconds = _remainingSeconds.value % 60
         val timeString = String.format("%02d:%02d", minutes, seconds)
         
-        val status = if (_isTimerRunning.value) "Focusing..." else "Paused"
+        var content = if (_isTimerRunning.value) "Focusing... $timeString" else "Paused $timeString"
+        
+        // Add total study time if applicable
+        if (isStudySession) {
+            val sessionElapsed = if (sessionInitialDuration > 0) sessionInitialDuration - _remainingSeconds.value else 0
+            val currentTotal = dailyTotalSeconds + sessionElapsed.coerceAtLeast(0)
+            
+            val totalHours = currentTotal / 3600
+            val totalMinutes = (currentTotal % 3600) / 60
+            val totalSeconds = currentTotal % 60
+            val totalString = String.format("%02d:%02d:%02d", totalHours, totalMinutes, totalSeconds)
+            
+            content += " | Total: $totalString"
+        }
         
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -174,16 +201,13 @@ class TimerService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Actions can be added (Pause/Resume buttons in notification)
-        // For simplicity and matching current request, just display.
-
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Pomodoro Timer")
-            .setContentText("$status $timeString")
-            .setSmallIcon(R.drawable.ic_launcher_foreground) // Ensure this exists or use a generic one
+            .setContentText(content)
+            .setSmallIcon(R.drawable.ic_launcher_foreground) 
             .setOngoing(_isTimerRunning.value)
             .setContentIntent(pendingIntent)
-            .setOnlyAlertOnce(true) // Don't buzz every second
+            .setOnlyAlertOnce(true) 
             .build()
     }
 
