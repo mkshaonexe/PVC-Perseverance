@@ -367,10 +367,19 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
     }
     
     fun completeSession() {
-        // Stop service
+        // Capture current remaining time before resetting for accurate saving
+        val finalRemainingSeconds = remainingTimeInSeconds
+
+        // Reset Service (Use ACTION_RESET instead of PAUSE to avoid Paused state in UI)
         val context = getApplication<Application>().applicationContext
         val intent = Intent(context, com.perseverance.pvc.services.TimerService::class.java).apply {
-            action = com.perseverance.pvc.services.TimerService.ACTION_PAUSE // Stop timer
+            action = com.perseverance.pvc.services.TimerService.ACTION_RESET
+            val resetDuration = when (_uiState.value.currentSessionType) {
+                SessionType.WORK -> workDuration
+                SessionType.SHORT_BREAK -> breakDuration
+                SessionType.LONG_BREAK -> breakDuration
+            }
+            putExtra(com.perseverance.pvc.services.TimerService.EXTRA_DURATION, resetDuration)
         }
         context.startService(intent)
         
@@ -383,7 +392,7 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         // Save the session (only for work sessions)
         if (_uiState.value.currentSessionType == SessionType.WORK && sessionStartTime != null) {
             viewModelScope.launch {
-                saveCurrentSession()
+                saveCurrentSession(finalRemainingSeconds)
                 // Clear timer state after saving session
                 repository.clearTimerState()
                 // Reset timer to initial state
@@ -395,8 +404,17 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
                 updateWidgets()
             }
         } else {
-            // For break sessions, just reset
-            resetTimer()
+            // For break sessions, just reset local state (Service is already reset above)
+            remainingTimeInSeconds = when (_uiState.value.currentSessionType) {
+                SessionType.WORK -> workDuration
+                SessionType.SHORT_BREAK -> breakDuration
+                SessionType.LONG_BREAK -> breakDuration
+            }
+            updateTimeDisplay()
+            
+            viewModelScope.launch {
+                repository.clearTimerState()
+            }
         }
         
         AnalyticsHelper.logEvent("timer_manual_complete", mapOf(
@@ -620,7 +638,7 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         }
     }
     
-    private fun saveCurrentSession() {
+    private fun saveCurrentSession(currentRemainingSeconds: Int = remainingTimeInSeconds) {
         if (sessionStartTime == null) return
         
         // Don't save session if subject is "Break" - break time should not count as study time
@@ -632,7 +650,7 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         }
         
         // Calculate actual study time in SECONDS (time elapsed since session start)
-        val studyDurationSeconds = (sessionInitialDuration - remainingTimeInSeconds).coerceAtLeast(0)
+        val studyDurationSeconds = (sessionInitialDuration - currentRemainingSeconds).coerceAtLeast(0)
         
         // Only save if user studied for at least 1 second
         if (studyDurationSeconds < 1) {
