@@ -35,6 +35,9 @@ import com.perseverance.pvc.ui.viewmodel.SettingsViewModel
 import com.perseverance.pvc.ui.viewmodel.PomodoroViewModel
 import com.perseverance.pvc.utils.PermissionManager
 import com.perseverance.pvc.utils.AnalyticsHelper
+import com.perseverance.pvc.di.SupabaseModule
+import io.github.jan.supabase.auth.handleDeeplinks
+import android.content.Intent
 
 class MainActivity : ComponentActivity() {
     private var pomodoroViewModel: PomodoroViewModel? = null
@@ -99,6 +102,14 @@ class MainActivity : ComponentActivity() {
             android.util.Log.e("MainActivity", "Error fetching Installation ID", e)
         }
         
+        // Handle deep links for Supabase Auth
+        val intent = intent
+        val data = intent.data
+        if (data != null && data.scheme == "pvcperseverance" && data.host == "login") {
+            android.widget.Toast.makeText(this, "Processing Login...", android.widget.Toast.LENGTH_LONG).show()
+        }
+        SupabaseModule.client.handleDeeplinks(intent)
+
         setContent {
             // Observe user's theme preference from settings
             val context = LocalContext.current
@@ -126,6 +137,15 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        val data = intent.data
+        if (data != null && data.scheme == "pvcperseverance" && data.host == "login") {
+            android.widget.Toast.makeText(this, "Processing Login...", android.widget.Toast.LENGTH_LONG).show()
+        }
+        SupabaseModule.client.handleDeeplinks(intent)
     }
     
     override fun onPause() {

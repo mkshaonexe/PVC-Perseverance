@@ -2,15 +2,14 @@ package com.perseverance.pvc.ui.viewmodel
 
 import android.app.Application
 import android.content.Intent
-import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.perseverance.pvc.data.AuthRepository
 import com.perseverance.pvc.data.SocialRepository
 import com.perseverance.pvc.data.SocialUser
-import com.perseverance.pvc.utils.GoogleAuthClient
-import com.perseverance.pvc.utils.SignInResult
 import com.perseverance.pvc.utils.AnalyticsHelper
+import io.github.jan.supabase.auth.status.SessionStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,17 +34,54 @@ data class SocialUiState(
 )
 
 class SocialViewModel(application: Application) : AndroidViewModel(application) {
-    private val repository = SocialRepository()
+    private val authRepository = AuthRepository()
+    private val repository = SocialRepository() // This might need refactoring too if it uses Firebase, but let's stick to ViewModel first
     private val studyRepository = com.perseverance.pvc.data.StudyRepository(application)
     private val missionRepository = com.perseverance.pvc.data.MissionRepository(application, studyRepository)
-    private val authClient = GoogleAuthClient(application)
     
     private val _uiState = MutableStateFlow(SocialUiState())
     val uiState: StateFlow<SocialUiState> = _uiState.asStateFlow()
     
     init {
-        checkSignInStatus()
+        observeAuthStatus()
         loadMissions()
+    }
+    
+    private fun observeAuthStatus() {
+        viewModelScope.launch {
+            authRepository.sessionStatus.collectLatest { status ->
+                when (status) {
+                    is SessionStatus.Authenticated -> {
+                        val session = status.session
+                        val user = session.user
+                        // Extract user info from Supabase User
+                        // Note: user_metadata contains the google profile info
+                        val metadata = user?.userMetadata
+                        val displayName = metadata?.get("full_name")?.toString() ?: "User"
+                        val photoUrl = metadata?.get("avatar_url")?.toString() ?: ""
+                        
+                        _uiState.value = _uiState.value.copy(
+                            isSignedIn = true,
+                            currentUser = SocialUser(
+                                uid = user?.id ?: "",
+                                displayName = displayName.replace("\"", ""), // Remove quotes if JSON parsing leaves them
+                                email = user?.email ?: "",
+                                photoUrl = photoUrl.replace("\"", "")
+                            )
+                        )
+                        startFriendsListener()
+                    }
+                    is SessionStatus.NotAuthenticated -> {
+                        _uiState.value = _uiState.value.copy(
+                            isSignedIn = false,
+                            currentUser = null,
+                            friends = emptyList()
+                        )
+                    }
+                    else -> {} // Loading or other states
+                }
+            }
+        }
     }
     
     private fun loadMissions() {
@@ -71,57 +107,24 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
     
-    private fun checkSignInStatus() {
-        val user = authClient.getSignedInUser()
-        if (user != null) {
-            _uiState.value = _uiState.value.copy(
-                isSignedIn = true,
-                currentUser = SocialUser(
-                    uid = user.uid,
-                    displayName = user.displayName ?: "User",
-                    email = user.email ?: "",
-                    photoUrl = user.photoUrl?.toString() ?: ""
-                )
-            )
-            // Start listening to friends status
-            startFriendsListener()
-        }
-    }
-    
-    fun onSignInResult(result: SignInResult) {
-        if (result.data != null) {
-            _uiState.value = _uiState.value.copy(
-                isSignedIn = true,
-                currentUser = SocialUser(
-                    uid = result.data.userId,
-                    displayName = result.data.username ?: "User",
-                    email = result.data.email ?: "",
-                    photoUrl = result.data.profilePictureUrl ?: ""
-                ),
-                error = null
-            )
-            
-            viewModelScope.launch {
-                repository.updateCurrentUserProfile()
+    fun performGoogleLogin() {
+        viewModelScope.launch {
+            try {
+                // Supabase internal OAuth handle
+                // Since this opens a browser, we just call the repo function
+                // The deep link will bring us back, and sessionStatus will update automatically.
+                authRepository.signInWithGoogle() // Passing empty string as we rely on the provider flow, or we might need `signInWith(Google)` directly from Repo
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(error = e.message)
             }
-            startFriendsListener()
-            
-            AnalyticsHelper.logEvent("login", mapOf("method" to "google"))
-        } else {
-            _uiState.value = _uiState.value.copy(
-                error = result.errorMessage
-            )
         }
     }
     
-    fun getSignInIntent(): Intent {
-        return authClient.getSignInIntent()
-    }
-    
-    suspend fun signOut() {
-        authClient.signOut()
-        _uiState.value = SocialUiState(isSignedIn = false)
-        AnalyticsHelper.logEvent("logout")
+    fun signOut() {
+        viewModelScope.launch {
+            authRepository.signOut()
+            AnalyticsHelper.logEvent("logout")
+        }
     }
     
     private fun startFriendsListener() {
