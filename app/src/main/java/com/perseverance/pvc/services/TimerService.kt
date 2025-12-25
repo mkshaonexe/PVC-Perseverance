@@ -115,6 +115,7 @@ class TimerService : Service() {
         timerJob = serviceScope.launch {
             while (_remainingSeconds.value > 0 && _isTimerRunning.value) {
                 updateNotification()
+                updateWidgets()
                 delay(1000)
                 _remainingSeconds.value -= 1
             }
@@ -131,6 +132,7 @@ class TimerService : Service() {
         _isTimerRunning.value = false
         timerJob?.cancel()
         updateNotification()
+        updateWidgets()
         // We keep the notification (detached), but update text
         stopForeground(STOP_FOREGROUND_DETACH) 
     }
@@ -139,6 +141,7 @@ class TimerService : Service() {
         pauseTimer()
         _remainingSeconds.value = duration
         updateNotification()
+        updateWidgets()
         stopSelf() 
     }
 
@@ -146,6 +149,7 @@ class TimerService : Service() {
         _isTimerRunning.value = false
         timerJob?.cancel()
         updateNotification()
+        updateWidgets()
     }
 
     private fun startForegroundService() {
@@ -226,6 +230,42 @@ class TimerService : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    private fun updateWidgets() {
+        val minutes = _remainingSeconds.value / 60
+        val seconds = _remainingSeconds.value % 60
+        val timeString = String.format("%02d:%02d", minutes, seconds)
+        
+        // Calculate total study time
+        // Calculate session elapsed time
+        val sessionElapsed = if (sessionInitialDuration > 0) sessionInitialDuration - _remainingSeconds.value else 0
+        
+        // Add to daily total (only if it's a study session)
+        val currentTotal = if (isStudySession) {
+            dailyTotalSeconds + sessionElapsed.coerceAtLeast(0)
+        } else {
+            dailyTotalSeconds // Just show daily total if in break
+        }
+        
+        val totalHours = currentTotal / 3600
+        val totalMinutes = (currentTotal % 3600) / 60
+        val totalSeconds = currentTotal % 60
+        val totalString = String.format("%02d:%02d:%02d", totalHours, totalMinutes, totalSeconds)
+        
+        // Update Pomodoro Widget
+        com.perseverance.pvc.widgets.PomodoroTimerWidgetProvider.updateWidgetState(
+            this,
+            timeString,
+            totalString,
+            _isTimerRunning.value
+        )
+        
+        // Update Study Time Widget
+        com.perseverance.pvc.widgets.StudyTimeWidgetProvider.updateWidgetState(
+            this,
+            totalString
+        )
+    }
 
     override fun onDestroy() {
         super.onDestroy()

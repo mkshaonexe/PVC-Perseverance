@@ -83,5 +83,38 @@ class PomodoroTimerWidgetProvider : AppWidgetProvider() {
                 updateAppWidget(context, appWidgetManager, appWidgetId)
             }
         }
+
+        // New method for real-time updates from Service
+        fun updateWidgetState(
+            context: Context,
+            remainingTime: String,
+            totalStudyTime: String,
+            isPlaying: Boolean
+        ) {
+            val appWidgetManager = AppWidgetManager.getInstance(context)
+            val appWidgetIds = appWidgetManager.getAppWidgetIds(
+                ComponentName(context, PomodoroTimerWidgetProvider::class.java)
+            )
+            
+            for (appWidgetId in appWidgetIds) {
+                val views = RemoteViews(context.packageName, R.layout.widget_pomodoro_timer)
+                
+                // Set up click intent
+                val intent = Intent(context, MainActivity::class.java)
+                val pendingIntent = PendingIntent.getActivity(
+                    context, 0, intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                views.setOnClickPendingIntent(R.id.widget_container, pendingIntent)
+                
+                // Update texts directly
+                views.setTextViewText(R.id.widget_timer_display, remainingTime)
+                views.setTextViewText(R.id.widget_session_time, totalStudyTime)
+                
+                // We could also update play/pause icon here if the widget has one
+                
+                appWidgetManager.updateAppWidget(appWidgetId, views)
+            }
+        }
     }
 }

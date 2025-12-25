@@ -80,5 +80,33 @@ class StudyTimeWidgetProvider : AppWidgetProvider() {
                 updateAppWidget(context, appWidgetManager, appWidgetId)
             }
         }
+
+        // New method for real-time updates from Service
+        fun updateWidgetState(
+            context: Context,
+            totalStudyTime: String
+        ) {
+            val appWidgetManager = AppWidgetManager.getInstance(context)
+            val appWidgetIds = appWidgetManager.getAppWidgetIds(
+                ComponentName(context, StudyTimeWidgetProvider::class.java)
+            )
+            
+            for (appWidgetId in appWidgetIds) {
+                val views = RemoteViews(context.packageName, R.layout.widget_study_time)
+                
+                // Set up click intent
+                val intent = Intent(context, MainActivity::class.java)
+                val pendingIntent = PendingIntent.getActivity(
+                    context, 0, intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                views.setOnClickPendingIntent(R.id.widget_container, pendingIntent)
+                
+                // Update text directly
+                views.setTextViewText(R.id.widget_time_display, totalStudyTime)
+                
+                appWidgetManager.updateAppWidget(appWidgetId, views)
+            }
+        }
     }
 }
