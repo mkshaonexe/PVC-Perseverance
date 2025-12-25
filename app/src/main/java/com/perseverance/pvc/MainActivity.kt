@@ -183,6 +183,17 @@ class MainActivity : ComponentActivity() {
         // Request all background permissions for proper timer functionality
         PermissionManager.requestAllBackgroundPermissions(this)
     }
+    
+    fun setStatusBarVisibility(isVisible: Boolean) {
+        val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
+        if (isVisible) {
+            windowInsetsController.show(WindowInsetsCompat.Type.statusBars())
+        } else {
+            windowInsetsController.hide(WindowInsetsCompat.Type.statusBars())
+            windowInsetsController.systemBarsBehavior = 
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+    }
 }
 
 @Composable

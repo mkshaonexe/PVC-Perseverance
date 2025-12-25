@@ -71,6 +71,12 @@ fun PomodoroScreen(
         onTimerStateChanged(uiState.isPlaying)
     }
     
+    // Control status bar visibility based on timer state
+    androidx.compose.runtime.LaunchedEffect(uiState.isPlaying) {
+        val activity = context as? com.perseverance.pvc.MainActivity
+        activity?.setStatusBarVisibility(!uiState.isPlaying)
+    }
+    
     Box(
         modifier = Modifier
             .fillMaxSize()
