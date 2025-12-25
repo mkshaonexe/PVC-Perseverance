@@ -130,7 +130,7 @@ fun Page2Screen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = "Pomodoro",
+                                text = "Pomodoro Timer",
                                 fontSize = 14.sp,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                             )
