@@ -14,13 +14,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collect
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
 
 enum class PeriodType {
-    PERIOD, DAY, WEEK, MONTH, TREND
+    PERIOD, DAY, WEEK, MONTH, CHALLENGES
 }
 
 data class DayStudyData(
@@ -42,11 +43,18 @@ data class InsightsUiState(
     val weeklyChartData: WeeklyChartData? = null,
     val todayData: TodayStudyData? = null,
     val periodInsights: PeriodInsights? = null,
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    // Mission State for Challenges Tab
+    val globalMission: com.perseverance.pvc.data.Mission? = null,
+    val globalMissionProgress: Long = 0,
+    val customMissions: List<com.perseverance.pvc.data.Mission> = emptyList()
 )
 
 class InsightsViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = StudyRepository(application.applicationContext)
+    // Initialize MissionRepository
+    private val missionRepository = com.perseverance.pvc.data.MissionRepository(application, repository)
+    
     private val _uiState = MutableStateFlow(InsightsUiState())
     val uiState: StateFlow<InsightsUiState> = _uiState.asStateFlow()
     
@@ -64,6 +72,7 @@ class InsightsViewModel(application: Application) : AndroidViewModel(application
         when (period) {
             PeriodType.PERIOD -> loadPeriodData()
             PeriodType.WEEK -> loadWeeklyData()
+            PeriodType.CHALLENGES -> loadMissions()
             else -> {
                 // Clear period and weekly data when switching to other periods
                 _uiState.value = _uiState.value.copy(
@@ -266,6 +275,45 @@ class InsightsViewModel(application: Application) : AndroidViewModel(application
             repository.getPeriodInsights().collect { insights ->
                 _uiState.value = _uiState.value.copy(periodInsights = insights)
             }
+        }
+    }
+    private fun loadMissions() {
+        // Reuse logic roughly from SocialViewModel but adapted for Insights
+        // We trigger both global and custom mission loads
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            
+            // Load Global Mission
+             launch {
+                missionRepository.getGlobalMission().collect { mission ->
+                    _uiState.value = _uiState.value.copy(globalMission = mission)
+                    
+                    if (mission != null) {
+                        missionRepository.getMissionProgress(mission).collect { progress ->
+                             _uiState.value = _uiState.value.copy(globalMissionProgress = progress)
+                        }
+                    }
+                }
+            }
+            
+            // Load Custom Missions
+            launch {
+                missionRepository.getCustomMissions().collect { missions ->
+                    _uiState.value = _uiState.value.copy(
+                        customMissions = missions,
+                        isLoading = false // Assume done or at least one part done
+                    )
+                }
+            }
+        }
+    }
+    
+    // Function to join global mission from Insights if needed (optional)
+    fun joinGlobalMission() {
+        viewModelScope.launch {
+            missionRepository.joinGlobalMission()
+            // Reload to update UI
+            loadMissions()
         }
     }
 }

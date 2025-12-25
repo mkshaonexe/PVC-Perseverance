@@ -45,6 +45,8 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
+import com.perseverance.pvc.ui.components.GlobalMissionCard
+import com.perseverance.pvc.ui.components.CustomMissionItem
 
 @Composable
 fun Page1Screen(
@@ -181,6 +183,67 @@ fun Page1Screen(
                                         textAlign = TextAlign.Center
                                     )
                                 }
+                            }
+                        }
+                    }
+                }
+                PeriodType.CHALLENGES -> {
+                    // Challenges / Missions View
+                    if (uiState.isLoading) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = Color(0xFFFFD700))
+                        }
+                    } else {
+                        // Global Mission
+                        uiState.globalMission?.let { mission ->
+                             Text(
+                                text = "Global Event",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                            )
+                            
+                             GlobalMissionCard(
+                                mission = mission,
+                                progress = uiState.globalMissionProgress,
+                                onJoinClick = { viewModel.joinGlobalMission() }
+                             )
+                             
+                             Spacer(modifier = Modifier.height(24.dp))
+                        }
+                        
+                        // Custom Missions
+                        if (uiState.customMissions.isNotEmpty()) {
+                             Text(
+                                text = "Your Missions",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                            )
+                            
+                            uiState.customMissions.forEach { mission ->
+                                CustomMissionItem(mission)
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+                        } else if (uiState.globalMission == null) {
+                             // Empty state if neither exists
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 32.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    "No active challenges or missions.",
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                )
                             }
                         }
                     }
