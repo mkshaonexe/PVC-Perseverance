@@ -36,6 +36,9 @@ class TimerService : Service() {
         const val ACTION_PAUSE = "ACTION_PAUSE"
         const val ACTION_RESET = "ACTION_RESET"
         const val EXTRA_DURATION = "EXTRA_DURATION"
+        const val EXTRA_DAILY_TOTAL_SECONDS = "EXTRA_DAILY_TOTAL_SECONDS"
+        const val EXTRA_SESSION_INITIAL_SECONDS = "EXTRA_SESSION_INITIAL_SECONDS"
+        const val EXTRA_IS_STUDY_SESSION = "EXTRA_IS_STUDY_SESSION"
 
         // Singleton state for UI to observe
         private val _remainingSeconds = MutableStateFlow(50 * 60)

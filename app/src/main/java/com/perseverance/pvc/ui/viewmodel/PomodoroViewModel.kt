@@ -251,26 +251,29 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
             saveTimerState()
         }
         
-        // Get current total daily seconds to pass to service
-        val dailyTotal = repository.getTodayTotalSecondsOnce()
-
-        // Start Service
-        val context = getApplication<Application>().applicationContext
-        val intent = Intent(context, com.perseverance.pvc.services.TimerService::class.java).apply {
-            action = com.perseverance.pvc.services.TimerService.ACTION_START
-            putExtra(com.perseverance.pvc.services.TimerService.EXTRA_DURATION, remainingTimeInSeconds)
+        // Launch coroutine to get daily total and start service
+        viewModelScope.launch {
+            // Get current total daily seconds to pass to service
+            val dailyTotal = repository.getTodayTotalSecondsOnce()
+    
+            // Start Service
+            val context = getApplication<Application>().applicationContext
+            val intent = Intent(context, com.perseverance.pvc.services.TimerService::class.java).apply {
+                action = com.perseverance.pvc.services.TimerService.ACTION_START
+                putExtra(com.perseverance.pvc.services.TimerService.EXTRA_DURATION, remainingTimeInSeconds)
+                
+                // Pass study time calculation data
+                putExtra(com.perseverance.pvc.services.TimerService.EXTRA_DAILY_TOTAL_SECONDS, dailyTotal)
+                putExtra(com.perseverance.pvc.services.TimerService.EXTRA_SESSION_INITIAL_SECONDS, sessionInitialDuration)
+                putExtra(com.perseverance.pvc.services.TimerService.EXTRA_IS_STUDY_SESSION, 
+                    _uiState.value.currentSessionType == SessionType.WORK && !_uiState.value.selectedSubject.equals("Break", ignoreCase = true))
+            }
             
-            // Pass study time calculation data
-            putExtra(com.perseverance.pvc.services.TimerService.EXTRA_DAILY_TOTAL_SECONDS, dailyTotal)
-            putExtra(com.perseverance.pvc.services.TimerService.EXTRA_SESSION_INITIAL_SECONDS, sessionInitialDuration)
-            putExtra(com.perseverance.pvc.services.TimerService.EXTRA_IS_STUDY_SESSION, 
-                _uiState.value.currentSessionType == SessionType.WORK && !_uiState.value.selectedSubject.equals("Break", ignoreCase = true))
-        }
-        
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            context.startForegroundService(intent)
-        } else {
-            context.startService(intent)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
         }
 
         AnalyticsHelper.logEvent("timer_start", mapOf(
