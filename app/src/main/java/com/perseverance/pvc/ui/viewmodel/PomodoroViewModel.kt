@@ -757,8 +757,41 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             val timerState = repository.restoreTimerState()
             
+            // Check if Service is currently alive and running
+            // We use the StateFlow's current value from the Companion object
+            val isServiceRunning = com.perseverance.pvc.services.TimerService.isTimerRunning.value
+            
             if (timerState != null && timerState.sessionStartTime != null) {
                 hasRestoredState = true
+                
+                // If the service is ALREADY running, we trust its state for time and running status.
+                // We only need to restore the session metadata (Subject, Session Type).
+                // This prevents "resuming" a timer that is already running fine, which causes UI glitches.
+                if (isServiceRunning) {
+                     Log.d("PomodoroViewModel", "Timer Service is running. Restoring metadata only and syncing with live service.")
+                     
+                     sessionStartTime = timerState.sessionStartTime
+                     sessionInitialDuration = timerState.sessionInitialDuration
+                     
+                     _uiState.value = _uiState.value.copy(
+                        selectedSubject = timerState.selectedSubject,
+                        currentSessionType = SessionType.valueOf(timerState.sessionType),
+                        completedSessions = timerState.completedSessions,
+                        // We set isPlaying=true tentatively, but the collector will confirm it immediately.
+                        // Setting it here enables the UI to show the correct buttons (Pause/Done) instantly.
+                        isPlaying = true,
+                        isPaused = false,
+                        isTimerCompleted = false,
+                        isWaitingForAcknowledgment = false
+                     )
+                     
+                     // We DO NOT calculate elapsed time here because the service has the correct realtime remainingSeconds.
+                     // We DO NOT call startTimer() because the service is already running.
+                     return@launch
+                }
+
+                // --- Standard Restoration Logic (Service was DEAD) ---
+                
                 // Calculate elapsed time since last update using timestamp
                 val now = LocalDateTime.now()
                 val elapsedSeconds = if (timerState.isPlaying) {
