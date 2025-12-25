@@ -367,108 +367,102 @@ private fun StudyTimeBarChartOnly(
         Color(0xFFA29BFE)  // Lavender
     )
     
-    Box(modifier = modifier) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            // Give some padding for the text at the top
-            val topPadding = 30.dp.toPx()
-            val availableHeight = size.height - topPadding
-            
-            val barWidth = size.width / subjects.size * 0.65f // Slightly thinner bars for elegance
-            val spacing = size.width / subjects.size * 0.35f
-            
-            subjects.forEachIndexed { index, subject ->
-                val x = index * (barWidth + spacing) + spacing / 2
-                // Ensure at least a tiny sliver is shown if > 0
-                val ratio = if(subject.totalMinutes > 0) 
-                    subject.totalMinutes.toFloat() / maxTime 
-                else 0f
+    Column(modifier = modifier) {
+        // Chart Area (Bars + Time Labels)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f) // Take up remaining space leaving room for labels
+        ) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                // Give some padding for the text at the top
+                val topPadding = 24.dp.toPx()
+                val availableHeight = size.height - topPadding
                 
-                val barHeight = ratio * availableHeight
-                val y = size.height - barHeight
+                // Adjust bar width logic
+                val barWidth = size.width / subjects.size * 0.5f 
+                val spacing = size.width / subjects.size * 0.5f
                 
-                // Draw bar with rounded top corners
-                if (barHeight > 0) {
-                    drawRoundRect(
-                        color = colors[index % colors.size],
-                        topLeft = Offset(x, y),
-                        size = Size(barWidth, barHeight),
-                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(8.dp.toPx(), 8.dp.toPx())
-                    )
+                subjects.forEachIndexed { index, subject ->
+                    val x = index * (barWidth + spacing) + spacing / 2
+                    val ratio = if(subject.totalMinutes > 0) 
+                        subject.totalMinutes.toFloat() / maxTime 
+                    else 0f
+                    
+                    val barHeight = ratio * availableHeight
+                    
+                    // Draw bar with rounded top corners
+                    if (barHeight > 0) {
+                        drawRoundRect(
+                            color = colors[index % colors.size],
+                            topLeft = Offset(x, size.height - barHeight),
+                            size = Size(barWidth, barHeight),
+                            cornerRadius = androidx.compose.ui.geometry.CornerRadius(8.dp.toPx(), 8.dp.toPx())
+                        )
+                    }
                 }
+            }
+            
+            // Time Labels Overlay
+            Row(
+                 modifier = Modifier.fillMaxSize()
+            ) {
+                 subjects.forEachIndexed { index, subject ->
+                     val ratio = if(maxTime > 0) subject.totalMinutes.toFloat() / maxTime else 0f
+                     
+                     Box(
+                         modifier = Modifier
+                             .weight(1f)
+                             .fillMaxHeight(),
+                         contentAlignment = Alignment.BottomCenter
+                     ) {
+                         Column(
+                             modifier = Modifier.fillMaxSize(),
+                             verticalArrangement = Arrangement.Bottom,
+                             horizontalAlignment = Alignment.CenterHorizontally
+                         ) {
+                             // Push down to just above the bar
+                             Spacer(modifier = Modifier.weight(1f - ratio + 0.001f)) 
+                             
+                             Text(
+                                 text = "${subject.totalMinutes}m",
+                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                 fontSize = 11.sp,
+                                 fontWeight = FontWeight.Bold,
+                                 textAlign = TextAlign.Center,
+                                 modifier = Modifier.padding(bottom = 4.dp)
+                             )
+                             
+                             // Occupy the bar's height
+                             Spacer(modifier = Modifier.weight(ratio + 0.001f)) 
+                         }
+                     }
+                 }
             }
         }
         
-        // Labels
+        // Subject Names Row (X-Axis Labels)
+        Spacer(modifier = Modifier.height(8.dp))
         Row(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             subjects.forEachIndexed { index, subject ->
-                 Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight(),
-                    contentAlignment = Alignment.BottomCenter // Align text to bottom to position it relative to bar top
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.Center
                 ) {
-                    // We need to position the text exactly above the bar. 
-                    // Using a full height box with weight is tricky for exact pixel positioning relative to the bar height.
-                    // Instead, let's just lay them out evenly and use a spacer weight.
+                    Text(
+                        text = subject.subject,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
                 }
             }
-        }
-        
-        // Better Label Positioning Overlay
-        // We'll use a Layout or just absolute offset logic if we could, but here let's just use the same math
-        // logic for a Row of columns.
-        Row(
-             modifier = Modifier.fillMaxSize()
-        ) {
-             subjects.forEachIndexed { index, subject ->
-                 val ratio = if(maxTime > 0) subject.totalMinutes.toFloat() / maxTime else 0f
-                 
-                 Box(
-                     modifier = Modifier
-                         .weight(1f)
-                         .fillMaxHeight(),
-                     contentAlignment = Alignment.BottomCenter
-                 ) {
-                     Column(
-                         modifier = Modifier.fillMaxSize(),
-                         verticalArrangement = Arrangement.Bottom,
-                         horizontalAlignment = Alignment.CenterHorizontally
-                     ) {
-                         // Space for the text above the bar
-                         val topPadding = 30.dp // Matches canvas padding roughly
-                         
-                         // Spacer to push text up to the right height
-                         // 1.0 = full height. text is at top. 
-                         // We want text to be at (1 - ratio).
-                         
-                         // Simplified approach: just put the text at the top of the bar's column,
-                         // but standard Column spacing handles it better if we just build the bars in Compose instead of Canvas?
-                         // The user asked to keep the chart type similar but "make it good". 
-                         // Canvas is more performant for charts. Let's stick to Canvas for bars content.
-                         
-                         // Let's use the layout weight trick? No, let's just draw the text on Canvas too?
-                         // Drawing text on Canvas in Compose is verbose.
-                         
-                         // Let's go back to the existing implementation's overlay approach but improved.
-                         
-                         Spacer(modifier = Modifier.weight(1f - ratio + 0.001f)) // pushes down
-                         
-                         Text(
-                             text = "${subject.totalMinutes}m",
-                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                             fontSize = 12.sp,
-                             fontWeight = FontWeight.Bold,
-                             textAlign = TextAlign.Center,
-                             modifier = Modifier.padding(bottom = 4.dp)
-                         )
-                         
-                         Spacer(modifier = Modifier.weight(ratio + 0.001f)) // pushes up
-                     }
-                 }
-             }
         }
     }
 }
