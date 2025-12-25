@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import android.widget.Toast
+import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -228,11 +229,52 @@ fun SettingsScreen(
                             icon = Icons.Filled.SupportAgent,
                             title = "Contact Support",
                             action = {
+                                val packageManager = context.packageManager
+                                val packageName = context.packageName
+                                var versionName = "Unknown"
+                                var versionCode = "Unknown"
+                                
+                                try {
+                                    val packageInfo = packageManager.getPackageInfo(packageName, 0)
+                                    versionName = packageInfo.versionName ?: "Unknown"
+                                    versionCode = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                                        packageInfo.longVersionCode.toString()
+                                    } else {
+                                        @Suppress("DEPRECATION")
+                                        packageInfo.versionCode.toString()
+                                    }
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
+                                
+                                val deviceName = android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL
+                                val androidVersion = android.os.Build.VERSION.RELEASE
+                                val sdkVersion = android.os.Build.VERSION.SDK_INT
+                                
+                                val emailBody = """
+                                    
+                                    Describe your problem here:
+                                    
+                                    
+                                    
+                                    --------------------------------------
+                                    App Information:
+                                    App Version: $versionName
+                                    Version Code: $versionCode
+                                    
+                                    Device Information:
+                                    Device: $deviceName
+                                    Android Version: $androidVersion (SDK $sdkVersion)
+                                    --------------------------------------
+                                    
+                                    Thank you
+                                """.trimIndent()
+
                                 val intent = Intent(Intent.ACTION_SENDTO).apply {
                                     data = Uri.parse("mailto:")
                                     putExtra(Intent.EXTRA_EMAIL, arrayOf("mkshaonnew31@gmail.com"))
                                     putExtra(Intent.EXTRA_SUBJECT, "PVC-Perservance study app issu / report / support")
-                                    putExtra(Intent.EXTRA_TEXT, "Write here\n\nThank you")
+                                    putExtra(Intent.EXTRA_TEXT, emailBody)
                                 }
                                 try {
                                     context.startActivity(intent)
