@@ -67,6 +67,11 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
     // Track if we've already restored state to avoid multiple restores
     private var hasRestoredState = false
     
+    // Flag to track if we are processing a manual reset/completion
+    // This prevents the race condition where the service stops (isRunning=false) before resetting time,
+    // which otherwise triggers the "Paused" state logic in the collector.
+    private var isProcessingReset = false
+    
     // Sound service connection
     private var soundService: TimerSoundService? = null
     private var isSoundServiceBound = false
@@ -111,6 +116,14 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
             launch {
                 com.perseverance.pvc.services.TimerService.remainingSeconds.collect { seconds ->
                     remainingTimeInSeconds = seconds
+                    
+                    // If we were processing a reset and the time has now reset to full duration,
+                    // we can clear the flag.
+                    if (isProcessingReset && seconds == getDurationForSessionType(_uiState.value.currentSessionType)) {
+                        isProcessingReset = false
+                        Log.d("PomodoroViewModel", "Reset complete (time synced), clearing processing flag")
+                    }
+                    
                     updateTimeDisplay()
                     // Real-time update of total study time while running
                     if (_uiState.value.isPlaying) {
@@ -127,7 +140,16 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
                      // Check if state changed from running to not running with 0 seconds -> Completion
                     val wasRunning = _uiState.value.isPlaying
                     
-                    _uiState.value = _uiState.value.copy(isPlaying = isRunning, isPaused = !isRunning && remainingTimeInSeconds < getDurationForSessionType(_uiState.value.currentSessionType) && remainingTimeInSeconds > 0)
+                    // Calculate if we should be in PAUSED state
+                    // We only auto-detect PAUSE if we are NOT currently processing a manual reset.
+                    // If isProcessingReset is true, we force isPaused = false.
+                    val shouldBePaused = if (isProcessingReset) {
+                        false
+                    } else {
+                        !isRunning && remainingTimeInSeconds < getDurationForSessionType(_uiState.value.currentSessionType) && remainingTimeInSeconds > 0
+                    }
+                    
+                    _uiState.value = _uiState.value.copy(isPlaying = isRunning, isPaused = shouldBePaused)
 
                     if (wasRunning && !isRunning && remainingTimeInSeconds <= 0 && !_uiState.value.isTimerCompleted) {
                         onTimerComplete()
@@ -238,6 +260,8 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
     fun startTimer(activity: Activity? = null) {
         if (_uiState.value.isPlaying) return
         
+        isProcessingReset = false // Clear reset flag if user manually starts
+        
         // Request background permissions when timer starts
         activity?.let { 
             requestBackgroundPermissionsIfNeeded(it)
@@ -341,6 +365,8 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
     }
     
     fun pauseTimer() {
+        isProcessingReset = false // Clear reset flag if user manually pauses
+        
         // Send pause command to service
         val context = getApplication<Application>().applicationContext
         val intent = Intent(context, com.perseverance.pvc.services.TimerService::class.java).apply {
@@ -367,6 +393,8 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
     }
     
     fun completeSession() {
+        isProcessingReset = true // Set reset flag to prevent auto-pause logic
+        
         // Capture current remaining time before resetting for accurate saving
         val finalRemainingSeconds = remainingTimeInSeconds
 
@@ -424,6 +452,8 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
     }
     
     fun resetTimer() {
+        isProcessingReset = true // Set reset flag to prevent auto-pause logic
+        
         // Reset Service
         val context = getApplication<Application>().applicationContext
         val intent = Intent(context, com.perseverance.pvc.services.TimerService::class.java).apply {
