@@ -47,6 +47,7 @@ import java.time.format.TextStyle
 import java.util.Locale
 import com.perseverance.pvc.ui.components.GlobalMissionCard
 import com.perseverance.pvc.ui.components.CustomMissionItem
+import com.perseverance.pvc.utils.AnalyticsHelper
 
 @Composable
 fun Page1Screen(
@@ -121,7 +122,10 @@ fun Page1Screen(
             // Period selection buttons
             PeriodSelector(
                 selectedPeriod = uiState.selectedPeriod,
-                onPeriodSelected = { viewModel.selectPeriod(it) }
+                onPeriodSelected = { 
+                    viewModel.selectPeriod(it)
+                    AnalyticsHelper.logInsightView(it.name)
+                }
             )
             
             Spacer(modifier = Modifier.height(16.dp))
@@ -265,8 +269,14 @@ fun Page1Screen(
                         uiState.weeklyData?.let { weekData ->
                         WeeklySummaryCard(
                             weekData = weekData,
-                            onPreviousWeek = { viewModel.navigateToPreviousWeek() },
-                            onNextWeek = { viewModel.navigateToNextWeek() }
+                            onPreviousWeek = { 
+                                viewModel.navigateToPreviousWeek()
+                                AnalyticsHelper.logSectionClick("week_prev")
+                            },
+                            onNextWeek = { 
+                                viewModel.navigateToNextWeek()
+                                AnalyticsHelper.logSectionClick("week_next")
+                            }
                         )
                         
                         Spacer(modifier = Modifier.height(16.dp))
@@ -319,9 +329,18 @@ fun Page1Screen(
                         currentMonth = uiState.currentMonth,
                         selectedDate = uiState.selectedDate,
                         monthDays = uiState.monthDays,
-                        onDateSelected = { viewModel.selectDate(it) },
-                        onPreviousMonth = { viewModel.previousMonth() },
-                        onNextMonth = { viewModel.nextMonth() }
+                        onDateSelected = { 
+                            viewModel.selectDate(it)
+                            AnalyticsHelper.logSectionClick("calendar_day_select")
+                        },
+                        onPreviousMonth = { 
+                            viewModel.previousMonth() 
+                            AnalyticsHelper.logSectionClick("calendar_prev_month")
+                        },
+                        onNextMonth = { 
+                            viewModel.nextMonth()
+                            AnalyticsHelper.logSectionClick("calendar_next_month")
+                        }
                     )
                     
                     Spacer(modifier = Modifier.height(16.dp))

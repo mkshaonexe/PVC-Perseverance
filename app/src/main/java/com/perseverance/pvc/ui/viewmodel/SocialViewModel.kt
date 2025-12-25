@@ -113,7 +113,8 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
                 // Supabase internal OAuth handle
                 // Since this opens a browser, we just call the repo function
                 // The deep link will bring us back, and sessionStatus will update automatically.
-                authRepository.signInWithGoogle() // Passing empty string as we rely on the provider flow, or we might need `signInWith(Google)` directly from Repo
+                authRepository.signInWithGoogle() 
+                AnalyticsHelper.logLogin("google")
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(error = e.message)
             }
@@ -123,7 +124,7 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
     fun signOut() {
         viewModelScope.launch {
             authRepository.signOut()
-            AnalyticsHelper.logEvent("logout")
+            AnalyticsHelper.logLogout()
         }
     }
     
@@ -177,7 +178,7 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             missionRepository.joinGlobalMission()
             Toast.makeText(getApplication(), "Joined the 101 Hours Challenge!", Toast.LENGTH_SHORT).show()
-            AnalyticsHelper.logEvent("mission_join", mapOf("mission_title" to "101 Hours Challenge"))
+            AnalyticsHelper.logMissionJoin("global_101", "101 Hours Challenge")
         }
     }
 
@@ -218,10 +219,7 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
             hideAddMissionDialog()
             Toast.makeText(getApplication(), "Mission Created!", Toast.LENGTH_SHORT).show()
             
-            AnalyticsHelper.logEvent("mission_create", mapOf(
-                "title" to title, 
-                "target_hours" to hours.toString()
-            ))
+            AnalyticsHelper.logMissionCreate(title, hours)
         }
     }
 }

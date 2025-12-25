@@ -118,7 +118,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _darkMode.value = mode
             repository.setDarkMode(mode)
         }
-        AnalyticsHelper.logEvent("settings_change", mapOf("setting" to "dark_mode", "value" to mode))
+        AnalyticsHelper.logSettingsChange("dark_mode", mode)
     }
     
     fun updateUseTimerInBackground(enabled: Boolean) {
@@ -126,7 +126,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _useTimerInBackground.value = enabled
             repository.setUseTimerInBackground(enabled)
         }
-        AnalyticsHelper.logEvent("settings_change", mapOf("setting" to "bg_timer", "value" to enabled.toString()))
+        AnalyticsHelper.logSettingsChange("background_timer", enabled.toString())
     }
     
     fun updateResetSessionEveryDay(enabled: Boolean) {
@@ -134,7 +134,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _resetSessionEveryDay.value = enabled
             repository.setResetSessionEveryDay(enabled)
         }
-        AnalyticsHelper.logEvent("settings_change", mapOf("setting" to "reset_session", "value" to enabled.toString()))
+        AnalyticsHelper.logSettingsChange("reset_session_daily", enabled.toString())
     }
     
     fun updateHideNavigationBar(enabled: Boolean) {
@@ -142,7 +142,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _hideNavigationBar.value = enabled
             repository.setHideNavigationBar(enabled)
         }
-        AnalyticsHelper.logEvent("settings_change", mapOf("setting" to "hide_nav", "value" to enabled.toString()))
+        AnalyticsHelper.logSettingsChange("hide_navigation", enabled.toString())
     }
     
     fun updateHideStatusBarDuringFocus(enabled: Boolean) {
@@ -150,7 +150,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _hideStatusBarDuringFocus.value = enabled
             repository.setHideStatusBarDuringFocus(enabled)
         }
-        AnalyticsHelper.logEvent("settings_change", mapOf("setting" to "hide_status_bar", "value" to enabled.toString()))
+        AnalyticsHelper.logSettingsChange("hide_status_bar", enabled.toString())
     }
     
     fun updateFollowSystemFontSettings(enabled: Boolean) {
@@ -158,7 +158,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _followSystemFontSettings.value = enabled
             repository.setFollowSystemFontSettings(enabled)
         }
-        AnalyticsHelper.logEvent("settings_change", mapOf("setting" to "system_font", "value" to enabled.toString()))
+        AnalyticsHelper.logSettingsChange("follow_system_font", enabled.toString())
     }
     
     fun updateDayStartTime(time: String) {
@@ -166,7 +166,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _dayStartTime.value = time
             repository.setDayStartTime(time)
         }
-        AnalyticsHelper.logEvent("settings_change", mapOf("setting" to "day_start", "value" to time))
+        AnalyticsHelper.logSettingsChange("day_start_time", time)
     }
     
     fun updateLanguage(language: String) {
@@ -174,7 +174,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _language.value = language
             repository.setLanguage(language)
         }
-        AnalyticsHelper.logEvent("settings_change", mapOf("setting" to "language", "value" to language))
+        AnalyticsHelper.logSettingsChange("language", language)
     }
     
     fun updateUseDNDDuringFocus(enabled: Boolean) {
@@ -182,7 +182,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _useDNDDuringFocus.value = enabled
             repository.setUseDNDDuringFocus(enabled)
         }
-        AnalyticsHelper.logEvent("settings_change", mapOf("setting" to "dnd", "value" to enabled.toString()))
+        AnalyticsHelper.logSettingsChange("dnd_mode", enabled.toString())
     }
     
     fun updateTimerDuration(duration: String) {
@@ -190,7 +190,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _timerDuration.value = duration
             repository.setTimerDuration(duration)
         }
-        AnalyticsHelper.logEvent("settings_change", mapOf("setting" to "timer_duration", "value" to duration))
+        AnalyticsHelper.logSettingsChange("timer_duration", duration)
     }
     
     fun updateBreakDuration(duration: String) {
@@ -198,7 +198,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _breakDuration.value = duration
             repository.setBreakDuration(duration)
         }
-        AnalyticsHelper.logEvent("settings_change", mapOf("setting" to "break_duration", "value" to duration))
+        AnalyticsHelper.logSettingsChange("break_duration", duration)
     }
     
     fun updateEnableTimerNotifications(enabled: Boolean) {
@@ -206,7 +206,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _enableTimerNotifications.value = enabled
             repository.setEnableTimerNotifications(enabled)
         }
-        AnalyticsHelper.logEvent("settings_change", mapOf("setting" to "notifications", "value" to enabled.toString()))
+        AnalyticsHelper.logSettingsChange("timer_notifications", enabled.toString())
     }
     
     fun completeOnboarding() {

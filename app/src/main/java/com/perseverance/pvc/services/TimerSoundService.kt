@@ -364,4 +364,26 @@ class TimerSoundService : Service() {
         stopInfiniteSound()
         Log.d("TimerSoundService", "Service destroyed")
     }
+    fun playStreakSuccessSound() {
+        Log.d("TimerSoundService", "Playing streak success sound")
+        try {
+            // Using a brighter, more positive tone sequence
+            val toneGen = ToneGenerator(AudioManager.STREAM_NOTIFICATION, 100)
+            CoroutineScope(Dispatchers.IO).launch {
+                // Ascending major triad effect (approximate with DTMF tones which are distinct)
+                // C (Low)
+                toneGen.startTone(ToneGenerator.TONE_DTMF_1, 150)
+                delay(150)
+                // E (Mid)
+                toneGen.startTone(ToneGenerator.TONE_DTMF_5, 150)
+                delay(150)
+                // G (High) - finish with a longer tone
+                toneGen.startTone(ToneGenerator.TONE_DTMF_9, 300)
+                delay(300)
+                toneGen.release()
+            }
+        } catch (e: Exception) {
+            Log.e("TimerSoundService", "Error playing streak sound", e)
+        }
+    }
 }

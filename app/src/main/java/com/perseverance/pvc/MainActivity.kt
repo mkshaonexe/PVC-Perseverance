@@ -125,6 +125,18 @@ class MainActivity : ComponentActivity() {
                 else -> true // Default to dark theme for new users
             }
 
+            // Update status bar icons based on theme
+            val view = androidx.compose.ui.platform.LocalView.current
+            if (!view.isInEditMode) {
+                SideEffect {
+                    val window = (context as android.app.Activity).window
+                    val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+                    // isAppearanceLightStatusBars = true -> Dark Icons (for Light Theme)
+                    // isAppearanceLightStatusBars = false -> Light Icons (for Dark Theme)
+                    insetsController.isAppearanceLightStatusBars = !useDarkTheme
+                }
+            }
+
             PerseverancePVCTheme(darkTheme = useDarkTheme) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),

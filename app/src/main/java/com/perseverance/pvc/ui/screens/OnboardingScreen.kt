@@ -28,6 +28,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
+import com.perseverance.pvc.utils.AnalyticsHelper
 
 data class OnboardingPage(
     val title: String,
@@ -78,6 +79,14 @@ fun OnboardingScreen(
     val pagerState = rememberPagerState(pageCount = { pages.size })
     val coroutineScope = rememberCoroutineScope()
 
+    LaunchedEffect(Unit) {
+        AnalyticsHelper.logTutorialBegin()
+    }
+
+    LaunchedEffect(pagerState.currentPage) {
+        AnalyticsHelper.logTutorialStep(pagerState.currentPage, pages[pagerState.currentPage].title)
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -102,7 +111,10 @@ fun OnboardingScreen(
                 horizontalArrangement = Arrangement.End
             ) {
                 TextButton(
-                    onClick = onComplete,
+                    onClick = {
+                        AnalyticsHelper.logTutorialComplete()
+                        onComplete()
+                    },
                     colors = ButtonDefaults.textButtonColors(
                         contentColor = Color.White.copy(alpha = 0.7f)
                     )
@@ -193,6 +205,7 @@ fun OnboardingScreen(
                                 pagerState.animateScrollToPage(pagerState.currentPage + 1)
                             }
                         } else {
+                            AnalyticsHelper.logTutorialComplete()
                             onComplete()
                         }
                     },

@@ -29,6 +29,9 @@ class SettingsRepository(private val context: Context) {
         private val BREAK_DURATION_KEY = stringPreferencesKey("break_duration")
         private val ENABLE_TIMER_NOTIFICATIONS_KEY = booleanPreferencesKey("enable_timer_notifications")
         private val ONBOARDING_COMPLETED_KEY = booleanPreferencesKey("onboarding_completed")
+        // Streak Tracking
+        private val LAST_STUDY_DATE_KEY = stringPreferencesKey("last_study_date")
+        private val CURRENT_STREAK_KEY = androidx.datastore.preferences.core.intPreferencesKey("current_streak")
     }
     
     // Dark Mode
@@ -197,6 +200,32 @@ class SettingsRepository(private val context: Context) {
     fun getOnboardingCompleted(): Flow<Boolean> {
         return context.settingsDataStore.data.map { preferences ->
             preferences[ONBOARDING_COMPLETED_KEY] ?: false
+        }
+    }
+
+    // Last Study Date
+    suspend fun setLastStudyDate(date: String) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[LAST_STUDY_DATE_KEY] = date
+        }
+    }
+    
+    fun getLastStudyDate(): Flow<String?> {
+        return context.settingsDataStore.data.map { preferences ->
+            preferences[LAST_STUDY_DATE_KEY]
+        }
+    }
+
+    // Current Streak
+    suspend fun setCurrentStreak(streak: Int) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[CURRENT_STREAK_KEY] = streak
+        }
+    }
+    
+    fun getCurrentStreak(): Flow<Int> {
+        return context.settingsDataStore.data.map { preferences ->
+            preferences[CURRENT_STREAK_KEY] ?: 0
         }
     }
 }

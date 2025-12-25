@@ -24,12 +24,15 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import android.app.AlarmManager
 import android.app.PendingIntent
 import com.perseverance.pvc.receivers.TimerExpiredReceiver
 import android.os.SystemClock
 import java.time.LocalDateTime
+import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 import com.perseverance.pvc.utils.AnalyticsHelper
 
 data class PomodoroUiState(
@@ -47,7 +50,8 @@ data class PomodoroUiState(
     val showSubjectDialog: Boolean = false,
     val totalStudyTimeDisplay: String = "00:00:00",  // HH:MM:SS format
     val isTimerCompleted: Boolean = false,  // New state for timer completion
-    val isWaitingForAcknowledgment: Boolean = false  // New state to track if waiting for user acknowledgment
+    val isWaitingForAcknowledgment: Boolean = false,  // New state to track if waiting for user acknowledgment
+    val currentStreak: Int = 0 // Daily study streak
 )
 
 enum class SessionType {
@@ -108,6 +112,7 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         updateTimeDisplay()
         loadSavedSubjects()
         loadTodayTotalStudyTime()
+        loadCurrentStreak()
         restoreTimerState()
         bindSoundService()
         
@@ -229,6 +234,56 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         }
     }
     
+    private fun loadCurrentStreak() {
+        viewModelScope.launch {
+            settingsRepository.getCurrentStreak().collect { streak ->
+                _uiState.value = _uiState.value.copy(currentStreak = streak)
+            }
+        }
+    }
+
+    private fun checkAndUpdateStreak() {
+        // Revised Approach using separate launch for clarity and avoiding flow blocking issues
+        viewModelScope.launch {
+            try {
+                // Get values using first() extension
+                val lastDate = settingsRepository.getLastStudyDate().first()
+                val currentStreakVal = settingsRepository.getCurrentStreak().first()
+                
+                val today = LocalDate.now()
+                
+                    if (lastDate == null) {
+                        // First time studying
+                        settingsRepository.setLastStudyDate(today.toString())
+                        settingsRepository.setCurrentStreak(1)
+                        // Celebration time!
+                        soundService?.playStreakSuccessSound()
+                        AnalyticsHelper.logStreakUpdate(1)
+                    } else {
+                        val lastDateParsed = LocalDate.parse(lastDate)
+                        
+                        if (lastDateParsed.isEqual(today)) {
+                            // Already studied today, streak stays same
+                        } else if (lastDateParsed.plusDays(1).isEqual(today)) {
+                            // Studied yesterday, increment streak
+                            settingsRepository.setLastStudyDate(today.toString())
+                            settingsRepository.setCurrentStreak(currentStreakVal + 1)
+                            // Celebration time!
+                            soundService?.playStreakSuccessSound()
+                            AnalyticsHelper.logStreakUpdate(currentStreakVal + 1)
+                        } else {
+                            // Missed a day or more, reset to 1
+                             settingsRepository.setLastStudyDate(today.toString())
+                            settingsRepository.setCurrentStreak(1)
+                            AnalyticsHelper.logStreakUpdate(1)
+                        }
+                    }
+            } catch (e: Exception) {
+                Log.e("PomodoroViewModel", "Error updating streak", e)
+            }
+        }
+    }
+    
     private fun loadTodayTotalStudyTime() {
         viewModelScope.launch {
             repository.getTodayTotalSeconds().collect { totalSeconds ->
@@ -300,10 +355,10 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
             }
         }
 
-        AnalyticsHelper.logEvent("timer_start", mapOf(
-            "subject" to _uiState.value.selectedSubject,
-            "session_type" to _uiState.value.currentSessionType.name
-        ))
+        AnalyticsHelper.logTimerStart(
+            _uiState.value.currentSessionType.name,
+            _uiState.value.selectedSubject
+        )
 
         // UI update happens via observing TimerService flows
     }
@@ -445,10 +500,11 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
             }
         }
         
-        AnalyticsHelper.logEvent("timer_manual_complete", mapOf(
-            "subject" to _uiState.value.selectedSubject,
-            "session_type" to _uiState.value.currentSessionType.name
-        ))
+        val durationPlayed = (sessionInitialDuration - finalRemainingSeconds).coerceAtLeast(0)
+        AnalyticsHelper.logTimerAbandon(
+            _uiState.value.currentSessionType.name,
+            durationPlayed
+        )
     }
     
     fun resetTimer() {
@@ -516,10 +572,15 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
             isWaitingForAcknowledgment = true
         )
 
-        AnalyticsHelper.logEvent("timer_finished", mapOf(
-            "session_type" to _uiState.value.currentSessionType.name,
-            "subject" to _uiState.value.selectedSubject
-        ))
+        val durationMinutes = when (_uiState.value.currentSessionType) {
+            SessionType.WORK -> workDuration / 60
+            SessionType.SHORT_BREAK, SessionType.LONG_BREAK -> breakDuration / 60
+        }
+        AnalyticsHelper.logTimerComplete(
+            _uiState.value.currentSessionType.name,
+            durationMinutes,
+            _uiState.value.selectedSubject
+        )
         
         // Start infinite sound
         Log.d("PomodoroViewModel", "Timer completed, starting sound. Service bound: $isSoundServiceBound, Service: $soundService")
@@ -697,6 +758,8 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         
         viewModelScope.launch {
             repository.saveStudySession(session)
+            // Check and update streak
+            checkAndUpdateStreak()
             // Update widgets after saving session
             updateWidgets()
         }

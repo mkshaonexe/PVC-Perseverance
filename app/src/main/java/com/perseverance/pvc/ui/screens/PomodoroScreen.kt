@@ -114,7 +114,8 @@ fun PomodoroScreen(
                     TopHeader(
                         onNavigateToSettings = onNavigateToSettings,
                         onNavigateToInsights = onNavigateToInsights,
-                        onHamburgerClick = onNavigateToMenu
+                        onHamburgerClick = onNavigateToMenu,
+                        streak = uiState.currentStreak
                     )
                 }
             }

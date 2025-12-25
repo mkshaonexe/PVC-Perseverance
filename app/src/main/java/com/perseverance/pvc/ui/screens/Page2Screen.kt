@@ -237,7 +237,7 @@ fun StudyTimeChartWithScrollableLegend(
         ),
         shape = RoundedCornerShape(24.dp), // More rounded corners
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = if (isLightTheme) null else null // Removed border for cleaner look
+        border = glassBorder(isLightTheme) // Restore border for visibility
     ) {
         Column(
             modifier = Modifier.fillMaxSize()
@@ -258,7 +258,7 @@ fun StudyTimeChartWithScrollableLegend(
                 
                 Spacer(modifier = Modifier.height(24.dp))
                 
-                if (chartData.dailyData.isNotEmpty()) {
+                if (chartData.dailyData.isNotEmpty() && chartData.dailyData.last().subjects.isNotEmpty()) {
                     val latestDay = chartData.dailyData.last()
                     
                     // Bar chart
@@ -285,7 +285,7 @@ fun StudyTimeChartWithScrollableLegend(
             }
             
             // Scrollable legend
-            if (chartData.dailyData.isNotEmpty()) {
+            if (chartData.dailyData.isNotEmpty() && chartData.dailyData.last().subjects.isNotEmpty()) {
                 Divider(
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
                     modifier = Modifier.padding(horizontal = 24.dp)

@@ -87,21 +87,22 @@ fun GroupScreen(
                     Text(
                         text = "Join the Club",
                         style = MaterialTheme.typography.headlineMedium,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "Sign in to join missions and study with friends.",
                         textAlign = TextAlign.Center,
-                        color = Color.White.copy(alpha = 0.7f)
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                     )
                     Spacer(modifier = Modifier.height(32.dp))
                     Button(
                         onClick = { socialViewModel.performGoogleLogin() },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.White,
-                            contentColor = Color.Black
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            contentColor = MaterialTheme.colorScheme.onSurface
                         ),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                         modifier = Modifier.fillMaxWidth().height(50.dp)
                     ) {
                         Text("Continue with Google", fontSize = 16.sp, fontWeight = FontWeight.Bold)
