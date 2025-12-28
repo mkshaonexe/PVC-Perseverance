@@ -43,7 +43,7 @@ class SettingsRepository(private val context: Context) {
     
     fun getDarkMode(): Flow<String> {
         return context.settingsDataStore.data.map { preferences ->
-            preferences[DARK_MODE_KEY] ?: "Dark"
+            preferences[DARK_MODE_KEY] ?: "Midnight"
         }
     }
     
