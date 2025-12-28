@@ -1,6 +1,7 @@
 package com.perseverance.pvc.ui.screens
 
 import android.text.format.DateUtils
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -8,6 +9,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import android.net.Uri
+import androidx.compose.material.icons.filled.Edit
+import kotlinx.coroutines.delay
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Leaderboard
 import androidx.compose.material.icons.filled.Star
@@ -23,26 +30,55 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.perseverance.pvc.data.StudyRepository
 import com.perseverance.pvc.ui.components.TopHeader
 import kotlinx.coroutines.flow.first
 import java.time.LocalDate
+import com.perseverance.pvc.ui.viewmodel.SocialViewModel
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.window.Dialog
 
 @Composable
 fun ProfileScreen(
+    socialViewModel: SocialViewModel = viewModel(),
     onNavigateToSettings: () -> Unit,
     onNavigateToInsights: () -> Unit,
     onNavigateToMenu: () -> Unit
 ) {
     val context = LocalContext.current
     val repository = remember { StudyRepository(context) }
+    val uiState by socialViewModel.uiState.collectAsState()
+    
     var todayStudySeconds by remember { mutableStateOf(0) }
     var weeklyStudyHours by remember { mutableStateOf(0.0) }
     var userRank by remember { mutableStateOf<String?>("4TH") } 
     var monthlyStudyHours by remember { mutableStateOf("04:10") }
     var allTimeStudyHours by remember { mutableStateOf("04:10") }
+
+    // Edit Profile State
+    var showEditDialog by remember { mutableStateOf(false) }
+    var isEditIconVisible by remember { mutableStateOf(false) }
+    var editName by remember { mutableStateOf("") }
+    var editPhotoUri by remember { mutableStateOf<Uri?>(null) }
+    
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            editPhotoUri = uri
+        }
+    }
+
+    // Auto-hide Edit Icon
+    LaunchedEffect(isEditIconVisible) {
+        if (isEditIconVisible) {
+            delay(5000)
+            isEditIconVisible = false
+        }
+    }
 
     // Fetch study data
     LaunchedEffect(Unit) {
@@ -94,71 +130,92 @@ fun ProfileScreen(
                     modifier = Modifier.padding(20.dp)
                 ) {
                     // Header: Avatar, Name, Achievements
-                    Row(
-                        verticalAlignment = Alignment.Top
-                    ) {
-                        // Avatar
-                        Box(
-                            modifier = Modifier
-                                .size(80.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(Color.Gray) // Placeholder
+                    Box(modifier = Modifier.clickable { isEditIconVisible = true }) {
+                        Row(
+                            verticalAlignment = Alignment.Top
                         ) {
-                            // In a real app, use coil to load image. 
-                            // Using a placeholder icon or random image if URL unavailable
-                             AsyncImage(
-                                model = "https://i.pravatar.cc/300", // Placeholder internet image
-                                contentDescription = "Profile Picture",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(16.dp))
-
-                        Column(
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(
-                                text = "Bongo Boltu", // Mock Name
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = goldColor
-                            )
-                            Text(
-                                text = "PROFILE",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = goldColor,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
-                            
-                            Spacer(modifier = Modifier.height(8.dp))
-                            
-                            // Achievements Row (Mock)
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            // Avatar
+                            Box(
+                                modifier = Modifier
+                                    .size(80.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color.Gray)
                             ) {
-                                Icon(Icons.Default.EmojiEvents, contentDescription = null, tint = Color.LightGray, modifier = Modifier.size(24.dp))
-                                Icon(Icons.Default.Star, contentDescription = null, tint = Color.LightGray, modifier = Modifier.size(24.dp))
-                                Icon(Icons.Default.Leaderboard, contentDescription = null, tint = Color.LightGray, modifier = Modifier.size(24.dp))
+                                AsyncImage(
+                                    model = uiState.currentUser?.photoUrl.takeIf { !it.isNullOrBlank() } ?: "https://i.pravatar.cc/300", 
+                                    contentDescription = "Profile Picture",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
                             }
-                        }
-                        
-                         Column(
-                            horizontalAlignment = Alignment.End
-                        ) {
-                             Text(
-                                text = "ACHIEVEMENTS",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = goldColor,
-                                fontWeight = FontWeight.Bold
-                            )
-                             // More achievement icons grid
-                              Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(top=8.dp)) {
-                                 Icon(Icons.Default.EmojiEvents, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(20.dp))
-                                 Icon(Icons.Default.Star, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(20.dp))
-                             }
+
+                            Spacer(modifier = Modifier.width(16.dp))
+
+                            Column(
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = uiState.currentUser?.displayName?.takeIf { it.isNotBlank() } ?: "User", 
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = goldColor
+                                    )
+                                    
+                                    if (isEditIconVisible) {
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        IconButton(
+                                            onClick = { 
+                                                editName = uiState.currentUser?.displayName ?: ""
+                                                editPhotoUri = null
+                                                showEditDialog = true 
+                                            },
+                                            modifier = Modifier.size(24.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Edit,
+                                                contentDescription = "Edit Profile",
+                                                tint = goldColor
+                                            )
+                                        }
+                                    }
+                                }
+                                
+                                Text(
+                                    text = "PROFILE",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = goldColor,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                                
+                                Spacer(modifier = Modifier.height(8.dp))
+                                
+                                // Achievements Row (Mock)
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(Icons.Default.EmojiEvents, contentDescription = null, tint = Color.LightGray, modifier = Modifier.size(24.dp))
+                                    Icon(Icons.Default.Star, contentDescription = null, tint = Color.LightGray, modifier = Modifier.size(24.dp))
+                                    Icon(Icons.Default.Leaderboard, contentDescription = null, tint = Color.LightGray, modifier = Modifier.size(24.dp))
+                                }
+                            }
+                            
+                            Column(
+                                horizontalAlignment = Alignment.End
+                            ) {
+                                    Text(
+                                    text = "ACHIEVEMENTS",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = goldColor,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                    // More achievement icons grid
+                                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(top=8.dp)) {
+                                        Icon(Icons.Default.EmojiEvents, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(20.dp))
+                                        Icon(Icons.Default.Star, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(20.dp))
+                                    }
+                            }
                         }
                     }
 
@@ -321,5 +378,63 @@ fun ProfileScreen(
                 }
             }
         }
+    }
+    
+    if (showEditDialog) {
+        AlertDialog(
+            onDismissRequest = { showEditDialog = false },
+            title = { Text("Edit Profile", color = MaterialTheme.colorScheme.onSurface) },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(modifier = Modifier.clickable { 
+                        photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                    }) {
+                        Box(
+                            modifier = Modifier
+                                .size(100.dp)
+                                .clip(CircleShape)
+                                .background(Color.Gray)
+                        ) {
+                             AsyncImage(
+                                model = editPhotoUri ?: uiState.currentUser?.photoUrl?.takeIf { !it.isNullOrBlank() } ?: "https://i.pravatar.cc/300", 
+                                contentDescription = "Profile Picture",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                        // Overlay camera icon
+                        Box(
+                           modifier = Modifier.align(Alignment.BottomEnd).background(MaterialTheme.colorScheme.primary, CircleShape).padding(8.dp)
+                        ) {
+                             Icon(Icons.Default.Edit, contentDescription = "Change Photo", tint = Color.White, modifier = Modifier.size(16.dp))
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    OutlinedTextField(
+                        value = editName,
+                        onValueChange = { editName = it },
+                        label = { Text("Display Name") },
+                        singleLine = true
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        socialViewModel.updateProfile(editName, editPhotoUri)
+                        showEditDialog = false
+                    }
+                ) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
