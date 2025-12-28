@@ -175,9 +175,9 @@ fun Page2Screen(
                             )
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                            text = uiState.totalStudyTimeDisplay,
+							text = uiState.totalStudyTimeDisplay,
                                 fontSize = 16.sp,
-                                color = MaterialTheme.colorScheme.primary
+                                color = Color(0xFFFF8C42)
                             )
                         }
                     }
@@ -474,7 +474,7 @@ fun TodayTotalStudyTimeBox(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) // Theme primary with transparency
+        color = Color(0xFF4CAF50).copy(alpha = 0.2f) // Green background with transparency
     ) {
         Row(
             modifier = Modifier
@@ -487,7 +487,7 @@ fun TodayTotalStudyTimeBox(
             Box(
                 modifier = Modifier
                     .size(48.dp)
-                    .background(MaterialTheme.colorScheme.primary, CircleShape),
+                    .background(Color(0xFF4CAF50), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -510,23 +510,23 @@ fun TodayTotalStudyTimeBox(
                 Text(
                     text = totalStudyTime,
                     fontSize = 24.sp,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = Color(0xFF4CAF50),
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp
                 )
             }
             
-            // Arrow pointing to the time
+            // Green arrow pointing to the time
             Box(
                 modifier = Modifier
                     .size(32.dp)
-                    .background(MaterialTheme.colorScheme.primary, CircleShape),
+                    .background(Color(0xFF4CAF50), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "→",
                     fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.onPrimary // Text color on primary background
+                    color = Color.White
                 )
             }
         }
