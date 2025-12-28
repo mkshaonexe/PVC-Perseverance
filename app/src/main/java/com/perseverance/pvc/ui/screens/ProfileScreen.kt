@@ -35,12 +35,50 @@ fun ProfileScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToInsights: () -> Unit,
     onNavigateToMenu: () -> Unit,
+    onNavigateToEditProfile: () -> Unit = {},
     socialViewModel: com.perseverance.pvc.ui.viewmodel.SocialViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val repository = remember { StudyRepository(context) }
     val socialUiState by socialViewModel.uiState.collectAsState()
     val currentUser = socialUiState.currentUser
+    
+    // Check authentication and profile completion
+    val isSignedIn = socialUiState.isSignedIn
+    val isProfileComplete = currentUser?.displayName?.isNotEmpty() == true && 
+                           currentUser?.photoUrl?.isNotEmpty() == true
+    
+    // If not signed in, show skeleton with login prompt
+    if (!isSignedIn) {
+        Scaffold(
+            topBar = {
+                TopHeader(
+                    onNavigateToSettings = onNavigateToSettings,
+                    onNavigateToInsights = onNavigateToInsights,
+                    onHamburgerClick = onNavigateToMenu,
+                    showBackButton = false,
+                    title = "Profile"
+                )
+            },
+            containerColor = MaterialTheme.colorScheme.background
+        ) { paddingValues ->
+            Box(modifier = Modifier.padding(paddingValues)) {
+                com.perseverance.pvc.ui.components.ProfileSkeletonView(
+                    onLoginClick = {
+                        socialViewModel.performGoogleLogin()
+                    }
+                )
+            }
+        }
+        return
+    }
+    
+    // If signed in but profile incomplete, navigate to edit profile
+    LaunchedEffect(isSignedIn, isProfileComplete) {
+        if (isSignedIn && !isProfileComplete) {
+            onNavigateToEditProfile()
+        }
+    }
     
     var todayStudySeconds by remember { mutableStateOf(0) }
     var weeklyStudyHours by remember { mutableStateOf("0:0") }
