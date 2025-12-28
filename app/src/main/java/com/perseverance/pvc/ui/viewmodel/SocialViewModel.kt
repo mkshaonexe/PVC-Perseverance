@@ -42,6 +42,7 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
     private val authRepository = AuthRepository()
     private val repository = SocialRepository() // This might need refactoring too if it uses Firebase, but let's stick to ViewModel first
     private val studyRepository = com.perseverance.pvc.data.StudyRepository(application)
+    private val profileRepository = com.perseverance.pvc.data.ProfileRepository(application)
     private val missionRepository = com.perseverance.pvc.data.MissionRepository(application, studyRepository)
     
     private val _uiState = MutableStateFlow(SocialUiState())
@@ -49,8 +50,19 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
     
     init {
         observeAuthStatus()
+        observeProfile()
         loadMissions()
         loadGroups()
+    }
+
+    private fun observeProfile() {
+        viewModelScope.launch {
+            profileRepository.getProfile().collectLatest { profile ->
+                if (profile.displayName.isNotEmpty()) {
+                    _uiState.value = _uiState.value.copy(currentUser = profile)
+                }
+            }
+        }
     }
     
     private fun observeAuthStatus() {
@@ -79,14 +91,9 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
                             currentUser = socialUser
                         )
 
-                        // Fetch full profile from DB
-                        viewModelScope.launch {
-                            val fullProfile = repository.getCurrentUserProfile()
-                            if (fullProfile != null) {
-                                _uiState.value = _uiState.value.copy(currentUser = fullProfile)
-                            }
-                        }
-
+                        // In local mode, we don't fetch from DB. 
+                        // The observeProfile() already handles loading from DataStore.
+                        
                         startFriendsListener()
                     }
                     is SessionStatus.NotAuthenticated -> {
@@ -274,17 +281,13 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
             
-            val photoBytes = imageUri?.let { uri ->
-                try {
-                    getApplication<Application>().contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                } catch (e: Exception) {
-                    null
-                }
-            }
+            // For local storage, we can save the URI string or copy the image to local storage.
+            // For now, let's just use the URI string if it's available.
+            val photoUrl = imageUri?.toString() ?: _uiState.value.currentUser?.photoUrl ?: ""
 
-            val result = repository.updateFullUserProfile(
+            profileRepository.saveProfile(
                 displayName = displayName,
-                photoData = photoBytes,
+                photoUrl = photoUrl,
                 bio = bio,
                 gender = gender,
                 dateOfBirth = dateOfBirth,
@@ -295,19 +298,8 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
             )
             
             _uiState.value = _uiState.value.copy(isLoading = false)
-
-            if (result.isSuccess) {
-                // Refresh full profile
-                 val fullProfile = repository.getCurrentUserProfile()
-                if (fullProfile != null) {
-                     _uiState.value = _uiState.value.copy(currentUser = fullProfile)
-                }
-                
-                Toast.makeText(getApplication(), "Profile updated!", Toast.LENGTH_SHORT).show()
-                AnalyticsHelper.logEvent("profile_update_full")
-            } else {
-                Toast.makeText(getApplication(), "Error updating profile: ${result.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
-            }
+            Toast.makeText(getApplication(), "Profile updated locally!", Toast.LENGTH_SHORT).show()
+            AnalyticsHelper.logEvent("profile_update_local")
         }
     }
 }
