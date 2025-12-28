@@ -215,8 +215,7 @@ fun GroupDetailsScreen(
                                 Box(
                                     modifier = Modifier
                                         .size(60.dp)
-                                        .clip(CircleShape)
-                                        .background(midNightGray) // Dark Gray Background
+                                        // Removed background(midNightGray) and clip as requested
                                 ) {
                                     Image(
                                         painter = painterResource(id = com.perseverance.pvc.R.drawable.study), // Always study icon for this section
@@ -263,9 +262,8 @@ fun GroupDetailsScreen(
                                  ) {
                                      Box(
                                          modifier = Modifier
-                                             .size(60.dp) // Larger circle
-                                             .clip(CircleShape)
-                                             .background(midNightGray)
+                                             .size(60.dp)
+                                             // Removed background(midNightGray) and clip as requested
                                      ) {
                                           Image(
                                              painter = painterResource(
@@ -288,7 +286,7 @@ fun GroupDetailsScreen(
                                      )
                                      Text(
                                          text = member.time,
-                                         color = orangeAccent,
+                                         color = if (member.isStudying) orangeAccent else Color.Gray, // Orange if studying, Ash/Gray if not
                                          fontSize = 13.sp,
                                          textAlign = TextAlign.Center,
                                          modifier = Modifier.fillMaxWidth(),
