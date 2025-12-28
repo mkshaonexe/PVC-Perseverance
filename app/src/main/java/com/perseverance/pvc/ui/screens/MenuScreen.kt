@@ -71,6 +71,12 @@ fun MenuScreen(
             description = "View detailed analytics"
         ),
         MenuItem(
+            title = "Profile",
+            icon = Icons.Filled.Person,
+            route = "profile",
+            description = "Edit your personal information"
+        ),
+        MenuItem(
             title = "Settings",
             icon = Icons.Filled.Settings,
             route = "settings",
