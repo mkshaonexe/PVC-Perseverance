@@ -73,6 +73,12 @@ fun MenuScreen(
             icon = Icons.Filled.Settings,
             route = "settings",
             description = "App preferences and configuration"
+        ),
+        MenuItem(
+            title = "Bug Report",
+            icon = Icons.Filled.BugReport,
+            route = "bug_report",
+            description = "Report issues or bugs"
         )
     )
 
@@ -90,6 +96,8 @@ fun MenuScreen(
             title = "Menu"
         )
 
+        val context = androidx.compose.ui.platform.LocalContext.current
+
         // Menu items list
         LazyColumn(
             modifier = Modifier
@@ -101,7 +109,57 @@ fun MenuScreen(
                 MenuItemCard(
                     item = item,
                     onClick = { 
-                        onNavigate(item.route)
+                        if (item.route == "bug_report") {
+                            // Gather device info
+                            val packageManager = context.packageManager
+                            val packageName = context.packageName
+                            var versionName = "Unknown"
+                            var versionCode = "Unknown"
+                            
+                            try {
+                                val packageInfo = packageManager.getPackageInfo(packageName, 0)
+                                versionName = packageInfo.versionName ?: "Unknown"
+                                versionCode = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                                    packageInfo.longVersionCode.toString()
+                                } else {
+                                    @Suppress("DEPRECATION")
+                                    packageInfo.versionCode.toString()
+                                }
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+                            
+                            val deviceName = android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL
+                            val androidVersion = android.os.Build.VERSION.RELEASE
+                            
+                            val emailBody = """
+                                what issu are you facing write here :
+
+
+                                ____________________________________________________________
+                                App version  $versionName   app vision code $versionCode 
+                                device $deviceName            andoin version $androidVersion 
+
+                                all permisio given or s the app mission permsion 
+                                ________________________________________________________
+
+                                thank you 
+                            """.trimIndent()
+
+                            val intent = Intent(Intent.ACTION_SENDTO).apply {
+                                data = Uri.parse("mailto:")
+                                putExtra(Intent.EXTRA_EMAIL, arrayOf("mkshaonnew31@gmail.com"))
+                                putExtra(Intent.EXTRA_SUBJECT, "PVC-Study app bug reort/issu")
+                                putExtra(Intent.EXTRA_TEXT, emailBody)
+                            }
+                            try {
+                                context.startActivity(intent)
+                            } catch (e: Exception) {
+                                // Handle case where no email app is available
+                            }
+                        } else {
+                            onNavigate(item.route)
+                        }
                     }
                 )
             }
