@@ -55,7 +55,8 @@ fun GroupScreen(
                 onNavigateToSettings = onNavigateToSettings,
                 onNavigateToInsights = onNavigateToInsights,
                 onHamburgerClick = onNavigateToMenu,
-                showBackButton = false
+                showBackButton = false,
+                title = "Groups"
             )
             
             Column(
@@ -66,40 +67,7 @@ fun GroupScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(modifier = Modifier.height(24.dp))
-                
-                // Study Group Header
-                Box(
-                    modifier = Modifier
-                        .size(80.dp)
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Group, // Using Group icon as approximate match
-                        contentDescription = "Study Group",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(40.dp)
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                Text(
-                    text = "Study Group",
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                
-                Text(
-                    text = "Join global challenges and study with friends.",
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.secondary,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-                
-                Spacer(modifier = Modifier.height(32.dp))
+
                 
                 // Global Event Section Removed as per request
 
