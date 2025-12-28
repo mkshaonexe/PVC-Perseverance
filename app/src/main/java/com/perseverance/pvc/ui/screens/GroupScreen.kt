@@ -37,7 +37,8 @@ fun GroupScreen(
     socialViewModel: SocialViewModel = viewModel(),
     onNavigateToSettings: () -> Unit = {},
     onNavigateToInsights: () -> Unit = {},
-    onNavigateToMenu: () -> Unit = {}
+    onNavigateToMenu: () -> Unit = {},
+    onNavigateToGroupDetails: () -> Unit = {}
 ) {
     val uiState by socialViewModel.uiState.collectAsState()
 
@@ -218,6 +219,7 @@ fun GroupScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(bottom = 12.dp)
+                                .clickable { onNavigateToGroupDetails() }
                         ) {
                             Row(
                                 modifier = Modifier.padding(16.dp),
