@@ -43,17 +43,62 @@ fun ProfileScreen(
     val currentUser = socialUiState.currentUser
     
     var todayStudySeconds by remember { mutableStateOf(0) }
-    var weeklyStudyHours by remember { mutableStateOf("0.0") }
-    var userRank by remember { mutableStateOf<String?>("4TH") } 
-    var monthlyStudyHours by remember { mutableStateOf("04:10") }
-    var allTimeStudyHours by remember { mutableStateOf("04:10") }
+    var weeklyStudyHours by remember { mutableStateOf("0:0") }
+    var monthlyStudyHours by remember { mutableStateOf("0:0") }
+    var allTimeStudyHours by remember { mutableStateOf("0:0") }
+    var avgStudyTime by remember { mutableStateOf("0:0") }
+    var maxFocusSession by remember { mutableStateOf("0:0") }
+    var totalSessionsToday by remember { mutableStateOf(0) }
+    var userRank by remember { mutableStateOf((1..1000).random()) }
+    var monthlyStudyData by remember { mutableStateOf<Map<Int, Int>>(emptyMap()) } // day -> seconds
+    val currentMonth = remember { LocalDate.now() }
 
     // Fetch study data
     LaunchedEffect(Unit) {
         val todaySeconds = repository.getTodayTotalSeconds().first()
         todayStudySeconds = todaySeconds
-        // Dummy data for now for other stats since we might not have them calculated in repo yet or complex logic
-        // But we can try to fetch real data if available from repo helpers
+        
+        // Get today's sessions for total count and max focus
+        val todaySessions = repository.getStudySessionsByDate(LocalDate.now()).first()
+        totalSessionsToday = todaySessions.size
+        maxFocusSession = todaySessions.maxOfOrNull { it.durationSeconds }?.let {
+            val hours = it / 3600
+            val minutes = (it % 3600) / 60
+            "$hours:${minutes.toString().padStart(2, '0')}"
+        } ?: "0:0"
+        
+        // Calculate monthly data for calendar
+        val monthStart = currentMonth.withDayOfMonth(1)
+        val monthEnd = currentMonth.withDayOfMonth(currentMonth.lengthOfMonth())
+        val monthSessions = repository.getStudySessionsInRange(monthStart, monthEnd).first()
+        
+        val dailyData = monthSessions.groupBy { it.startTime?.toLocalDate()?.dayOfMonth ?: 0 }
+            .mapValues { (_, sessions) -> sessions.sumOf { it.durationSeconds } }
+        monthlyStudyData = dailyData
+        
+        // Calculate monthly total
+        val monthlySeconds = monthSessions.sumOf { it.durationSeconds }
+        
+        // Calculate weekly total (last 7 days)
+        val weekStart = LocalDate.now().minusDays(6)
+        val weekSessions = repository.getStudySessionsInRange(weekStart, LocalDate.now()).first()
+        val weeklySeconds = weekSessions.sumOf { it.durationSeconds }
+        
+        // Calculate all time total
+        val allSessions = repository.getAllStudySessions().first()
+        val allTimeSeconds = allSessions.sumOf { it.durationSeconds }
+        
+        // Calculate average (total seconds / days with study)
+        val daysWithStudy = dailyData.keys.size
+        if (daysWithStudy > 0) {
+            val avgSeconds = monthlySeconds / daysWithStudy
+            avgStudyTime = "${avgSeconds / 3600}:${((avgSeconds % 3600) / 60).toString().padStart(2, '0')}"
+        }
+        
+        // Format all time values
+        monthlyStudyHours = "${monthlySeconds / 3600}:${((monthlySeconds % 3600) / 60).toString().padStart(2, '0')}"
+        weeklyStudyHours = "${weeklySeconds / 3600}:${((weeklySeconds % 3600) / 60).toString().padStart(2, '0')}"
+        allTimeStudyHours = "${allTimeSeconds / 3600}:${((allTimeSeconds % 3600) / 60).toString().padStart(2, '0')}"
     }
 
     val todayStudyTimeFormatted = remember(todayStudySeconds) {
@@ -242,13 +287,16 @@ fun ProfileScreen(
                             Spacer(modifier = Modifier.height(16.dp))
                             
                             Text("LEADERBOARD POSITION", color = textColor, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Text("TIME: ${userRank}", color = secondaryTextColor, fontSize = 13.sp, modifier = Modifier.padding(top=4.dp))
+                            Text("USER RANK: #${userRank}", color = secondaryTextColor, fontSize = 13.sp, modifier = Modifier.padding(top=4.dp))
                             Text("ANKI: COMING SOON", color = secondaryTextColor, fontSize = 13.sp, modifier = Modifier.padding(top=4.dp))
                             
                             Spacer(modifier = Modifier.height(24.dp))
                             
                             Text("STUDY TIME", color = textColor, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                             Text("DAILY: $todayStudyTimeFormatted", color = secondaryTextColor, fontSize = 13.sp, modifier = Modifier.padding(top=4.dp))
+                            Text("AVG: $avgStudyTime", color = secondaryTextColor, fontSize = 13.sp, modifier = Modifier.padding(top=4.dp))
+                            Text("MAX FOCUS SESSION: $maxFocusSession", color = secondaryTextColor, fontSize = 13.sp, modifier = Modifier.padding(top=4.dp))
+                            Text("TOTAL SESSIONS TODAY: $totalSessionsToday", color = secondaryTextColor, fontSize = 13.sp, modifier = Modifier.padding(top=4.dp))
                             Text("WEEKLY: $weeklyStudyHours", color = secondaryTextColor, fontSize = 13.sp, modifier = Modifier.padding(top=4.dp))
                             Text("MONTHLY: $monthlyStudyHours", color = secondaryTextColor, fontSize = 13.sp, modifier = Modifier.padding(top=4.dp))
                             Text("ALL TIME: $allTimeStudyHours", color = secondaryTextColor, fontSize = 13.sp, modifier = Modifier.padding(top=4.dp))
@@ -268,57 +316,91 @@ fun ProfileScreen(
                              
                              Row(
                                  modifier = Modifier.fillMaxWidth(),
-                                 horizontalArrangement = Arrangement.SpaceBetween
+                                 horizontalArrangement = Arrangement.Center
                              ) {
-                                 Text("DECEMBER: 4 hours", color = accentColor, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                                 Text("2025", color = textColor, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                 Text(
+                                     "${currentMonth.month.name.lowercase().replaceFirstChar { it.uppercase() }} ${currentMonth.year}",
+                                     color = textColor,
+                                     fontWeight = FontWeight.Bold,
+                                     fontSize = 14.sp
+                                 )
                              }
                              
                              Spacer(modifier = Modifier.height(12.dp))
 
-                             // Simple Calendar Grid Mockup
-                             val weeks = listOf(
-                                 listOf("", "1", "2", "3", "4", "5", "6"),
-                                 listOf("7", "8", "9", "10", "11", "12", "13"),
-                                 listOf("14", "15", "16", "17", "18", "19", "20"),
-                                 listOf("21", "22", "23", "24", "25", "26", "27"),
-                                 listOf("28", "29", "30", "31", "", "", "")
-                             )
+                             
+                             // Dynamic Calendar Grid
+                             val firstDayOfMonth = currentMonth.withDayOfMonth(1)
+                             val daysInMonth = currentMonth.lengthOfMonth()
+                             val firstDayOfWeek = firstDayOfMonth.dayOfWeek.value % 7 // 0 = Sunday
+                             
                              val daysHeader = listOf("S", "M", "T", "W", "T", "F", "S")
+                             
+                             // Lambda to get color based on study hours
+                             val getStudyColor: (Int) -> Color = { seconds ->
+                                 val hours = seconds / 3600f
+                                 when {
+                                     hours >= 10 -> Color(0xFF00A86B) // Deep green
+                                     hours >= 5 -> Color(0xFF4CAF50) // Medium green
+                                     hours >= 1 -> Color(0xFF81C784) // Light green
+                                     else -> Color.Transparent // No study
+                                 }
+                             }
 
                              Column {
                                  // Header
                                  Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                      daysHeader.forEach { day ->
-                                         Text(day, color = textColor, fontWeight = FontWeight.Bold, fontSize = 12.sp, modifier = Modifier.width(20.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                         Text(
+                                             day,
+                                             color = textColor,
+                                             fontWeight = FontWeight.Bold,
+                                             fontSize = 12.sp,
+                                             modifier = Modifier.width(20.dp),
+                                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                         )
                                      }
                                  }
                                  Spacer(modifier = Modifier.height(8.dp))
-                                 // Days
-                                 weeks.forEach { week ->
-                                     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                                         week.forEach { date ->
-                                              if (date.isNotEmpty()) {
-                                                  val isSelected = date == "25" || date == "27" // Mock selected days
-                                                  Box(
-                                                      modifier = Modifier
-                                                          .width(20.dp)
-                                                          .height(20.dp)
-                                                          .clip(CircleShape)
-                                                          .background(if(isSelected) accentColor else Color.Transparent),
-                                                      contentAlignment = Alignment.Center
-                                                  ) {
-                                                      Text(
-                                                          text = date, 
-                                                          color = if (isSelected) Color.White else secondaryTextColor, 
-                                                          fontSize = 12.sp
-                                                      )
-                                                  }
-                                              } else {
-                                                  Spacer(modifier = Modifier.width(20.dp))
-                                              }
+                                 
+                                 // Calendar days
+                                 var dayCounter = 1
+                                 var weekIndex = 0
+                                 while (dayCounter <= daysInMonth) {
+                                     Row(
+                                         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                         horizontalArrangement = Arrangement.SpaceBetween
+                                     ) {
+                                         for (dayOfWeek in 0..6) {
+                                             val dayIndex = weekIndex * 7 + dayOfWeek
+                                             
+                                             if ((weekIndex == 0 && dayOfWeek < firstDayOfWeek) || dayCounter > daysInMonth) {
+                                                 Spacer(modifier = Modifier.width(20.dp))
+                                             } else {
+                                                 val studySeconds = monthlyStudyData[dayCounter] ?: 0
+                                                 val studyColor = getStudyColor(studySeconds)
+                                                 val isToday = dayCounter == currentMonth.dayOfMonth
+                                                 
+                                                 Box(
+                                                     modifier = Modifier
+                                                         .width(20.dp)
+                                                         .height(20.dp)
+                                                         .clip(CircleShape)
+                                                         .background(studyColor),
+                                                     contentAlignment = Alignment.Center
+                                                 ) {
+                                                     Text(
+                                                         text = dayCounter.toString(),
+                                                         color = if (studyColor != Color.Transparent) Color.White else secondaryTextColor,
+                                                         fontSize = 10.sp,
+                                                         fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal
+                                                     )
+                                                 }
+                                                 dayCounter++
+                                             }
                                          }
                                      }
+                                     weekIndex++
                                  }
                              }
                         }
