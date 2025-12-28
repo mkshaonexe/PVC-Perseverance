@@ -14,14 +14,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.geometry.Offset
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -230,15 +226,6 @@ fun AppNavigation(
     var currentRoute by remember { mutableStateOf(Screen.Home.route) }
     var previousRoute by remember { mutableStateOf(Screen.Home.route) }
     var showBottomBar by remember { mutableStateOf(true) }
-    var lastSwipeTime by remember { mutableStateOf(0L) }
-    
-    // Define the navigation order for swipe gestures
-    val navigationOrder = listOf(
-        Screen.Dashboard.route,
-        Screen.Home.route,
-        Screen.Group.route,
-        Screen.Profile.route
-    )
     
     // Function to navigate to a route and remember the previous one
     fun navigateToRoute(route: String) {
@@ -254,21 +241,7 @@ fun AppNavigation(
         currentRoute = previousRoute
     }
     
-    // Function to navigate to next page (swipe left)
-    fun navigateNext() {
-        val currentIndex = navigationOrder.indexOf(currentRoute)
-        if (currentIndex >= 0 && currentIndex < navigationOrder.size - 1) {
-            navigateToRoute(navigationOrder[currentIndex + 1])
-        }
-    }
-    
-    // Function to navigate to previous page (swipe right)
-    fun navigatePrevious() {
-        val currentIndex = navigationOrder.indexOf(currentRoute)
-        if (currentIndex > 0) {
-            navigateToRoute(navigationOrder[currentIndex - 1])
-        }
-    }
+
     
     // Show onboarding screen if not completed
     if (showOnboarding) {
@@ -296,26 +269,6 @@ fun AppNavigation(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(if (showBottomBar) paddingValues else PaddingValues(0.dp))
-                .pointerInput(Unit) {
-                    detectHorizontalDragGestures(
-                        onDragEnd = {
-                            // We'll handle navigation in the onDrag callback
-                        }
-                    ) { _, dragAmount ->
-                        // Swipe right (negative drag) = go to next page
-                        // Swipe left (positive drag) = go to previous page
-                        val currentTime = System.currentTimeMillis()
-                        if (currentTime - lastSwipeTime > 300) { // Debounce: 300ms between swipes
-                            if (dragAmount < -50) { // Swipe right = next page
-                                navigateNext()
-                                lastSwipeTime = currentTime
-                            } else if (dragAmount > 50) { // Swipe left = previous page
-                                navigatePrevious()
-                                lastSwipeTime = currentTime
-                            }
-                        }
-                    }
-                }
         ) {
             when (currentRoute) {
                 Screen.Dashboard.route -> Page2Screen(
@@ -348,10 +301,11 @@ fun AppNavigation(
                     onNavigateToInsights = { navigateToRoute(Screen.Insights.route) },
                     onNavigateToMenu = { navigateToRoute(Screen.Menu.route) }
                 )
-                Screen.EditProfile.route -> ProfileScreen(
+                Screen.EditProfile.route -> EditProfileScreen(
                     onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
                     onNavigateToInsights = { navigateToRoute(Screen.Insights.route) },
-                    onNavigateToMenu = { navigateToRoute(Screen.Menu.route) }
+                    onNavigateToMenu = { navigateToRoute(Screen.Menu.route) },
+                    onBackClick = { goBack() }
                 )
                 Screen.Insights.route -> Page1Screen(
                     onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },

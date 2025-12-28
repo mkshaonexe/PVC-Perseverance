@@ -34,12 +34,16 @@ import java.time.LocalDate
 fun ProfileScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToInsights: () -> Unit,
-    onNavigateToMenu: () -> Unit
+    onNavigateToMenu: () -> Unit,
+    socialViewModel: com.perseverance.pvc.ui.viewmodel.SocialViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val repository = remember { StudyRepository(context) }
+    val socialUiState by socialViewModel.uiState.collectAsState()
+    val currentUser = socialUiState.currentUser
+    
     var todayStudySeconds by remember { mutableStateOf(0) }
-    var weeklyStudyHours by remember { mutableStateOf(0.0) }
+    var weeklyStudyHours by remember { mutableStateOf("0.0") }
     var userRank by remember { mutableStateOf<String?>("4TH") } 
     var monthlyStudyHours by remember { mutableStateOf("04:10") }
     var allTimeStudyHours by remember { mutableStateOf("04:10") }
@@ -108,7 +112,7 @@ fun ProfileScreen(
                             // In a real app, use coil to load image. 
                             // Using a placeholder icon or random image if URL unavailable
                              AsyncImage(
-                                model = "https://i.pravatar.cc/300", // Placeholder internet image
+                                model = currentUser?.photoUrl ?: "https://i.pravatar.cc/300", // Placeholder internet image
                                 contentDescription = "Profile Picture",
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop
@@ -121,7 +125,7 @@ fun ProfileScreen(
                             modifier = Modifier.weight(1f)
                         ) {
                             Text(
-                                text = "MK Shaon", // Mock Name
+                                text = currentUser?.displayName ?: "User", // Mock Name
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = goldColor
