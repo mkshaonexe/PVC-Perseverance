@@ -561,7 +561,7 @@ private fun ControlIconButton(
 @Preview(showBackground = true)
 @Composable
 fun Page2ScreenPreview() {
-    PerseverancePVCTheme {
+    PerseverancePVCTheme(themeMode = "Dark") {
         Page2Screen()
     }
 }

@@ -811,7 +811,7 @@ fun CustomDurationInputDialog(
 @Preview(showBackground = true)
 @Composable
 fun PomodoroScreenPreview() {
-    PerseverancePVCTheme {
+    PerseverancePVCTheme(themeMode = "Dark") {
         PomodoroScreen()
     }
 }

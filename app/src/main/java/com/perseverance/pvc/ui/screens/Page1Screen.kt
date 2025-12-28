@@ -749,7 +749,7 @@ fun formatSecondsToHMS(seconds: Int): String {
 @Preview(showBackground = true)
 @Composable
 fun Page1ScreenPreview() {
-    PerseverancePVCTheme {
+    PerseverancePVCTheme(themeMode = "Dark") {
         Page1Screen()
     }
 }
