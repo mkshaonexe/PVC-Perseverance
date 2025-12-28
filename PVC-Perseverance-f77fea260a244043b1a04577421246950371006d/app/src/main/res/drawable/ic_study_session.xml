@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="60dp"
+    android:height="60dp"
+    android:viewportWidth="60"
+    android:viewportHeight="60">
+    <!-- Person sitting at desk -->
+    <path
+        android:fillColor="#FF8C42"
+        android:strokeColor="#FF8C42"
+        android:strokeWidth="2"
+        android:pathData="M30,10 C25,10 20,15 20,20 L20,35 L25,35 L25,20 C25,18 26,17 30,17 C34,17 35,18 35,20 L35,35 L40,35 L40,20 C40,15 35,10 30,10 Z"/>
+    <!-- Desk -->
+    <path
+        android:fillColor="#FF8C42"
+        android:strokeColor="#FF8C42"
+        android:strokeWidth="2"
+        android:pathData="M15,40 L45,40 L45,45 L15,45 Z"/>
+    <!-- Lamp -->
+    <path
+        android:fillColor="#FF8C42"
+        android:strokeColor="#FF8C42"
+        android:strokeWidth="2"
+        android:pathData="M50,25 L50,35 L48,35 L48,25 Z"/>
+    <path
+        android:fillColor="#FF8C42"
+        android:strokeColor="#FF8C42"
+        android:strokeWidth="2"
+        android:pathData="M50,22 A3,3 0 1,1 50,28 A3,3 0 1,1 50,22 Z"/>
+</vector>

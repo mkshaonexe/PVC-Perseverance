@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+:root {
+  /* Android App Replica Theme */
+  --background: #000000;
+  /* Pure Black */
+  --foreground: #FFFFFF;
+  /* White */
+
+  --primary: #FFD700;
+  /* PomodoroYellow */
+  --primary-foreground: #000000;
+
+  --secondary: #4CAF50;
+  /* PomodoroGreen */
+  --secondary-foreground: #FFFFFF;
+
+  --muted: #E0E0E0;
+  /* PomodoroGrey */
+  --muted-foreground: #B0B0B0;
+  /* MediumGrey */
+
+  --card: #1E1E1E;
+  /* DarkSurface */
+  --card-foreground: #FFFFFF;
+
+  --accent: #2C2C2C;
+  /* DarkSurfaceVariant */
+  --accent-foreground: #FFD700;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), Arial, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom Utilities */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
