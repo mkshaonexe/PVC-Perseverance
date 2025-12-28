@@ -118,13 +118,12 @@ fun SettingsScreen(
                 SettingsSection(
                     title = "Preferences",
                     items = {
-                        SettingsToggleItem(
-                            icon = Icons.Filled.DarkMode,
-                            title = "Dark Mode",
-                            checked = darkMode == "Dark",
-                            onCheckedChange = { isChecked ->
-                                viewModel.updateDarkMode(if (isChecked) "Dark" else "Light")
-                            }
+                        SettingsDropdownItem(
+                            icon = Icons.Filled.Palette,
+                            title = "App Theme",
+                            value = darkMode,
+                            options = listOf("Light", "Dark", "Midnight"),
+                            onValueChange = { viewModel.updateDarkMode(it) }
                         )
                     }
                 )
@@ -312,13 +311,7 @@ fun SettingsScreen(
                                 context.startActivity(intent)
                             }
                         )
-                        SettingsItem(
-                            icon = Icons.Filled.Palette,
-                            title = "Theme Settings",
-                            action = { 
-                                Toast.makeText(context, "Theme customization coming soon!", Toast.LENGTH_SHORT).show()
-                            }
-                        )
+
                     }
                 )
 
