@@ -288,7 +288,8 @@ fun AppNavigation(
                 Screen.Group.route -> GroupScreen(
                     onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
                     onNavigateToInsights = { navigateToRoute(Screen.Insights.route) },
-                    onNavigateToMenu = { navigateToRoute(Screen.Menu.route) }
+                    onNavigateToMenu = { navigateToRoute(Screen.Menu.route) },
+                    onNavigateToGroupDetails = { navigateToRoute(Screen.GroupDetails.route) }
                 ) // Group = GroupScreen (Study Groups)
                 Screen.Settings.route -> SettingsScreen(
                     onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
@@ -320,6 +321,12 @@ fun AppNavigation(
                         onBackClick = { goBack() },
                         isProfileIncomplete = isProfileIncomplete,
                         socialViewModel = socialViewModel
+                    )
+                }
+                Screen.GroupDetails.route -> {
+                    GroupDetailsScreen(
+                        onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
+                        onBackClick = { goBack() }
                     )
                 }
                 Screen.Insights.route -> Page1Screen(
