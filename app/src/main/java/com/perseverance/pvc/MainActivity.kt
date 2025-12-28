@@ -346,7 +346,14 @@ fun AppNavigation(
                 Screen.Profile.route -> ProfileScreen(
                     onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
                     onNavigateToInsights = { navigateToRoute(Screen.Insights.route) },
-                    onNavigateToMenu = { navigateToRoute(Screen.Menu.route) }
+                    onNavigateToMenu = { navigateToRoute(Screen.Menu.route) },
+                    initialEditMode = false
+                )
+                Screen.EditProfile.route -> ProfileScreen(
+                    onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
+                    onNavigateToInsights = { navigateToRoute(Screen.Insights.route) },
+                    onNavigateToMenu = { navigateToRoute(Screen.Menu.route) },
+                    initialEditMode = true
                 )
                 Screen.Insights.route -> Page1Screen(
                     onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },

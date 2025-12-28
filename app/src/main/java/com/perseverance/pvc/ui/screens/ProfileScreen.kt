@@ -15,6 +15,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,19 +40,21 @@ import com.perseverance.pvc.ui.theme.glassBorder
 import com.perseverance.pvc.ui.theme.glassElevation
 import com.perseverance.pvc.ui.theme.isLightTheme
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     socialViewModel: SocialViewModel = viewModel(),
     pomodoroViewModel: com.perseverance.pvc.ui.viewmodel.PomodoroViewModel = viewModel(),
     onNavigateToSettings: () -> Unit,
     onNavigateToInsights: () -> Unit,
-    onNavigateToMenu: () -> Unit
+    onNavigateToMenu: () -> Unit,
+    initialEditMode: Boolean = false
 ) {
     val socialUiState by socialViewModel.uiState.collectAsState()
     val pomodoroUiState by pomodoroViewModel.uiState.collectAsState()
     val isLight = isLightTheme()
 
-    var isEditing by remember { mutableStateOf(false) }
+    var isEditing by remember { mutableStateOf(initialEditMode) }
 
     // Initialize state from existing user data (for Edit View)
     var displayName by remember(socialUiState.currentUser) { mutableStateOf(socialUiState.currentUser?.displayName ?: "") }
@@ -189,15 +195,98 @@ fun ProfileScreen(
                             elevation = glassElevation(isLight)
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
-                                ProfileTextField(value = displayName, onValueChange = { displayName = it }, label = "Full Name", icon = Icons.Default.Person)
+                                ProfileTextField(
+                                    value = displayName,
+                                    onValueChange = { displayName = it },
+                                    label = "Full Name",
+                                    icon = Icons.Default.Person
+                                )
                                 Spacer(modifier = Modifier.height(16.dp))
-                                ProfileTextField(value = username, onValueChange = { username = it }, label = "Username", icon = Icons.Default.AlternateEmail)
-                                 Spacer(modifier = Modifier.height(16.dp))
-                                ProfileTextField(value = bio, onValueChange = { bio = it }, label = "Bio", icon = Icons.Default.Info, maxLines = 3)
+                                
+                                ProfileTextField(
+                                    value = username,
+                                    onValueChange = { username = it },
+                                    label = "Username",
+                                    icon = Icons.Default.AlternateEmail,
+                                    supportingText = { Text("Must be unique", fontSize = 11.sp) }
+                                )
                                 Spacer(modifier = Modifier.height(16.dp))
-                                ProfileTextField(value = gender, onValueChange = { gender = it }, label = "Gender", icon = Icons.Default.Male)
+                                
+                                ProfileTextField(
+                                    value = bio,
+                                    onValueChange = { if (it.length <= 500) bio = it },
+                                    label = "Bio",
+                                    icon = Icons.Default.Info,
+                                    maxLines = 5,
+                                    supportingText = { 
+                                        Text(
+                                            text = "${bio.length}/500",
+                                            modifier = Modifier.fillMaxWidth(),
+                                            textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                                            fontSize = 11.sp
+                                        )
+                                    }
+                                )
                                 Spacer(modifier = Modifier.height(16.dp))
-                                 ProfileTextField(value = dateOfBirth, onValueChange = { dateOfBirth = it }, label = "Date of Birth (YYYY-MM-DD)", icon = Icons.Default.CalendarToday, keyboardType = KeyboardType.Number)
+                                
+                                // Gender Selector
+                                Text("Gender", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    RadioButton(selected = gender.equals("Male", ignoreCase = true), onClick = { gender = "Male" })
+                                    Text("Male", modifier = Modifier.clickable { gender = "Male" })
+                                    Spacer(modifier = Modifier.width(16.dp))
+                                    RadioButton(selected = gender.equals("Female", ignoreCase = true), onClick = { gender = "Female" })
+                                    Text("Female", modifier = Modifier.clickable { gender = "Female" })
+                                }
+                                
+                                Spacer(modifier = Modifier.height(16.dp))
+                                
+                                // Date of Birth Picker
+                                var showDatePicker by remember { mutableStateOf(false) }
+                                if (showDatePicker) {
+                                    val datePickerState = rememberDatePickerState()
+                                    DatePickerDialog(
+                                        onDismissRequest = { showDatePicker = false },
+                                        confirmButton = {
+                                            TextButton(onClick = {
+                                                datePickerState.selectedDateMillis?.let { millis ->
+                                                    val date = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date(millis))
+                                                    dateOfBirth = date
+                                                }
+                                                showDatePicker = false
+                                            }) { Text("OK") }
+                                        },
+                                        dismissButton = {
+                                            TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+                                        }
+                                    ) {
+                                        DatePicker(state = datePickerState)
+                                    }
+                                }
+
+                                Box(modifier = Modifier.fillMaxWidth()) {
+                                    OutlinedTextField(
+                                        value = dateOfBirth,
+                                        onValueChange = { }, // Read only, set by picker
+                                        label = { Text("Date of Birth (YYYY-MM-DD)") },
+                                        leadingIcon = { Icon(Icons.Default.CalendarToday, contentDescription = null) },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        enabled = false, // Disable typing, enable click
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                                            disabledBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
+                                            disabledLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                            disabledLeadingIconColor = MaterialTheme.colorScheme.primary
+                                        )
+                                    )
+                                    // Transparent box to capture clicks over the disabled text field
+                                    Box(
+                                        modifier = Modifier
+                                            .matchParentSize()
+                                            .clickable { showDatePicker = true }
+                                    )
+                                }
+
                                 Spacer(modifier = Modifier.height(16.dp))
                                  ProfileTextField(value = address, onValueChange = { address = it }, label = "Address", icon = Icons.Default.Home)
                                 Spacer(modifier = Modifier.height(16.dp))
@@ -541,7 +630,8 @@ fun ProfileTextField(
     label: String,
     icon: ImageVector,
     maxLines: Int = 1,
-    keyboardType: KeyboardType = KeyboardType.Text
+    keyboardType: KeyboardType = KeyboardType.Text,
+    supportingText: @Composable (() -> Unit)? = null
 ) {
     OutlinedTextField(
         value = value,
@@ -551,6 +641,7 @@ fun ProfileTextField(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         maxLines = maxLines,
+        supportingText = supportingText,
         keyboardOptions = KeyboardOptions(
             keyboardType = keyboardType,
             imeAction = ImeAction.Next

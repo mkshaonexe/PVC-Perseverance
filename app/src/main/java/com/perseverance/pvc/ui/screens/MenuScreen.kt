@@ -65,7 +65,7 @@ fun MenuScreen(
         MenuItem(
             title = "Profile",
             icon = Icons.Filled.Person,
-            route = "profile",
+            route = "edit_profile",
             description = "Edit your personal information"
         ),
         MenuItem(
