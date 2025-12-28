@@ -126,12 +126,9 @@ fun ProfileScreen(
         val allSessions = repository.getAllStudySessions().first()
         val allTimeSeconds = allSessions.sumOf { it.durationSeconds }
         
-        // Calculate average (total seconds / days with study)
-        val daysWithStudy = dailyData.keys.size
-        if (daysWithStudy > 0) {
-            val avgSeconds = monthlySeconds / daysWithStudy
-            avgStudyTime = "${avgSeconds / 3600}:${((avgSeconds % 3600) / 60).toString().padStart(2, '0')}"
-        }
+        // Calculate average study time (last 7 days)
+        val avgSeconds = weeklySeconds / 7
+        avgStudyTime = "${avgSeconds / 3600}:${((avgSeconds % 3600) / 60).toString().padStart(2, '0')}"
         
         // Format all time values
         monthlyStudyHours = "${monthlySeconds / 3600}:${((monthlySeconds % 3600) / 60).toString().padStart(2, '0')}"
@@ -330,14 +327,11 @@ fun ProfileScreen(
                             
                             Spacer(modifier = Modifier.height(24.dp))
                             
-                            Text("STUDY TIME", color = textColor, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Text("DAILY: $todayStudyTimeFormatted", color = secondaryTextColor, fontSize = 13.sp, modifier = Modifier.padding(top=4.dp))
-                            Text("AVG: $avgStudyTime", color = secondaryTextColor, fontSize = 13.sp, modifier = Modifier.padding(top=4.dp))
-                            Text("MAX FOCUS SESSION: $maxFocusSession", color = secondaryTextColor, fontSize = 13.sp, modifier = Modifier.padding(top=4.dp))
-                            Text("TOTAL SESSIONS TODAY: $totalSessionsToday", color = secondaryTextColor, fontSize = 13.sp, modifier = Modifier.padding(top=4.dp))
-                            Text("WEEKLY: $weeklyStudyHours", color = secondaryTextColor, fontSize = 13.sp, modifier = Modifier.padding(top=4.dp))
-                            Text("MONTHLY: $monthlyStudyHours", color = secondaryTextColor, fontSize = 13.sp, modifier = Modifier.padding(top=4.dp))
-                            Text("ALL TIME: $allTimeStudyHours", color = secondaryTextColor, fontSize = 13.sp, modifier = Modifier.padding(top=4.dp))
+                             Text("STUDY TIME", color = textColor, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                             Text("DAILY: $todayStudyTimeFormatted", color = secondaryTextColor, fontSize = 13.sp, modifier = Modifier.padding(top=4.dp))
+                             Text("AVG: $avgStudyTime", color = secondaryTextColor, fontSize = 13.sp, modifier = Modifier.padding(top=4.dp))
+                             Text("MAX: $maxFocusSession", color = secondaryTextColor, fontSize = 13.sp, modifier = Modifier.padding(top=4.dp))
+                             Text("SESSIONS: $totalSessionsToday", color = secondaryTextColor, fontSize = 13.sp, modifier = Modifier.padding(top=4.dp))
                         }
 
                         Spacer(modifier = Modifier.width(16.dp))
