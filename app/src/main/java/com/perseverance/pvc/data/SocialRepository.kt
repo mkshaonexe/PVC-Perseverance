@@ -24,7 +24,14 @@ data class SocialUser(
     @SerialName("current_subject") val currentSubject: String = "",
     @SerialName("last_active") val lastActive: Long = 0,
     @SerialName("study_start_time") val studyStartTime: Long = 0,
-    @SerialName("study_duration") val studyDuration: Long = 0
+    @SerialName("study_duration") val studyDuration: Long = 0,
+    val bio: String = "",
+    val gender: String = "",
+    @SerialName("date_of_birth") val dateOfBirth: String = "",
+    val address: String = "",
+    @SerialName("phone_number") val phoneNumber: String = "",
+    @SerialName("secondary_email") val secondaryEmail: String = "",
+    val username: String = ""
 )
 
 @Serializable
@@ -67,6 +74,18 @@ class SocialRepository {
         }
     }
 
+    suspend fun getCurrentUserProfile(): SocialUser? {
+        val user = client.auth.currentUserOrNull() ?: return null
+        return try {
+            client.from("users").select {
+                filter { eq("id", user.id) }
+            }.decodeSingleOrNull<SocialUser>()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching current user profile", e)
+            null
+        }
+    }
+
     suspend fun updateUserProfile(displayName: String, photoData: ByteArray?): Result<Unit> {
         val user = client.auth.currentUserOrNull() ?: return Result.failure(Exception("Not logged in"))
 
@@ -105,6 +124,66 @@ class SocialRepository {
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Error updating user profile", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateFullUserProfile(
+        displayName: String,
+        photoData: ByteArray?,
+        bio: String,
+        gender: String,
+        dateOfBirth: String,
+        address: String,
+        phoneNumber: String,
+        secondaryEmail: String,
+        username: String
+    ): Result<Unit> {
+        val user = client.auth.currentUserOrNull() ?: return Result.failure(Exception("Not logged in"))
+
+        return try {
+            var photoUrl = user.userMetadata?.get("avatar_url")?.toString()?.replace("\"", "") ?: ""
+
+            if (photoData != null) {
+                val fileName = "${user.id}/avatar_${System.currentTimeMillis()}.jpg"
+                val bucket = client.storage.from("avatars")
+                bucket.upload(fileName, photoData) {
+                    upsert = true
+                }
+                photoUrl = bucket.publicUrl(fileName)
+            }
+
+            // Update Auth User Metadata (only standard fields usually, but custom data can be added)
+            client.auth.updateUser {
+                data = JsonObject(
+                    mapOf(
+                        "full_name" to JsonPrimitive(displayName),
+                        "avatar_url" to JsonPrimitive(photoUrl)
+                        // Note: Other fields are better kept in the users table to avoid bloating auth metadata
+                    )
+                )
+            }
+
+            // Sync with 'users' table
+            client.from("users").update(
+                {
+                    set("display_name", displayName)
+                    set("avatar_url", photoUrl)
+                    set("bio", bio)
+                    set("gender", gender)
+                    set("date_of_birth", dateOfBirth)
+                    set("address", address)
+                    set("phone_number", phoneNumber)
+                    set("secondary_email", secondaryEmail)
+                    set("username", username)
+                }
+            ) {
+                filter { eq("id", user.id) }
+            }
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating full user profile", e)
             Result.failure(e)
         }
     }
