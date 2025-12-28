@@ -86,16 +86,8 @@ fun MenuScreen(
             onNavigateToSettings = onNavigateToSettings,
             onNavigateToInsights = onNavigateToInsights,
             onBackClick = onBackClick,
-            showBackButton = true
-        )
-
-        // Menu title
-        Text(
-            text = "Menu",
-            style = MaterialTheme.typography.headlineLarge,
-            color = MaterialTheme.colorScheme.onBackground,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
+            showBackButton = true,
+            title = "Menu"
         )
 
         // Menu items list
