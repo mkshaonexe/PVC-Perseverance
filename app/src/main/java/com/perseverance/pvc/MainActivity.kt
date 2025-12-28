@@ -299,14 +299,29 @@ fun AppNavigation(
                 Screen.Profile.route -> ProfileScreen(
                     onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
                     onNavigateToInsights = { navigateToRoute(Screen.Insights.route) },
-                    onNavigateToMenu = { navigateToRoute(Screen.Menu.route) }
-                )
-                Screen.EditProfile.route -> EditProfileScreen(
-                    onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
-                    onNavigateToInsights = { navigateToRoute(Screen.Insights.route) },
                     onNavigateToMenu = { navigateToRoute(Screen.Menu.route) },
-                    onBackClick = { goBack() }
+                    onNavigateToEditProfile = { navigateToRoute(Screen.EditProfile.route) }
                 )
+                Screen.EditProfile.route -> {
+                    val socialViewModel: com.perseverance.pvc.ui.viewmodel.SocialViewModel = viewModel(
+                        factory = ViewModelProvider.AndroidViewModelFactory.getInstance(
+                            context.applicationContext as android.app.Application
+                        )
+                    )
+                    val socialUiState by socialViewModel.uiState.collectAsState()
+                    val currentUser = socialUiState.currentUser
+                    val isProfileIncomplete = currentUser?.displayName?.isEmpty() == true || 
+                                             currentUser?.photoUrl?.isEmpty() == true
+                    
+                    EditProfileScreen(
+                        onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
+                        onNavigateToInsights = { navigateToRoute(Screen.Insights.route) },
+                        onNavigateToMenu = { navigateToRoute(Screen.Menu.route) },
+                        onBackClick = { goBack() },
+                        isProfileIncomplete = isProfileIncomplete,
+                        socialViewModel = socialViewModel
+                    )
+                }
                 Screen.Insights.route -> Page1Screen(
                     onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
                     onNavigateToInsights = { navigateToRoute(Screen.Insights.route) },
