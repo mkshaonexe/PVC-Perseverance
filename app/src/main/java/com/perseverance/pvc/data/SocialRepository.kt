@@ -52,6 +52,20 @@ class SocialRepository {
     private val client = SupabaseModule.client
     private val TAG = "SocialRepository"
 
+    suspend fun isUsernameTaken(username: String): Boolean {
+        return try {
+            val count = client.from("users").select {
+                filter { eq("username", username) }
+                count(io.github.jan.supabase.postgrest.query.Count.EXACT)
+            }.countOrNull() ?: 0
+            
+            count > 0L
+        } catch (e: Exception) {
+            Log.e(TAG, "Error checking username availability", e)
+            true // Assume taken on error to be safe
+        }
+    }
+
     // --- User Management ---
 
     // Create or update user profile upon login
