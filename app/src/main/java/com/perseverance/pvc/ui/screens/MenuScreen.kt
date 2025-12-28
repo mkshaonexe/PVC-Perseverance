@@ -44,12 +44,17 @@ fun MenuScreen(
 ) {
     val menuItems = listOf(
         MenuItem(
+            title = "Profile",
+            icon = Icons.Filled.Person,
+            route = "edit_profile",
+            description = "Edit your personal information"
+        ),
+        MenuItem(
             title = "Dashboard",
             icon = Icons.Filled.Dashboard,
             route = "dashboard",
             description = "View your study statistics"
         ),
-
         MenuItem(
             title = "Study Groups",
             icon = Icons.Filled.Group,
@@ -61,12 +66,6 @@ fun MenuScreen(
             icon = Icons.Filled.Insights,
             route = "insights",
             description = "View detailed analytics"
-        ),
-        MenuItem(
-            title = "Profile",
-            icon = Icons.Filled.Person,
-            route = "edit_profile",
-            description = "Edit your personal information"
         ),
         MenuItem(
             title = "Settings",
@@ -98,6 +97,8 @@ fun MenuScreen(
 
         val context = androidx.compose.ui.platform.LocalContext.current
 
+        Spacer(modifier = Modifier.height(16.dp))
+        
         // Menu items list
         LazyColumn(
             modifier = Modifier
