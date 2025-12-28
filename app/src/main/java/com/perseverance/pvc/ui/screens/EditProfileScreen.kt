@@ -97,7 +97,9 @@ fun EditProfileScreen(
                         .background(Color.Gray)
                         .clickable {
                             photoPickerLauncher.launch(
-                                ActivityResultContracts.PickVisualMedia.ImageOnly
+                                androidx.activity.result.PickVisualMediaRequest(
+                                    ActivityResultContracts.PickVisualMedia.ImageOnly
+                                )
                             )
                         }
                 ) {
@@ -117,7 +119,9 @@ fun EditProfileScreen(
                         .background(Color(0xFFFFD700))
                         .clickable {
                             photoPickerLauncher.launch(
-                                ActivityResultContracts.PickVisualMedia.ImageOnly
+                                androidx.activity.result.PickVisualMediaRequest(
+                                    ActivityResultContracts.PickVisualMedia.ImageOnly
+                                )
                             )
                         },
                     contentAlignment = Alignment.Center
@@ -270,7 +274,8 @@ fun EditProfileScreen(
                         address = address,
                         phoneNumber = phoneNumber,
                         secondaryEmail = secondaryEmail,
-                        username = username
+                        username = username,
+                        imageUri = selectedPhotoUri
                     )
                     // Navigate back after a short delay
                     // In production, wait for successful save callback
