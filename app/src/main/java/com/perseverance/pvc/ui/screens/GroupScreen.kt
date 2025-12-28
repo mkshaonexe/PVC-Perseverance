@@ -23,13 +23,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.perseverance.pvc.ui.components.TopHeader
 import com.perseverance.pvc.data.StudyGroup
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import com.perseverance.pvc.ui.viewmodel.SocialViewModel
 
 @Composable
 fun GroupScreen(
+    socialViewModel: SocialViewModel = viewModel(),
     onNavigateToSettings: () -> Unit = {},
     onNavigateToInsights: () -> Unit = {},
     onNavigateToMenu: () -> Unit = {}
 ) {
+    val uiState by socialViewModel.uiState.collectAsState()
+
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
