@@ -3,6 +3,7 @@ package com.perseverance.pvc.di
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.storage.Storage
 
 object SupabaseModule {
     // Ideally these should come from BuildConfig found in app/build/generated/source/buildConfig/debug/com/perseverance/pvc/BuildConfig.java
@@ -21,5 +22,6 @@ object SupabaseModule {
             host = "login"
         }
         install(Postgrest)
+        install(Storage)
     }
 }
