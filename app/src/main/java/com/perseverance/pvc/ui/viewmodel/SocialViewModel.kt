@@ -197,6 +197,27 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
             
+            // Check and set username if missing
+            val currentUser = _uiState.value.currentUser
+            if (currentUser != null && currentUser.username.isBlank()) {
+                val newUsername = generateUniqueUsername(currentUser.displayName)
+                if (newUsername != null) {
+                     repository.updateFullUserProfile(
+                        displayName = currentUser.displayName,
+                        photoData = null,
+                        bio = currentUser.bio,
+                        gender = currentUser.gender,
+                        dateOfBirth = currentUser.dateOfBirth,
+                        address = currentUser.address,
+                        phoneNumber = currentUser.phoneNumber,
+                        secondaryEmail = currentUser.secondaryEmail,
+                        username = newUsername
+                    )
+                    // Optimistic update
+                    _uiState.value = _uiState.value.copy(currentUser = currentUser.copy(username = newUsername))
+                }
+            }
+
             val result = repository.joinGroup(groupId)
             
             if (result.isSuccess) {
@@ -219,6 +240,23 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
                 Toast.makeText(getApplication(), "Failed to join group", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    private suspend fun generateUniqueUsername(displayName: String): String? {
+        val baseName = displayName.filter { it.isLetterOrDigit() }.lowercase()
+        val startName = if (baseName.isNotEmpty()) baseName else "user"
+        
+        // Try exact match
+        if (!repository.isUsernameTaken(startName)) return startName
+        
+        // Try appending numbers
+        for (i in 1..10) {
+            val candidate = "$startName${(100..999).random()}"
+            if (!repository.isUsernameTaken(candidate)) return candidate
+        }
+        
+        // Fallback with timestamp
+        return "${startName}${System.currentTimeMillis() % 10000}" 
     }
 
     /**
