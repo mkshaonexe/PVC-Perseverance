@@ -93,6 +93,9 @@ dependencies {
     
     // Gson for JSON serialization
     implementation("com.google.code.gson:gson:2.10.1")
+
+    // Coil for image loading
+    implementation("io.coil-kt:coil-compose:2.6.0")
     
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

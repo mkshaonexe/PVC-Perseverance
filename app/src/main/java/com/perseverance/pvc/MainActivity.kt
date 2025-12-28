@@ -237,7 +237,7 @@ fun AppNavigation(
         Screen.Dashboard.route,
         Screen.Home.route,
         Screen.Group.route,
-        Screen.Settings.route
+        Screen.Profile.route
     )
     
     // Function to navigate to a route and remember the previous one
@@ -342,6 +342,11 @@ fun AppNavigation(
                     onNavigateToInsights = { navigateToRoute(Screen.Insights.route) },
                     onNavigateToMenu = { navigateToRoute(Screen.Menu.route) },
                     onBackClick = { goBack() }
+                )
+                Screen.Profile.route -> ProfileScreen(
+                    onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
+                    onNavigateToInsights = { navigateToRoute(Screen.Insights.route) },
+                    onNavigateToMenu = { navigateToRoute(Screen.Menu.route) }
                 )
                 Screen.Insights.route -> Page1Screen(
                     onNavigateToSettings = { navigateToRoute(Screen.Settings.route) },
