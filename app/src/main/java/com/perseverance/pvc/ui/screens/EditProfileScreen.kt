@@ -311,7 +311,7 @@ fun EditProfileScreen(
                     }
                     
                     isSaving = true
-                    // Save to Supabase
+                    // Save locally
                     socialViewModel.updateFullProfile(
                         displayName = displayName,
                         bio = bio,
@@ -326,6 +326,8 @@ fun EditProfileScreen(
                     // Navigate back after save completes
                     if (!isProfileIncomplete) {
                         onBackClick()
+                    } else {
+                        isSaving = false
                     }
                 },
                 modifier = Modifier

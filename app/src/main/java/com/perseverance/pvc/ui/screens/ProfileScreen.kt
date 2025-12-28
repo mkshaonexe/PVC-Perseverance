@@ -48,8 +48,8 @@ fun ProfileScreen(
     val isProfileComplete = currentUser?.displayName?.isNotEmpty() == true && 
                            currentUser?.photoUrl?.isNotEmpty() == true
     
-    // If not signed in, show skeleton with login prompt
-    if (!isSignedIn) {
+    // If neither signed in nor having local data, show skeleton with login prompt
+    if (!isSignedIn && currentUser == null) {
         Scaffold(
             topBar = {
                 TopHeader(
