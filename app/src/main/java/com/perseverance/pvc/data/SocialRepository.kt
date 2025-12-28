@@ -352,4 +352,214 @@ class SocialRepository {
             emptyList()
         }
     }
+
+    // --- Real-Time Group Study Functions ---
+
+    /**
+     * Join a study group. User can only be in one group at a time.
+     */
+    suspend fun joinGroup(groupId: String): Result<Unit> {
+        val user = client.auth.currentUserOrNull() ?: return Result.failure(Exception("Not logged in"))
+        
+        return try {
+            // First, leave any existing group
+            client.from("group_members").delete {
+                filter { eq("user_id", user.id) }
+            }
+            
+            // Then join the new group
+            client.from("group_members").insert(
+                GroupMemberRecord(groupId = groupId, userId = user.id)
+            )
+            
+            Log.d(TAG, "Joined group: $groupId")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error joining group", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Leave the current study group.
+     */
+    suspend fun leaveGroup(): Result<Unit> {
+        val user = client.auth.currentUserOrNull() ?: return Result.failure(Exception("Not logged in"))
+        
+        return try {
+            client.from("group_members").delete {
+                filter { eq("user_id", user.id) }
+            }
+            Log.d(TAG, "Left group")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error leaving group", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Get the current user's joined group ID.
+     */
+    suspend fun getCurrentGroupId(): String? {
+        val user = client.auth.currentUserOrNull() ?: return null
+        
+        return try {
+            val membership = client.from("group_members").select {
+                filter { eq("user_id", user.id) }
+            }.decodeSingleOrNull<GroupMemberRecord>()
+            membership?.groupId
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting current group", e)
+            null
+        }
+    }
+
+    /**
+     * Get all members of a specific group with their study status.
+     */
+    suspend fun getGroupMembers(groupId: String): List<GroupMemberWithStatus> {
+        return try {
+            // 1. Get all user IDs in the group
+            val memberships = client.from("group_members").select {
+                filter { eq("group_id", groupId) }
+            }.decodeList<GroupMemberRecord>()
+            
+            val userIds = memberships.map { it.userId }
+            
+            if (userIds.isEmpty()) {
+                Log.d(TAG, "No members in group: $groupId")
+                return emptyList()
+            }
+            
+            Log.d(TAG, "Found ${userIds.size} members in group: $groupId")
+            
+            // 2. Fetch user details for all members
+            val users = client.from("users").select {
+                filter { isIn("id", userIds) }
+            }.decodeList<SocialUser>()
+            
+            // 3. Convert to GroupMemberWithStatus
+            users.map { user ->
+                GroupMemberWithStatus(
+                    userId = user.id,
+                    displayName = user.displayName.ifEmpty { user.email.substringBefore("@") },
+                    avatarUrl = user.photoUrl.ifEmpty { null },
+                    status = user.status,
+                    studyStartTime = user.studyStartTime,
+                    studyDuration = user.studyDuration,
+                    lastActive = user.lastActive,
+                    currentSubject = user.currentSubject
+                )
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching group members", e)
+            emptyList()
+        }
+    }
+
+    /**
+     * Update the user's last_active timestamp (heartbeat).
+     * Should be called every 60 seconds.
+     */
+    suspend fun updateHeartbeat() {
+        val user = client.auth.currentUserOrNull() ?: return
+        
+        try {
+            client.from("users").update(
+                {
+                    set("last_active", System.currentTimeMillis())
+                }
+            ) {
+                filter { eq("id", user.id) }
+            }
+            Log.d(TAG, "Heartbeat updated")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating heartbeat", e)
+        }
+    }
+
+    /**
+     * Start studying - updates status and study_start_time.
+     */
+    suspend fun startStudying(subject: String = "") {
+        val user = client.auth.currentUserOrNull() ?: return
+        
+        try {
+            client.from("users").update(
+                {
+                    set("status", "STUDYING")
+                    set("study_start_time", System.currentTimeMillis())
+                    set("current_subject", subject)
+                    set("last_active", System.currentTimeMillis())
+                }
+            ) {
+                filter { eq("id", user.id) }
+            }
+            Log.d(TAG, "Started studying: $subject")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error starting study", e)
+        }
+    }
+
+    /**
+     * Stop studying - updates status and accumulates study_duration.
+     */
+    suspend fun stopStudying() {
+        val user = client.auth.currentUserOrNull() ?: return
+        
+        try {
+            // First, get current study_start_time to calculate duration
+            val currentUser = client.from("users").select {
+                filter { eq("id", user.id) }
+            }.decodeSingleOrNull<SocialUser>()
+            
+            val studyStartTime = currentUser?.studyStartTime ?: 0L
+            val currentDuration = currentUser?.studyDuration ?: 0L
+            
+            val sessionDuration = if (studyStartTime > 0) {
+                (System.currentTimeMillis() - studyStartTime) / 1000 // in seconds
+            } else 0L
+            
+            val newTotalDuration = currentDuration + sessionDuration
+            
+            client.from("users").update(
+                {
+                    set("status", "IDLE")
+                    set("study_start_time", 0L)
+                    set("study_duration", newTotalDuration)
+                    set("last_active", System.currentTimeMillis())
+                }
+            ) {
+                filter { eq("id", user.id) }
+            }
+            Log.d(TAG, "Stopped studying. Session: ${sessionDuration}s, Total: ${newTotalDuration}s")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error stopping study", e)
+        }
+    }
+
+    /**
+     * Called when app goes to background - pause studying if active.
+     */
+    suspend fun onAppBackground() {
+        val user = client.auth.currentUserOrNull() ?: return
+        
+        try {
+            val currentUser = getCurrentUserProfile() ?: return
+            if (currentUser.status == "STUDYING") {
+                stopStudying()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error handling app background", e)
+        }
+    }
+
+    /**
+     * Called when app resumes from background.
+     */
+    suspend fun onAppResume() {
+        updateHeartbeat()
+    }
 }
+

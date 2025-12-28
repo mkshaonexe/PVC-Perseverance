@@ -34,7 +34,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import com.perseverance.pvc.ui.viewmodel.SocialViewModel
 
-import com.perseverance.pvc.ui.viewmodel.GroupMember
+import com.perseverance.pvc.ui.viewmodel.GroupMemberUI
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

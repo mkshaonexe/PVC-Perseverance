@@ -4,6 +4,7 @@ import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.storage.Storage
+import io.github.jan.supabase.realtime.Realtime
 
 object SupabaseModule {
     // Ideally these should come from BuildConfig found in app/build/generated/source/buildConfig/debug/com/perseverance/pvc/BuildConfig.java
@@ -23,5 +24,6 @@ object SupabaseModule {
         }
         install(Postgrest)
         install(Storage)
+        install(Realtime)
     }
 }

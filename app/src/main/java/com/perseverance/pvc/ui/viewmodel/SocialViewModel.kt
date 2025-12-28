@@ -10,15 +10,24 @@ import com.perseverance.pvc.data.AuthRepository
 import com.perseverance.pvc.data.SocialRepository
 import com.perseverance.pvc.data.SocialUser
 import com.perseverance.pvc.data.StudyGroup
+import com.perseverance.pvc.data.GroupMemberWithStatus
 import com.perseverance.pvc.utils.AnalyticsHelper
 import io.github.jan.supabase.auth.status.SessionStatus
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
-data class GroupMember(
+/**
+ * UI representation of a group member with live-updating time.
+ * This is calculated client-side every second.
+ */
+data class GroupMemberUI(
+    val userId: String,
     val name: String,
     val imageUrl: String? = null,
     val timeSeconds: Long = 0,
@@ -54,13 +63,18 @@ data class SocialUiState(
     val groups: List<com.perseverance.pvc.data.StudyGroup> = emptyList(),
     val selectedGroup: com.perseverance.pvc.data.StudyGroup? = null,
     val isLoadingGroups: Boolean = false,
-    // Simulation
-    val groupMembers: List<GroupMember> = emptyList()
+    val currentGroupId: String? = null,
+    val hasJoinedCurrentGroup: Boolean = false,
+    // Real Group Members (from Supabase)
+    val realGroupMembers: List<GroupMemberWithStatus> = emptyList(),
+    // UI Display Members (with live-calculated time)
+    val groupMembers: List<GroupMemberUI> = emptyList(),
+    val isLoadingMembers: Boolean = false
 )
 
 class SocialViewModel(application: Application) : AndroidViewModel(application) {
     private val authRepository = AuthRepository()
-    private val repository = SocialRepository() // This might need refactoring too if it uses Firebase, but let's stick to ViewModel first
+    private val repository = SocialRepository()
     private val studyRepository = com.perseverance.pvc.data.StudyRepository(application)
     private val profileRepository = com.perseverance.pvc.data.ProfileRepository(application)
     private val missionRepository = com.perseverance.pvc.data.MissionRepository(application, studyRepository)
@@ -68,90 +82,245 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
     private val _uiState = MutableStateFlow(SocialUiState())
     val uiState: StateFlow<SocialUiState> = _uiState.asStateFlow()
     
+    // Jobs for managing coroutines
+    private var timerJob: Job? = null
+    private var heartbeatJob: Job? = null
+    private var refreshJob: Job? = null
+    
     init {
         observeAuthStatus()
         observeProfile()
         loadMissions()
         loadGroups()
-        initializeSimulation()
+        startHeartbeat()
     }
 
-    private fun initializeSimulation() {
-        // Initial Mock Data with some randomization
-        val initialMembers = listOf(
-            GroupMember("Tanjim Shakil", timeSeconds = 9701, isActive = true, isStudying = true, avatarResId = com.perseverance.pvc.R.drawable.study),
-            GroupMember("Nusrat Jahan", timeSeconds = 4359, isActive = true, isStudying = true, avatarResId = com.perseverance.pvc.R.drawable.study),
-            GroupMember("Ahmed Riaz", timeSeconds = 3523, isActive = true, isStudying = true, avatarResId = com.perseverance.pvc.R.drawable.study),
-            GroupMember("Farhana Rifa", timeSeconds = 2752, isActive = true, isStudying = true, avatarResId = com.perseverance.pvc.R.drawable.study),
-            GroupMember("Leonor", timeSeconds = 40579, isActive = false, isStudying = false, avatarResId = com.perseverance.pvc.R.drawable.home),
-            GroupMember("Abid Hasan", timeSeconds = 38476, isActive = true, isStudying = true, avatarResId = com.perseverance.pvc.R.drawable.study),
-            GroupMember("Jenifar Akter", timeSeconds = 25247, isActive = false, isStudying = false, avatarResId = com.perseverance.pvc.R.drawable.home),
-            GroupMember("Sajjad Hossain", timeSeconds = 20543, isActive = true, isStudying = true, avatarResId = com.perseverance.pvc.R.drawable.study),
-            GroupMember("Mehedi Hasan", timeSeconds = 17627, isActive = false, isStudying = false, avatarResId = com.perseverance.pvc.R.drawable.home),
-            GroupMember("Sumaiya Islam", timeSeconds = 16802, isActive = false, isStudying = false, avatarResId = com.perseverance.pvc.R.drawable.home),
-            GroupMember("Rafiqul Islam", timeSeconds = 16542, isActive = true, isStudying = true, avatarResId = com.perseverance.pvc.R.drawable.study),
-            GroupMember("Tasnim Rahman", timeSeconds = 15150, isActive = true, isStudying = true, avatarResId = com.perseverance.pvc.R.drawable.study),
-            GroupMember("Karim Ullah", timeSeconds = 11550, isActive = false, isStudying = false, avatarResId = com.perseverance.pvc.R.drawable.home),
-            GroupMember("Rahim Badsha", timeSeconds = 7950, isActive = true, isStudying = true, avatarResId = com.perseverance.pvc.R.drawable.study),
-            GroupMember("Ayesha Siddi..", timeSeconds = 4350, isActive = true, isStudying = true, avatarResId = com.perseverance.pvc.R.drawable.study),
-            GroupMember("User 12", timeSeconds = 750, isActive = false, isStudying = false, avatarResId = com.perseverance.pvc.R.drawable.home)
-        )
-        _uiState.value = _uiState.value.copy(groupMembers = initialMembers)
-        startSimulationLoop()
-    }
+    // --- Real-Time Group Member Functions ---
 
-    private fun startSimulationLoop() {
-        viewModelScope.launch {
-            while (true) {
-                kotlinx.coroutines.delay(1000)
-                updateSimulation()
+    /**
+     * Start the heartbeat loop - updates last_active every 60 seconds.
+     */
+    private fun startHeartbeat() {
+        heartbeatJob?.cancel()
+        heartbeatJob = viewModelScope.launch {
+            while (isActive) {
+                delay(60_000) // 60 seconds
+                if (_uiState.value.isSignedIn) {
+                    repository.updateHeartbeat()
+                }
             }
         }
     }
 
-    private fun updateSimulation() {
-        val currentMembers = _uiState.value.groupMembers
-        val updatedMembers = currentMembers.map { member ->
-            var newTime = member.timeSeconds
-            var newIsStudying = member.isStudying
-            var newIsActive = member.isActive
-            
-            // Logic:
-            // 1. If studying, increment time
-            // 2. Random chance to stop studying (small chance)
-            // 3. Random chance to start studying (if idle)
-            // 4. Update status/icon based on studying state
-
-            if (member.isStudying) {
-                newTime += 1
-                // Chance to stop: 0.5% per second (~once every 3 mins roughly on avg, but logic is per tick)
-                // Let's make it rare so they study for a while. 0.1% chance.
-                if (Math.random() < 0.001) {
-                    newIsStudying = false
-                    newIsActive = false // "Offline" or just not studying
-                }
-            } else {
-                // Chance to start: 0.2% per second
-                 if (Math.random() < 0.002) {
-                    newIsStudying = true
-                    newIsActive = true
-                }
+    /**
+     * Start the timer update loop - recalculates live study times every second.
+     */
+    private fun startTimerLoop() {
+        timerJob?.cancel()
+        timerJob = viewModelScope.launch {
+            while (isActive) {
+                delay(1000) // Every second
+                updateLiveTimers()
             }
-            
-            member.copy(
-                timeSeconds = newTime, 
-                isStudying = newIsStudying, 
-                isActive = newIsActive,
-                avatarResId = if (newIsStudying) com.perseverance.pvc.R.drawable.study else com.perseverance.pvc.R.drawable.home
+        }
+    }
+
+    /**
+     * Update the UI with live-calculated study times.
+     * This runs client-side every second, no DB writes.
+     */
+    private fun updateLiveTimers() {
+        val realMembers = _uiState.value.realGroupMembers
+        if (realMembers.isEmpty()) return
+        
+        val uiMembers = realMembers.map { member ->
+            val liveSeconds = member.getLiveStudySeconds()
+            GroupMemberUI(
+                userId = member.userId,
+                name = member.displayName,
+                imageUrl = member.avatarUrl,
+                timeSeconds = liveSeconds,
+                isActive = member.isOnline(),
+                isStudying = member.isStudying,
+                avatarResId = if (member.isStudying) com.perseverance.pvc.R.drawable.study else com.perseverance.pvc.R.drawable.home
             )
         }
         
-        // Sort: Studying first, then by time descending? Or just keep original order for stability?
-        // Reference image shows studying members in a separate list. The UI handles filtering.
-        // But for the grid, maybe we want some order? 
-        // For now, keep stability to avoid jumping UI.
-        
-        _uiState.value = _uiState.value.copy(groupMembers = updatedMembers)
+        _uiState.value = _uiState.value.copy(groupMembers = uiMembers)
+    }
+
+    /**
+     * Load group members from Supabase and start timer loop.
+     */
+    fun loadGroupMembers(groupId: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoadingMembers = true)
+            
+            val members = repository.getGroupMembers(groupId)
+            
+            // Check if current user has joined this group
+            val currentGroupId = repository.getCurrentGroupId()
+            val hasJoined = currentGroupId == groupId
+            
+            _uiState.value = _uiState.value.copy(
+                realGroupMembers = members,
+                currentGroupId = currentGroupId,
+                hasJoinedCurrentGroup = hasJoined,
+                isLoadingMembers = false
+            )
+            
+            // Start the timer loop for live updates
+            startTimerLoop()
+            
+            // Also update UI immediately
+            updateLiveTimers()
+        }
+    }
+
+    /**
+     * Refresh group members (called every 60 seconds as safety refresh).
+     */
+    private fun startSafetyRefresh(groupId: String) {
+        refreshJob?.cancel()
+        refreshJob = viewModelScope.launch {
+            while (isActive) {
+                delay(60_000) // Every 60 seconds
+                loadGroupMembers(groupId)
+            }
+        }
+    }
+
+    /**
+     * Join a study group.
+     */
+    fun joinGroup(groupId: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            
+            val result = repository.joinGroup(groupId)
+            
+            if (result.isSuccess) {
+                _uiState.value = _uiState.value.copy(
+                    hasJoinedCurrentGroup = true,
+                    currentGroupId = groupId,
+                    isLoading = false
+                )
+                Toast.makeText(getApplication(), "Joined group!", Toast.LENGTH_SHORT).show()
+                AnalyticsHelper.logEvent("group_join")
+                
+                // Reload members to include self
+                loadGroupMembers(groupId)
+                startSafetyRefresh(groupId)
+            } else {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = result.exceptionOrNull()?.message
+                )
+                Toast.makeText(getApplication(), "Failed to join group", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    /**
+     * Leave the current group.
+     */
+    fun leaveGroup() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            
+            val result = repository.leaveGroup()
+            
+            if (result.isSuccess) {
+                _uiState.value = _uiState.value.copy(
+                    hasJoinedCurrentGroup = false,
+                    currentGroupId = null,
+                    isLoading = false
+                )
+                Toast.makeText(getApplication(), "Left group", Toast.LENGTH_SHORT).show()
+                AnalyticsHelper.logEvent("group_leave")
+                
+                // Stop refresh loop
+                refreshJob?.cancel()
+                
+                // Reload members (to remove self from list)
+                _uiState.value.selectedGroup?.let { loadGroupMembers(it.id) }
+            } else {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = result.exceptionOrNull()?.message
+                )
+            }
+        }
+    }
+
+    /**
+     * Start studying in the current group.
+     */
+    fun startGroupStudy(subject: String = "") {
+        viewModelScope.launch {
+            repository.startStudying(subject)
+            Toast.makeText(getApplication(), "Started studying!", Toast.LENGTH_SHORT).show()
+            AnalyticsHelper.logEvent("group_study_start")
+            
+            // Reload to reflect status change
+            _uiState.value.selectedGroup?.let { loadGroupMembers(it.id) }
+        }
+    }
+
+    /**
+     * Stop studying in the current group.
+     */
+    fun stopGroupStudy() {
+        viewModelScope.launch {
+            repository.stopStudying()
+            Toast.makeText(getApplication(), "Study session ended", Toast.LENGTH_SHORT).show()
+            AnalyticsHelper.logEvent("group_study_stop")
+            
+            // Reload to reflect status change
+            _uiState.value.selectedGroup?.let { loadGroupMembers(it.id) }
+        }
+    }
+
+    /**
+     * Called when entering a group details screen.
+     */
+    fun onEnterGroupDetails(group: StudyGroup) {
+        _uiState.value = _uiState.value.copy(selectedGroup = group)
+        loadGroupMembers(group.id)
+        startSafetyRefresh(group.id)
+    }
+
+    /**
+     * Called when leaving the group details screen.
+     */
+    fun onExitGroupDetails() {
+        timerJob?.cancel()
+        refreshJob?.cancel()
+        _uiState.value = _uiState.value.copy(
+            selectedGroup = null,
+            realGroupMembers = emptyList(),
+            groupMembers = emptyList()
+        )
+    }
+
+    /**
+     * Handle app lifecycle - going to background.
+     */
+    fun onAppBackground() {
+        viewModelScope.launch {
+            repository.onAppBackground()
+        }
+    }
+
+    /**
+     * Handle app lifecycle - resuming from background.
+     */
+    fun onAppResume() {
+        viewModelScope.launch {
+            repository.onAppResume()
+            // Reload current group if active
+            _uiState.value.selectedGroup?.let { loadGroupMembers(it.id) }
+        }
     }
 
     private fun observeProfile() {
