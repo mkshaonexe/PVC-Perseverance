@@ -15,7 +15,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val repository = SettingsRepository(application)
     
     // Dark Mode
-    private val _darkMode = MutableStateFlow("Dark")
+    private val _darkMode = MutableStateFlow("Midnight")
     val darkMode: StateFlow<String> = _darkMode.asStateFlow()
     
     // Use Timer in Background
