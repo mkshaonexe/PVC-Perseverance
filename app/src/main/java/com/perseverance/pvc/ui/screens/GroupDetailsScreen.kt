@@ -34,15 +34,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import com.perseverance.pvc.ui.viewmodel.SocialViewModel
 
-data class GroupMember(
-    val name: String,
-    val imageUrl: String? = null,
-    val time: String,
-    val isActive: Boolean = false,
-    val isStudying: Boolean = false
-)
-
-
+import com.perseverance.pvc.ui.viewmodel.GroupMember
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,29 +45,14 @@ fun GroupDetailsScreen(
 ) {
     val uiState by socialViewModel.uiState.collectAsState()
     val selectedGroup = uiState.selectedGroup
+    val groupMembers = uiState.groupMembers
 
-    // Mock Data
-    val activeMembers = listOf(
-        GroupMember("Tanjim Shakil", time = "02:41:41", isActive = true, isStudying = true),
-        GroupMember("Nusrat Jahan", time = "01:12:39", isActive = true, isStudying = true),
-        GroupMember("Ahmed Riaz", time = "00:58:43", isActive = true, isStudying = true),
-        GroupMember("Farhana Rifa", time = "00:45:52", isActive = true, isStudying = true)
-    )
+    // Filter members
+    val activeMembers = groupMembers.filter { it.isStudying }
+    val allMembers = groupMembers // Show everyone in the bottom grid, or maybe filter? 
+    // The previous mock data had disjoint sets roughly, but "Abid" was in allMembers and was studying.
+    // So allMembers likely implies "All Members" list.
 
-    val allMembers = listOf(
-        GroupMember("Leonor", time = "11:16:19", isActive = false), // Not studying (example)
-        GroupMember("Abid Hasan", time = "10:41:16", isActive = true, isStudying = true),
-        GroupMember("Jenifar Akter", time = "07:00:47", isActive = false),
-        GroupMember("Sajjad Hossain", time = "05:42:23", isActive = true, isStudying = true),
-        GroupMember("Mehedi Hasan", time = "04:53:47", isActive = false),
-        GroupMember("Sumaiya Islam", time = "04:40:02", isActive = false),
-        GroupMember("Rafiqul Islam", time = "04:35:42", isActive = true, isStudying = true),
-        GroupMember("Tasnim Rahman", time = "04:12:30", isActive = true, isStudying = true),
-        GroupMember("Karim Ullah", time = "03:12:30", isActive = false),
-        GroupMember("Rahim Badsha", time = "02:12:30", isActive = true, isStudying = true),
-        GroupMember("Ayesha Siddi..", time = "01:12:30", isActive = true, isStudying = true),
-        GroupMember("User 12", time = "00:12:30", isActive = false),
-    )
 
     // Colors from Reference
     val backgroundColor = MaterialTheme.colorScheme.background // Black/Midnight
@@ -213,7 +190,7 @@ fun GroupDetailsScreen(
                                         // Removed background(midNightGray) and clip as requested
                                 ) {
                                     Image(
-                                        painter = painterResource(id = com.perseverance.pvc.R.drawable.study), // Always study icon for this section
+                                        painter = painterResource(id = if (member.avatarResId != 0) member.avatarResId else com.perseverance.pvc.R.drawable.study), // Always study icon for this section
                                         contentDescription = "Studying",
                                         modifier = Modifier
                                             .size(40.dp) // Adjusted size for PNG
@@ -260,9 +237,9 @@ fun GroupDetailsScreen(
                                              .size(60.dp)
                                              // Removed background(midNightGray) and clip as requested
                                      ) {
-                                          Image(
+                                         Image(
                                              painter = painterResource(
-                                                 id = if (member.isStudying) com.perseverance.pvc.R.drawable.study else com.perseverance.pvc.R.drawable.home
+                                                 id = if (member.avatarResId != 0) member.avatarResId else if (member.isStudying) com.perseverance.pvc.R.drawable.study else com.perseverance.pvc.R.drawable.home
                                              ),
                                              contentDescription = if (member.isStudying) "Studying" else "Not Studying",
                                              modifier = Modifier
