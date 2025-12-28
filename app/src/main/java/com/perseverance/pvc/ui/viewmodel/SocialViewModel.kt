@@ -34,7 +34,8 @@ data class SocialUiState(
     val newMissionTitle: String = "",
     val newMissionTargetHours: String = "",
     // Groups
-    val groups: List<com.perseverance.pvc.data.StudyGroup> = emptyList()
+    val groups: List<com.perseverance.pvc.data.StudyGroup> = emptyList(),
+    val isLoadingGroups: Boolean = false
 )
 
 class SocialViewModel(application: Application) : AndroidViewModel(application) {
@@ -124,11 +125,18 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
     
-    private fun loadGroups() {
+    
+    fun loadGroups() {
         viewModelScope.launch {
-            val groups = repository.getGroups()
-            if (groups.isNotEmpty()) {
-                _uiState.value = _uiState.value.copy(groups = groups)
+            _uiState.value = _uiState.value.copy(isLoadingGroups = true)
+            try {
+                val groups = repository.getGroups()
+                _uiState.value = _uiState.value.copy(
+                    groups = groups,
+                    isLoadingGroups = false
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(isLoadingGroups = false)
             }
         }
     }
