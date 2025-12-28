@@ -35,6 +35,7 @@ data class SocialUiState(
     val newMissionTargetHours: String = "",
     // Groups
     val groups: List<com.perseverance.pvc.data.StudyGroup> = emptyList(),
+    val selectedGroup: com.perseverance.pvc.data.StudyGroup? = null,
     val isLoadingGroups: Boolean = false
 )
 
@@ -63,6 +64,12 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
                 }
             }
         }
+    }
+    
+
+
+    fun selectGroup(group: com.perseverance.pvc.data.StudyGroup) {
+        _uiState.value = _uiState.value.copy(selectedGroup = group)
     }
     
     private fun observeAuthStatus() {

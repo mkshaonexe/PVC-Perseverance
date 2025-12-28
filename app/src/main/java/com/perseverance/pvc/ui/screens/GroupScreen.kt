@@ -220,7 +220,10 @@ fun GroupScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(bottom = 12.dp)
-                                .clickable { onNavigateToGroupDetails() }
+                                .clickable {
+                                    socialViewModel.selectGroup(group)
+                                    onNavigateToGroupDetails()
+                                }
                         ) {
                             Row(
                                 modifier = Modifier.padding(16.dp),

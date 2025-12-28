@@ -34,6 +34,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import com.perseverance.pvc.ui.viewmodel.SocialViewModel
+
 data class GroupMember(
     val name: String,
     val imageUrl: String? = null,
@@ -42,12 +47,18 @@ data class GroupMember(
     val isStudying: Boolean = false
 )
 
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GroupDetailsScreen(
+    socialViewModel: SocialViewModel = viewModel(),
     onNavigateToSettings: () -> Unit = {},
     onBackClick: () -> Unit = {}
 ) {
+    val uiState by socialViewModel.uiState.collectAsState()
+    val selectedGroup = uiState.selectedGroup
+
     // Mock Data
     val activeMembers = listOf(
         GroupMember("Tanjim Shakil", time = "02:41:41", isActive = true, isStudying = true),
@@ -130,7 +141,7 @@ fun GroupDetailsScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            text = "College Student Community",
+                            text = selectedGroup?.name ?: "College Student Community",
                             style = MaterialTheme.typography.headlineSmall,
                             color = primaryTextColor,
                             fontWeight = FontWeight.Bold
@@ -151,7 +162,7 @@ fun GroupDetailsScreen(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "Public group • 1.2K members",
+                            text = "Public group • ${selectedGroup?.memberCount ?: "1.2K"} members",
                             color = Color.Gray,
                             fontSize = 12.sp
                         )
@@ -300,7 +311,7 @@ fun GroupDetailsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
-                .padding(horizontal = 8.dp, vertical = 8.dp),
+                .padding(horizontal = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {

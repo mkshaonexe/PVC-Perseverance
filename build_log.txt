@@ -37,7 +37,12 @@
 > Task :app:writeDebugSigningConfigVersions UP-TO-DATE
 
 > Task :app:compileDebugKotlin FAILED
-e: file:///E:/Cursor%20Play%20ground/PVC-Perseverance/app/src/main/java/com/perseverance/pvc/ui/screens/ProfileScreen.kt:286:42 'fun Modifier.matchParentSize(): Modifier' cannot be called in this context with an implicit receiver. Use an explicit receiver if necessary.
+e: file:///E:/Cursor%20Play%20ground/PVC-Perseverance/app/src/main/java/com/perseverance/pvc/ui/screens/GroupDetailsScreen.kt:90:36 Unresolved reference 'primaryTextColor'.
+e: file:///E:/Cursor%20Play%20ground/PVC-Perseverance/app/src/main/java/com/perseverance/pvc/ui/screens/GroupDetailsScreen.kt:101:40 Unresolved reference 'primaryTextColor'.
+e: file:///E:/Cursor%20Play%20ground/PVC-Perseverance/app/src/main/java/com/perseverance/pvc/ui/screens/GroupDetailsScreen.kt:111:50 Unresolved reference 'primaryTextColor'.
+e: file:///E:/Cursor%20Play%20ground/PVC-Perseverance/app/src/main/java/com/perseverance/pvc/ui/screens/GroupDetailsScreen.kt:112:46 Unresolved reference 'primaryTextColor'.
+e: file:///E:/Cursor%20Play%20ground/PVC-Perseverance/app/src/main/java/com/perseverance/pvc/ui/screens/GroupDetailsScreen.kt:166:37 Unresolved reference 'primaryTextColor'.
+e: file:///E:/Cursor%20Play%20ground/PVC-Perseverance/app/src/main/java/com/perseverance/pvc/ui/screens/GroupDetailsScreen.kt:172:36 Unresolved reference 'primaryTextColor'.
 
 FAILURE: Build failed with an exception.
 
@@ -52,5 +57,5 @@ Execution failed for task ':app:compileDebugKotlin'.
 > Run with --scan to get full insights.
 > Get more help at https://help.gradle.org.
 
-BUILD FAILED in 3s
+BUILD FAILED in 2s
 32 actionable tasks: 1 executed, 31 up-to-date
