@@ -50,25 +50,25 @@ fun GroupDetailsScreen(
 ) {
     // Mock Data
     val activeMembers = listOf(
-        GroupMember("Tanjim$&", time = "12:41:41", isActive = true, isStudying = true),
-        GroupMember("Tabasum...", time = "12:12:39", isStudying = false),
-        GroupMember("TL+HMED", time = "12:08:43", isActive = true, isStudying = true),
-        GroupMember("FA RIFAZ", time = "12:00:52", isActive = true, isStudying = true)
+        GroupMember("Tanjim Shakil", time = "02:41:41", isActive = true, isStudying = true),
+        GroupMember("Nusrat Jahan", time = "01:12:39", isActive = true, isStudying = true),
+        GroupMember("Ahmed Riaz", time = "00:58:43", isActive = true, isStudying = true),
+        GroupMember("Farhana Rifa", time = "00:45:52", isActive = true, isStudying = true)
     )
 
     val allMembers = listOf(
-        GroupMember("Leonor", time = "11:16:19", isActive = true),
-        GroupMember("abiiiiiida", time = "10:41:16", isActive = true),
-        GroupMember("jenifar", time = "7:00:47", isActive = false),
-        GroupMember("Sajjatul Ah...", time = "5:42:23", isActive = true),
-        GroupMember("✨MAVERI...", time = "4:53:47", isActive = false),
-        GroupMember("sumaiya", time = "4:40:02", isActive = false),
-        GroupMember("Rurah", time = "4:35:42", isActive = true),
-        GroupMember("al tasin", time = "4:12:30", isActive = true),
-        GroupMember("User 9", time = "3:12:30", isActive = true),
-        GroupMember("User 10", time = "2:12:30", isActive = true),
-        GroupMember("User 11", time = "1:12:30", isActive = true),
-        GroupMember("User 12", time = "0:12:30", isActive = true),
+        GroupMember("Leonor", time = "11:16:19", isActive = false), // Not studying (example)
+        GroupMember("Abid Hasan", time = "10:41:16", isActive = true, isStudying = true),
+        GroupMember("Jenifar Akter", time = "07:00:47", isActive = false),
+        GroupMember("Sajjad Hossain", time = "05:42:23", isActive = true, isStudying = true),
+        GroupMember("Mehedi Hasan", time = "04:53:47", isActive = false),
+        GroupMember("Sumaiya Islam", time = "04:40:02", isActive = false),
+        GroupMember("Rafiqul Islam", time = "04:35:42", isActive = true, isStudying = true),
+        GroupMember("Tasnim Rahman", time = "04:12:30", isActive = true, isStudying = true),
+        GroupMember("Karim Ullah", time = "03:12:30", isActive = false),
+        GroupMember("Rahim Badsha", time = "02:12:30", isActive = true, isStudying = true),
+        GroupMember("Ayesha Siddi..", time = "01:12:30", isActive = true, isStudying = true),
+        GroupMember("User 12", time = "00:12:30", isActive = false),
     )
 
     // Colors from Reference
@@ -207,14 +207,12 @@ fun GroupDetailsScreen(
                                         .clip(CircleShape)
                                         .background(midNightGray) // Dark Gray Background
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Edit, // Pencil Icon
-                                        contentDescription = null,
-                                        tint = Color.LightGray,
+                                    Image(
+                                        painter = painterResource(id = com.perseverance.pvc.R.drawable.study), // Always study icon for this section
+                                        contentDescription = "Studying",
                                         modifier = Modifier
-                                            .size(30.dp)
+                                            .size(40.dp) // Adjusted size for PNG
                                             .align(Alignment.Center)
-                                            .rotate(90f) // Rotate to look like writing? Or just normal
                                     )
                                 }
                                 Spacer(modifier = Modifier.height(8.dp))
@@ -258,12 +256,13 @@ fun GroupDetailsScreen(
                                              .clip(CircleShape)
                                              .background(midNightGray)
                                      ) {
-                                          Icon(
-                                             imageVector = if (member.isActive) Icons.Filled.Edit else Icons.Filled.Public, // Eye for viewers, Edit for studiers
-                                             contentDescription = null,
-                                             tint = Color.LightGray,
+                                          Image(
+                                             painter = painterResource(
+                                                 id = if (member.isStudying) com.perseverance.pvc.R.drawable.study else com.perseverance.pvc.R.drawable.home
+                                             ),
+                                             contentDescription = if (member.isStudying) "Studying" else "Not Studying",
                                              modifier = Modifier
-                                                 .size(30.dp)
+                                                 .size(40.dp)
                                                  .align(Alignment.Center)
                                          )
                                      }
