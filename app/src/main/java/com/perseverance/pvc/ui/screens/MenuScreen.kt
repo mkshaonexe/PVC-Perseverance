@@ -42,9 +42,6 @@ fun MenuScreen(
     onBackClick: () -> Unit = {},
     onNavigate: (String) -> Unit = {}
 ) {
-    var developerClickCount by remember { mutableStateOf(0) }
-    var isDeveloperModeUnlocked by remember { mutableStateOf(false) }
-    var showDeveloperPopup by remember { mutableStateOf(false) }
     val menuItems = listOf(
         MenuItem(
             title = "Dashboard",
@@ -52,12 +49,7 @@ fun MenuScreen(
             route = "dashboard",
             description = "View your study statistics"
         ),
-        MenuItem(
-            title = "Focus Timer",
-            icon = Icons.Filled.Home,
-            route = "home",
-            description = "Start a focus session"
-        ),
+
         MenuItem(
             title = "Study Groups",
             icon = Icons.Filled.Group,
@@ -81,12 +73,6 @@ fun MenuScreen(
             icon = Icons.Filled.Settings,
             route = "settings",
             description = "App preferences and configuration"
-        ),
-        MenuItem(
-            title = "Developer Mode",
-            icon = Icons.Filled.Build,
-            route = "developer",
-            description = "Add study time manually for testing"
         )
     )
 
@@ -123,22 +109,8 @@ fun MenuScreen(
                 MenuItemCard(
                     item = item,
                     onClick = { 
-                        if (item.route == "developer") {
-                            // Special handling for Developer Mode
-                            developerClickCount++
-                            if (developerClickCount >= 7) {
-                                isDeveloperModeUnlocked = true
-                                showDeveloperPopup = true
-                                // Navigate after showing popup
-                                onNavigate(item.route)
-                            }
-                            // Don't navigate on clicks 1-6, just count them
-                        } else {
-                            onNavigate(item.route)
-                        }
-                    },
-                    isDeveloperMode = item.route == "developer",
-                    isUnlocked = isDeveloperModeUnlocked
+                        onNavigate(item.route)
+                    }
                 )
             }
             
@@ -149,43 +121,13 @@ fun MenuScreen(
         }
     }
     
-    // Developer mode popup
-    if (showDeveloperPopup) {
-        AlertDialog(
-            onDismissRequest = { showDeveloperPopup = false },
-            title = {
-                Text(
-                    text = "🎉 Developer Mode Unlocked!",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            text = {
-                Text(
-                    text = "You are now a developer!\n\nYou can now add study time manually for testing purposes.",
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = { showDeveloperPopup = false },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
-                ) {
-                    Text("Got it!")
-                }
-            }
-        )
-    }
+
 }
 
 @Composable
 fun MenuItemCard(
     item: MenuItem,
-    onClick: () -> Unit,
-    isDeveloperMode: Boolean = false,
-    isUnlocked: Boolean = false
+    onClick: () -> Unit
 ) {
     val isLight = isLightTheme()
     Card(
@@ -193,19 +135,10 @@ fun MenuItemCard(
             .fillMaxWidth()
             .clickable { onClick() },
         colors = CardDefaults.cardColors(
-            containerColor = if (isDeveloperMode && !isUnlocked) {
-                // Subtle color change for developer mode (always when not unlocked)
-                MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
-            } else {
-                MaterialTheme.colorScheme.surface
-            }
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         border = glassBorder(isLight),
-        elevation = if (isDeveloperMode && !isUnlocked) {
-            CardDefaults.cardElevation(defaultElevation = 6.dp)
-        } else {
-            glassElevation(isLight)
-        }
+        elevation = glassElevation(isLight)
     ) {
         Row(
             modifier = Modifier
@@ -242,15 +175,13 @@ fun MenuItemCard(
                 }
             }
             
-            // Arrow icon (only show for non-developer items or unlocked developer mode)
-            if (!isDeveloperMode || isUnlocked) {
-                Icon(
-                    imageVector = Icons.Filled.ChevronRight,
-                    contentDescription = "Navigate to ${item.title}",
-                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                    modifier = Modifier.size(20.dp)
-                )
-            }
+            // Arrow icon
+            Icon(
+                imageVector = Icons.Filled.ChevronRight,
+                contentDescription = "Navigate to ${item.title}",
+                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                modifier = Modifier.size(20.dp)
+            )
         }
     }
 }
