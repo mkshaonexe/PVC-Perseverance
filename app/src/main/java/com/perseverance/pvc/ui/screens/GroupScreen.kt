@@ -43,6 +43,11 @@ fun GroupScreen(
 ) {
     val uiState by socialViewModel.uiState.collectAsState()
 
+    // Refresh groups every time the screen is entered
+    LaunchedEffect(Unit) {
+        socialViewModel.loadGroups()
+    }
+
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
