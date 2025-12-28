@@ -72,17 +72,8 @@ fun SettingsScreen(
                 .background(MaterialTheme.colorScheme.background)
         )
         
-        // Semi-transparent overlay
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    if (MaterialTheme.colorScheme.background.luminance() < 0.5f)
-                        Color.Black.copy(alpha = 0.5f)
-                    else
-                        Color.Transparent
-                )
-        )
+        // Overlay removed to match Group screen background
+
         
         Column(
             modifier = Modifier
