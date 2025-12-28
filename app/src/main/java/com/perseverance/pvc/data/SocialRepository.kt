@@ -4,6 +4,9 @@ import android.util.Log
 import com.perseverance.pvc.di.SupabaseModule
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.storage.storage
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -61,6 +64,48 @@ class SocialRepository {
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error updating profile", e)
+        }
+    }
+
+    suspend fun updateUserProfile(displayName: String, photoData: ByteArray?): Result<Unit> {
+        val user = client.auth.currentUserOrNull() ?: return Result.failure(Exception("Not logged in"))
+
+        return try {
+            var photoUrl = user.userMetadata?.get("avatar_url")?.toString()?.replace("\"", "") ?: ""
+
+            if (photoData != null) {
+                val fileName = "${user.id}/avatar_${System.currentTimeMillis()}.jpg"
+                val bucket = client.storage.from("avatars")
+                bucket.upload(fileName, photoData) {
+                    upsert = true
+                }
+                photoUrl = bucket.publicUrl(fileName)
+            }
+
+            // Update Auth User Metadata
+            client.auth.updateUser {
+                data = JsonObject(
+                    mapOf(
+                        "full_name" to JsonPrimitive(displayName),
+                        "avatar_url" to JsonPrimitive(photoUrl)
+                    )
+                )
+            }
+
+            // Sync with 'users' table (Manually, in case triggers fail/lag)
+            client.from("users").update(
+                {
+                    set("display_name", displayName)
+                    set("avatar_url", photoUrl)
+                }
+            ) {
+                filter { eq("id", user.id) }
+            }
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating user profile", e)
+            Result.failure(e)
         }
     }
 
