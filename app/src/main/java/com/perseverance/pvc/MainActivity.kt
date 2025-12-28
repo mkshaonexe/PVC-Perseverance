@@ -229,7 +229,7 @@ fun AppNavigation(
     
     // Function to navigate to a route and remember the previous one
     fun navigateToRoute(route: String) {
-        if (route != currentRoute) {
+        if (route != currentRoute || route == Screen.Group.route) {
             previousRoute = currentRoute
             currentRoute = route
             AnalyticsHelper.logScreenView(route)
