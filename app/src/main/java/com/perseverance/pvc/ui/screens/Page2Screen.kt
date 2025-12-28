@@ -80,7 +80,8 @@ fun Page2Screen(
             TopHeader(
                 onNavigateToSettings = onNavigateToSettings,
                 onNavigateToInsights = onNavigateToInsights,
-                onHamburgerClick = onNavigateToMenu
+                onHamburgerClick = onNavigateToMenu,
+                title = "Dashboard"
             )
             
             // Main content with padding
