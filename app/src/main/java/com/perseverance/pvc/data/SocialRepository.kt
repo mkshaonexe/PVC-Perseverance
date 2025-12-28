@@ -341,7 +341,12 @@ class SocialRepository {
 
     suspend fun getGroups(): List<StudyGroup> {
         return try {
-            client.from("groups").select().decodeList<StudyGroup>()
+            val groups = client.from("groups").select().decodeList<StudyGroup>()
+            Log.d(TAG, "getGroups: Fetched ${groups.size} groups")
+            groups.forEach { group ->
+                 Log.d(TAG, "getGroups: ID=${group.id}, Name=${group.name}")
+            }
+            groups
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching groups", e)
             emptyList()

@@ -101,6 +101,38 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
                         // In local mode, we don't fetch from DB. 
                         // The observeProfile() already handles loading from DataStore.
                         
+                        // Fetch remote profile and sync to local storage
+                        val remoteProfile = repository.getCurrentUserProfile()
+                        if (remoteProfile != null) {
+                            // Merge remote data with the auth info (auth has the photoUrl from Google)
+                            val finalPhotoUrl = if (remoteProfile.photoUrl.isNotEmpty()) remoteProfile.photoUrl else photoUrl.replace("\"", "")
+                            
+                            profileRepository.saveProfile(
+                                displayName = remoteProfile.displayName.ifEmpty { displayName.replace("\"", "") },
+                                photoUrl = finalPhotoUrl,
+                                bio = remoteProfile.bio,
+                                gender = remoteProfile.gender,
+                                dateOfBirth = remoteProfile.dateOfBirth,
+                                address = remoteProfile.address,
+                                phoneNumber = remoteProfile.phoneNumber,
+                                secondaryEmail = remoteProfile.secondaryEmail,
+                                username = remoteProfile.username
+                            )
+                        } else {
+                             // Initialize local with basic auth info if no remote profile exists
+                             profileRepository.saveProfile(
+                                displayName = displayName.replace("\"", ""),
+                                photoUrl = photoUrl.replace("\"", ""),
+                                bio = "",
+                                gender = "",
+                                dateOfBirth = "",
+                                address = "",
+                                phoneNumber = "",
+                                secondaryEmail = "",
+                                username = ""
+                             )
+                        }
+                        
                         startFriendsListener()
                     }
                     is SessionStatus.NotAuthenticated -> {
@@ -292,6 +324,7 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
             // For now, let's just use the URI string if it's available.
             val photoUrl = imageUri?.toString() ?: _uiState.value.currentUser?.photoUrl ?: ""
 
+            // 1. Save to Local Storage
             profileRepository.saveProfile(
                 displayName = displayName,
                 photoUrl = photoUrl,
@@ -303,10 +336,31 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
                 secondaryEmail = secondaryEmail,
                 username = username
             )
+
+            // 2. Sync to Remote (Supabase)
+            // We launch this concurrently but let the local update finish first so UI is responsive
+            launch {
+                val result = repository.updateFullUserProfile(
+                    displayName = displayName,
+                    photoData = null, // We are not uploading a new image file here, just updating the URL/Text
+                    bio = bio,
+                    gender = gender,
+                    dateOfBirth = dateOfBirth,
+                    address = address,
+                    phoneNumber = phoneNumber,
+                    secondaryEmail = secondaryEmail,
+                    username = username
+                )
+                
+                if (result.isFailure) {
+                   // Ideally properly handle error, maybe a snackbar
+                   // For now, at least we have local persistence
+                }
+            }
             
             _uiState.value = _uiState.value.copy(isLoading = false)
-            Toast.makeText(getApplication(), "Profile updated locally!", Toast.LENGTH_SHORT).show()
-            AnalyticsHelper.logEvent("profile_update_local")
+            Toast.makeText(getApplication(), "Profile updated!", Toast.LENGTH_SHORT).show()
+            AnalyticsHelper.logEvent("profile_update_sync")
         }
     }
 }
