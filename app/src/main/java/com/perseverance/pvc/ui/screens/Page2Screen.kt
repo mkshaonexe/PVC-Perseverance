@@ -128,7 +128,7 @@ fun Page2Screen(
                             )
                             Text(
                                 text = uiState.timerDisplay,
-                                fontSize = 40.sp,
+                                fontSize = 32.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
