@@ -78,58 +78,26 @@ fun GroupDetailsScreen(
     val blueBanner = Color(0xFF1976D2) // Blue for group banner
     val primaryTextColor = MaterialTheme.colorScheme.onBackground
 
-    Scaffold(
-        containerColor = backgroundColor,
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {},
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = primaryTextColor
-                        )
-                    }
-                },
-                actions = {
-                    // Notification Icon with Badge
-                    Box {
-                        IconButton(onClick = {}) {
-                            Icon(
-                                Icons.Filled.Notifications, 
-                                contentDescription = "Notifications", 
-                                tint = primaryTextColor
-                            )
-                        }
-                        Badge(modifier = Modifier.align(Alignment.TopEnd).padding(4.dp)) {
-                            Text("3")
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = backgroundColor, // Match background
-                    navigationIconContentColor = primaryTextColor,
-                    actionIconContentColor = primaryTextColor
-                )
-            )
-        }
-    ) { paddingValues ->
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(backgroundColor)
+    ) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .background(backgroundColor)
+                .background(backgroundColor),
+            contentPadding = PaddingValues(bottom = 16.dp)
         ) {
-            // 1. Cover Photo
+            // 1. Cover Photo (Starts at top)
             item {
                 Image(
                     painter = painterResource(id = com.perseverance.pvc.R.drawable.group_cover),
                     contentDescription = "Group Cover Photo",
-                    contentScale = ContentScale.FillWidth, // Match width, height auto or manual
+                    contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(220.dp) // Taller to show content
+                        .height(200.dp) // Maintain user-defined height
                 )
             }
 
@@ -271,7 +239,6 @@ fun GroupDetailsScreen(
             }
 
             // 5. Grid/List of Other Members
-            // We use a FlowRow equivalent or just rows of 4 items for grid-like appearance in LazyColumn
             item {
                  Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                      val chunks = allMembers.chunked(4)
@@ -326,6 +293,38 @@ fun GroupDetailsScreen(
                          }
                      }
                  }
+            }
+        }
+
+        // Overlay Header (Back & Notification)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(horizontal = 8.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBackClick) {
+                Icon(
+                    imageVector = Icons.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint = Color.White // White icon for better visibility on cover
+                )
+            }
+
+            // Notification Icon with Badge
+            Box {
+                IconButton(onClick = {}) {
+                    Icon(
+                        Icons.Filled.Notifications, 
+                        contentDescription = "Notifications", 
+                        tint = Color.White // White icon
+                    )
+                }
+                Badge(modifier = Modifier.align(Alignment.TopEnd).padding(4.dp)) {
+                    Text("3")
+                }
             }
         }
     }
