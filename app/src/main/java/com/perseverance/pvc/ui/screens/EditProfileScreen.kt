@@ -35,6 +35,7 @@ fun EditProfileScreen(
     onNavigateToInsights: () -> Unit = {},
     onNavigateToMenu: () -> Unit = {},
     onBackClick: () -> Unit = {},
+    isProfileIncomplete: Boolean = false,
     socialViewModel: SocialViewModel = viewModel()
 ) {
     val uiState by socialViewModel.uiState.collectAsState()
@@ -53,6 +54,12 @@ fun EditProfileScreen(
     
     var showGenderDialog by remember { mutableStateOf(false) }
     var isSaving by remember { mutableStateOf(false) }
+    var showIncompleteWarning by remember { mutableStateOf(false) }
+    
+    // Check if profile is complete
+    val hasName = displayName.isNotEmpty()
+    val hasPhoto = selectedPhotoUri != null || currentUser?.photoUrl?.isNotEmpty() == true
+    val isComplete = hasName && hasPhoto
     
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -70,8 +77,14 @@ fun EditProfileScreen(
                 onNavigateToInsights = onNavigateToInsights,
                 onHamburgerClick = onNavigateToMenu,
                 showBackButton = true,
-                onBackClick = onBackClick,
-                title = "Edit Profile"
+                onBackClick = {
+                    if (isProfileIncomplete && !isComplete) {
+                        showIncompleteWarning = true
+                    } else {
+                        onBackClick()
+                    }
+                },
+                title = if (isProfileIncomplete) "Complete Your Profile" else "Edit Profile"
             )
         },
         containerColor = MaterialTheme.colorScheme.background
@@ -85,6 +98,34 @@ fun EditProfileScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(24.dp))
+            
+            // Mandatory completion message
+            if (isProfileIncomplete) {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = "Please set your name and profile picture to continue",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
             
             // Profile Photo with Edit Button
             Box(
@@ -264,6 +305,11 @@ fun EditProfileScreen(
             // Save Button
             Button(
                 onClick = {
+                    if (isProfileIncomplete && !isComplete) {
+                        showIncompleteWarning = true
+                        return@Button
+                    }
+                    
                     isSaving = true
                     // Save to Supabase
                     socialViewModel.updateFullProfile(
@@ -277,8 +323,10 @@ fun EditProfileScreen(
                         username = username,
                         imageUri = selectedPhotoUri
                     )
-                    // Navigate back after a short delay
-                    // In production, wait for successful save callback
+                    // Navigate back after save completes
+                    if (!isProfileIncomplete) {
+                        onBackClick()
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -287,7 +335,7 @@ fun EditProfileScreen(
                     containerColor = MaterialTheme.colorScheme.primary
                 ),
                 shape = RoundedCornerShape(12.dp),
-                enabled = !isSaving
+                enabled = !isSaving && (!isProfileIncomplete || isComplete)
             ) {
                 if (isSaving) {
                     CircularProgressIndicator(
@@ -341,6 +389,22 @@ fun EditProfileScreen(
             confirmButton = {
                 TextButton(onClick = { showGenderDialog = false }) {
                     Text("Cancel")
+                }
+            }
+        )
+    }
+    
+    // Incomplete Profile Warning Dialog
+    if (showIncompleteWarning) {
+        AlertDialog(
+            onDismissRequest = { showIncompleteWarning = false },
+            title = { Text("Profile Incomplete") },
+            text = {
+                Text("Please set both your name and profile picture to continue. These are required fields.")
+            },
+            confirmButton = {
+                TextButton(onClick = { showIncompleteWarning = false }) {
+                    Text("OK")
                 }
             }
         )
