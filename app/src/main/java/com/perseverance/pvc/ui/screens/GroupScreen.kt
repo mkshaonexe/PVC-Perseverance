@@ -44,7 +44,7 @@ fun GroupScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFF0D161F)) // Dark background matching reference
+                .background(MaterialTheme.colorScheme.background)
         )
         
         Column(
@@ -71,13 +71,13 @@ fun GroupScreen(
                 Box(
                     modifier = Modifier
                         .size(80.dp)
-                        .background(Color(0xFFFFD700).copy(alpha = 0.2f), CircleShape),
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Group, // Using Group icon as approximate match
                         contentDescription = "Study Group",
-                        tint = Color(0xFFFFD700),
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(40.dp)
                     )
                 }
@@ -88,13 +88,13 @@ fun GroupScreen(
                     text = "Study Group",
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onBackground
                 )
                 
                 Text(
                     text = "Join global challenges and study with friends.",
                     fontSize = 14.sp,
-                    color = Color(0xFF8B9BB4),
+                    color = MaterialTheme.colorScheme.secondary,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(top = 8.dp)
                 )
@@ -106,15 +106,15 @@ fun GroupScreen(
                     text = "Global Event",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
                 )
                 
                 // 101 Hours Challenge Card
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF151F28)),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     shape = RoundedCornerShape(24.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFFD700).copy(alpha = 0.3f)),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
@@ -125,7 +125,7 @@ fun GroupScreen(
                         ) {
                             Text(
                                 text = "LIMITED TIME EVENT",
-                                color = Color(0xFFFFD700),
+                                color = MaterialTheme.colorScheme.primary,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -150,7 +150,7 @@ fun GroupScreen(
                             text = "101 Hours Challenge",
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         
                         Spacer(modifier = Modifier.height(8.dp))
@@ -158,7 +158,7 @@ fun GroupScreen(
                         Text(
                             text = "Study 101 hours in the last week of 2025 (168 Hours). The toughest mission!",
                             fontSize = 14.sp,
-                            color = Color(0xFF8B9BB4),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             lineHeight = 20.sp
                         )
                         
@@ -172,13 +172,13 @@ fun GroupScreen(
                                 text = "1.3",
                                 fontSize = 32.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFFFFD700)
+                                color = MaterialTheme.colorScheme.primary
                             )
                             Spacer(modifier = Modifier.weight(1f))
                             Text(
                                 text = "/ 101 hrs",
                                 fontSize = 14.sp,
-                                color = Color(0xFF8B9BB4),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(bottom = 6.dp)
                             )
                         }
@@ -192,8 +192,8 @@ fun GroupScreen(
                                 .fillMaxWidth()
                                 .height(6.dp)
                                 .clip(RoundedCornerShape(3.dp)),
-                            trackColor = Color(0xFF2A3744),
-                            color = Color(0xFFFFD700)
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                            color = MaterialTheme.colorScheme.primary
                         )
                         
                         Spacer(modifier = Modifier.height(16.dp))
@@ -204,14 +204,14 @@ fun GroupScreen(
                             Icon(
                                 imageVector = Icons.Filled.People,
                                 contentDescription = null,
-                                tint = Color(0xFF8B9BB4),
+                                tint = MaterialTheme.colorScheme.secondary,
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "1,240 participants fighting now",
                                 fontSize = 12.sp,
-                                color = Color(0xFF8B9BB4)
+                                color = MaterialTheme.colorScheme.secondary
                             )
                         }
                     }
@@ -229,9 +229,9 @@ fun GroupScreen(
                         modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
                     )
                     
-                    uiState.groups.forEach { group ->
+                     uiState.groups.forEach { group ->
                         Card(
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF151F28)),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                             shape = RoundedCornerShape(16.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -244,12 +244,12 @@ fun GroupScreen(
                                 Box(
                                     modifier = Modifier
                                         .size(48.dp)
-                                        .background(Color(0xFFFFD700).copy(alpha = 0.2f), CircleShape),
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
                                         text = group.name.firstOrNull()?.toString() ?: "G",
-                                        color = Color(0xFFFFD700),
+                                        color = MaterialTheme.colorScheme.primary,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 20.sp
                                     )
@@ -264,13 +264,13 @@ fun GroupScreen(
                                         text = group.name,
                                         fontSize = 16.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color.White
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
                                     group.description?.let { desc ->
                                         Text(
                                             text = desc,
                                             fontSize = 12.sp,
-                                            color = Color(0xFF8B9BB4),
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             lineHeight = 16.sp,
                                             maxLines = 2,
                                             modifier = Modifier.padding(top = 4.dp)
@@ -285,14 +285,14 @@ fun GroupScreen(
                                         Icon(
                                             imageVector = Icons.Filled.People,
                                             contentDescription = null,
-                                            tint = Color(0xFF8B9BB4),
+                                            tint = MaterialTheme.colorScheme.secondary,
                                             modifier = Modifier.size(12.dp)
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
                                         Text(
                                             text = "${group.memberCount} members",
                                             fontSize = 12.sp,
-                                            color = Color(0xFF8B9BB4)
+                                            color = MaterialTheme.colorScheme.secondary
                                         )
                                     }
                                 }
@@ -313,13 +313,13 @@ fun GroupScreen(
                         text = "Your Missions",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                     
                     Icon(
                         imageVector = Icons.Filled.Add,
                         contentDescription = "Add Mission",
-                        tint = Color(0xFFFFD700),
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(24.dp)
                     )
                 }
@@ -331,12 +331,12 @@ fun GroupScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(80.dp)
-                        .background(Color(0xFF151F28), RoundedCornerShape(16.dp)),
+                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "Create your first custom mission!",
-                        color = Color(0xFF8B9BB4).copy(alpha = 0.5f),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                         fontSize = 14.sp
                     )
                 }
