@@ -65,15 +65,27 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
                         val displayName = metadata?.get("full_name")?.toString() ?: "User"
                         val photoUrl = metadata?.get("avatar_url")?.toString() ?: ""
                         
-                        _uiState.value = _uiState.value.copy(
-                            isSignedIn = true,
-                            currentUser = SocialUser(
+                        // Initial basic info from Auth
+                        var socialUser = SocialUser(
                                 uid = user?.id ?: "",
                                 displayName = displayName.replace("\"", ""), // Remove quotes if JSON parsing leaves them
                                 email = user?.email ?: "",
                                 photoUrl = photoUrl.replace("\"", "")
                             )
+                        
+                        _uiState.value = _uiState.value.copy(
+                            isSignedIn = true,
+                            currentUser = socialUser
                         )
+
+                        // Fetch full profile from DB
+                        viewModelScope.launch {
+                            val fullProfile = repository.getCurrentUserProfile()
+                            if (fullProfile != null) {
+                                _uiState.value = _uiState.value.copy(currentUser = fullProfile)
+                            }
+                        }
+
                         startFriendsListener()
                     }
                     is SessionStatus.NotAuthenticated -> {
@@ -240,9 +252,17 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
 
     // --- Profile Management ---
 
-    fun updateProfile(displayName: String, imageUri: Uri?) {
-        if (displayName.isBlank()) return
-
+    fun updateFullProfile(
+        displayName: String,
+        imageUri: Uri?,
+        bio: String,
+        gender: String,
+        dateOfBirth: String,
+        address: String,
+        phoneNumber: String,
+        secondaryEmail: String,
+        username: String
+    ) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
             
@@ -254,30 +274,29 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
                 }
             }
 
-            val result = repository.updateUserProfile(displayName, photoBytes)
+            val result = repository.updateFullUserProfile(
+                displayName = displayName,
+                photoData = photoBytes,
+                bio = bio,
+                gender = gender,
+                dateOfBirth = dateOfBirth,
+                address = address,
+                phoneNumber = phoneNumber,
+                secondaryEmail = secondaryEmail,
+                username = username
+            )
             
             _uiState.value = _uiState.value.copy(isLoading = false)
 
             if (result.isSuccess) {
-                // Update local state immediately to reflect changes
-                val currentUser = _uiState.value.currentUser
-                if (currentUser != null) {
-                    // Start with existing photoUrl
-                    var newPhotoUrl = currentUser.photoUrl
-                    
-                    // Ideally we should get the new URL from the repo result, but let's just trigger a session refresh or wait for the flow
-                    // Actually, since we updated auth metadata, sessionStatus flow in init block *should* trigger eventually 
-                    // providing internal Supabase cache updates.
-                    // But for immediate UI feedback (optimistic update), we might need the URL.
-                    // The repo currently returns Unit. Let's rely on the auth listener for now, 
-                    // but we can force a session refresh if needed.
-                    // For now, just Toast. The Auth flow (observeAuthStatus) will catch the metadata change if Supabase emits it.
-                    // If not, we might need to manually refresh session.
-                    
-                    authRepository.sessionStatus // access to force refresh if possible, or just wait
+                // Refresh full profile
+                 val fullProfile = repository.getCurrentUserProfile()
+                if (fullProfile != null) {
+                     _uiState.value = _uiState.value.copy(currentUser = fullProfile)
                 }
+                
                 Toast.makeText(getApplication(), "Profile updated!", Toast.LENGTH_SHORT).show()
-                AnalyticsHelper.logEvent("profile_update")
+                AnalyticsHelper.logEvent("profile_update_full")
             } else {
                 Toast.makeText(getApplication(), "Error updating profile: ${result.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
             }
