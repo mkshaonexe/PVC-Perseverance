@@ -190,7 +190,7 @@ fun SettingsScreen(
                     items = {
                         SettingsItem(
                             icon = Icons.Filled.Info,
-                            title = "Version 0.7.5",
+                            title = "Version 0.7.6",
                             action = {
                                 val intent = Intent(Intent.ACTION_VIEW).apply {
                                     data = Uri.parse("https://t.me/PVCPerseverance")
