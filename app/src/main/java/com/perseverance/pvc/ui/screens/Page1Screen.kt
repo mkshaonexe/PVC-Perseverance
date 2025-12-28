@@ -102,15 +102,6 @@ fun Page1Screen(
                     .verticalScroll(scrollState)
                     .padding(horizontal = 16.dp, vertical = 24.dp)
             ) {
-                // Title
-                Text(
-                    text = "Insights",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-            
             // Period selection buttons
             PeriodSelector(
                 selectedPeriod = uiState.selectedPeriod,
@@ -185,7 +176,66 @@ fun Page1Screen(
                 }
                 PeriodType.CHALLENGES -> {
                     // Challenges / Missions View
-                    if (uiState.isLoading) {
+                    if (!uiState.isSignedIn) {
+                        // Not Authenticated - Show Sign In Card
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 16.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surface
+                            ),
+                            shape = RoundedCornerShape(16.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(32.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.KeyboardArrowRight,
+                                    contentDescription = "Challenges",
+                                    modifier = Modifier.size(64.dp),
+                                    tint = Color(0xFFFFD700)
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(
+                                    text = "Join Challenges",
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Sign in with Google to view and participate in study challenges and missions.",
+                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(modifier = Modifier.height(24.dp))
+                                Button(
+                                    onClick = { 
+                                        viewModel.signInWithGoogle()
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color(0xFFFFD700),
+                                        contentColor = Color.Black
+                                    ),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.KeyboardArrowRight,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Sign in with Google", fontSize = 16.sp)
+                                }
+                            }
+                        }
+                    } else if (uiState.isLoading) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
