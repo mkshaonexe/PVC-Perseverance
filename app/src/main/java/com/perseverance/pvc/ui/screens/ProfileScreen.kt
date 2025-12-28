@@ -56,13 +56,13 @@ fun ProfileScreen(
         DateUtils.formatElapsedTime(todayStudySeconds.toLong())
     }
 
-    // Colors roughly matching the dark/teal theme from the image
-    val darkBackground = Color(0xFF0D161F)
-    val cardBackground = Color(0xFF0F1E29) // Slightly lighter dark for cards
-    val goldColor = Color(0xFFFFD700)
-    val textColor = Color.White
-    val secondaryTextColor = Color(0xFF8B9BB4)
-    val accentColor = Color(0xFF00A8E8) // Light blueish
+    // Colors derived from MaterialTheme for dynamic theming
+    val darkBackground = MaterialTheme.colorScheme.background
+    val cardBackground = MaterialTheme.colorScheme.surface
+    val goldColor = MaterialTheme.colorScheme.primary // Starts as Gold in Midnight/Dark, can be different in Light if needed
+    val textColor = MaterialTheme.colorScheme.onBackground
+    val secondaryTextColor = MaterialTheme.colorScheme.secondary
+    val accentColor = MaterialTheme.colorScheme.tertiary // Map tertiary to accent
 
     Scaffold(
         topBar = {
@@ -170,15 +170,15 @@ fun ProfileScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             // Icons for currency/stats (Mock)
-                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.background(Color(0xFF1E2D38), RoundedCornerShape(50)).padding(horizontal = 8.dp, vertical = 4.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(50)).padding(horizontal = 8.dp, vertical = 4.dp)) {
                                 Text("🟡 541", color = textColor, fontSize = 12.sp)
                             }
                             Spacer(modifier = Modifier.width(8.dp))
-                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.background(Color(0xFF1E2D38), RoundedCornerShape(50)).padding(horizontal = 8.dp, vertical = 4.dp)) {
+                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(50)).padding(horizontal = 8.dp, vertical = 4.dp)) {
                                 Text("💎 0", color = textColor, fontSize = 12.sp)
                             }
                              Spacer(modifier = Modifier.width(8.dp))
-                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.background(Color(0xFF1E2D38), RoundedCornerShape(50)).padding(horizontal = 8.dp, vertical = 4.dp)) {
+                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(50)).padding(horizontal = 8.dp, vertical = 4.dp)) {
                                 Text("🎁 0", color = textColor, fontSize = 12.sp)
                             }
                         }
@@ -197,7 +197,7 @@ fun ProfileScreen(
                                 .fillMaxWidth()
                                 .height(8.dp)
                                 .clip(RoundedCornerShape(4.dp)),
-                            trackColor = Color(0xFF1E2A36),
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant,
                             color = goldColor
                         )
                         Text(
