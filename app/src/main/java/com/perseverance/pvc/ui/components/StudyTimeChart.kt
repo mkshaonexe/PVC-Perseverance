@@ -29,7 +29,7 @@ fun StudyTimeChart(
             .fillMaxWidth()
             .padding(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.Black.copy(alpha = 0.7f)
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         shape = RoundedCornerShape(16.dp)
     ) {
@@ -41,7 +41,7 @@ fun StudyTimeChart(
                 text = "Daily Study Time",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center
             )
@@ -75,7 +75,7 @@ fun StudyTimeChart(
                 ) {
                     Text(
                         text = "No study data available",
-                        color = Color.White.copy(alpha = 0.7f),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                         fontSize = 16.sp
                     )
                 }
@@ -138,7 +138,7 @@ private fun StudyTimeBarChart(
                 ) {
                     Text(
                         text = "${subject.totalMinutes}m",
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(top = 8.dp)
@@ -189,13 +189,13 @@ private fun SubjectLegend(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = subject.subject,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 14.sp
                     )
                 }
                 Text(
                     text = "${subject.totalMinutes}m",
-                    color = Color.White.copy(alpha = 0.8f),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium
                 )
