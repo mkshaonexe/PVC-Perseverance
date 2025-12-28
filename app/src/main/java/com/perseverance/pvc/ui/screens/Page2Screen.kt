@@ -221,10 +221,7 @@ fun StudyTimeChartWithScrollableLegend(
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(
-            containerColor = if (isLightTheme) 
-                MaterialTheme.colorScheme.surface 
-            else 
-                Color(0xFF1E1E1E) // Slightly lighter than pure black for depth
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         shape = RoundedCornerShape(24.dp), // More rounded corners
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
