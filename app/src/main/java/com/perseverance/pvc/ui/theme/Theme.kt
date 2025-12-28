@@ -41,13 +41,36 @@ private val LightColorScheme = lightColorScheme(
     outline = GlassBorder // Subtle borders
 )
 
+private val MidnightColorScheme = darkColorScheme(
+    primary = MidnightPrimary,
+    secondary = MidnightSecondary,
+    tertiary = MidnightSecondary,
+    background = MidnightBackground,
+    surface = MidnightSurface,
+    surfaceVariant = MidnightSurfaceVariant,
+    onPrimary = MidnightBackground,
+    onSecondary = MidnightBackground,
+    onTertiary = MidnightBackground,
+    onBackground = MidnightOnBackground,
+    onSurface = MidnightOnBackground,
+    onSurfaceVariant = MidnightSecondary
+)
+
 @Composable
 fun PerseverancePVCTheme(
-    darkTheme: Boolean = true, // Default to dark theme for new users
+    themeMode: String = "Dark", // "Light", "Dark", "Midnight"
     content: @Composable () -> Unit
 ) {
-    // Dynamic color disabled to ensure consistent reference light theme
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    val context = LocalContext.current
+    val systemInDarkTheme = isSystemInDarkTheme()
+    
+    val colorScheme = when (themeMode) {
+        "Light" -> LightColorScheme
+        "Dark" -> DarkColorScheme
+        "Midnight" -> MidnightColorScheme
+        "System" -> if (systemInDarkTheme) DarkColorScheme else LightColorScheme
+        else -> DarkColorScheme
+    }
 
     MaterialTheme(
         colorScheme = colorScheme,
