@@ -68,17 +68,8 @@ fun Page2Screen(
                 .background(MaterialTheme.colorScheme.background)
         )
         
-        // Semi-transparent overlay for text readability
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    if (MaterialTheme.colorScheme.background.luminance() < 0.5f)
-                        Color.Black.copy(alpha = 0.3f)
-                    else
-                        Color.Transparent
-                )
-        )
+        // Overlay removed to match Group screen background
+
         
         Column(
             modifier = Modifier
