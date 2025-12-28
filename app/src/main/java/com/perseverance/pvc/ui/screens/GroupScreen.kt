@@ -9,13 +9,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
@@ -23,327 +22,235 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.perseverance.pvc.ui.components.TopHeader
-import com.perseverance.pvc.ui.components.GlobalMissionCard
-import com.perseverance.pvc.ui.components.CustomMissionItem
-import kotlinx.coroutines.launch
-import androidx.lifecycle.viewmodel.compose.viewModel
-
-import androidx.compose.runtime.LaunchedEffect
-import com.perseverance.pvc.utils.AnalyticsHelper
 
 @Composable
 fun GroupScreen(
-    socialViewModel: com.perseverance.pvc.ui.viewmodel.SocialViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
     onNavigateToSettings: () -> Unit = {},
     onNavigateToInsights: () -> Unit = {},
     onNavigateToMenu: () -> Unit = {}
 ) {
-    val uiState by socialViewModel.uiState.collectAsState()
-    
-    LaunchedEffect(Unit) {
-        // AnalyticsHelper.logScreenView("GroupScreen")
-    }
-    
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
-        // Simple background
+        // Background
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
+                .background(Color(0xFF0D161F)) // Dark background matching reference
         )
         
-        // Semi-transparent overlay
-        Box(
-             modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    if (MaterialTheme.colorScheme.background.luminance() < 0.5f)
-                        Color.Black.copy(alpha = 0.5f)
-                    else
-                        Color.Transparent
-                )
-        )
-        
-        if (!uiState.isSignedIn) {
-            // Login Screen
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // Top Header
+            TopHeader(
+                onNavigateToSettings = onNavigateToSettings,
+                onNavigateToInsights = onNavigateToInsights,
+                onHamburgerClick = onNavigateToMenu,
+                showBackButton = false
+            )
+            
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier.padding(24.dp)
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                // Study Group Header
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .background(Color(0xFFFFD700).copy(alpha = 0.2f), CircleShape),
+                    contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Filled.Group,
-                        contentDescription = null,
+                        imageVector = Icons.Filled.Group, // Using Group icon as approximate match
+                        contentDescription = "Study Group",
                         tint = Color(0xFFFFD700),
-                        modifier = Modifier.size(64.dp)
+                        modifier = Modifier.size(40.dp)
                     )
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Text(
-                        text = "Join the Club",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Sign in to join missions and study with friends.",
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-                    )
-                    Spacer(modifier = Modifier.height(32.dp))
-                    Button(
-                        onClick = { socialViewModel.performGoogleLogin() },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            contentColor = MaterialTheme.colorScheme.onSurface
-                        ),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                        modifier = Modifier.fillMaxWidth().height(50.dp)
-                    ) {
-                        Text("Continue with Google", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    }
-                    if (uiState.error != null) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = uiState.error ?: "",
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall,
-                            textAlign = TextAlign.Center
-                        )
-                    }
                 }
-            }
-        } else {
-            // Signed In Content
-            Column(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                // Top header
-                TopHeader(
-                    onNavigateToSettings = onNavigateToSettings,
-                    onNavigateToInsights = onNavigateToInsights,
-                    onHamburgerClick = onNavigateToMenu
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text(
+                    text = "Study Group",
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
                 )
                 
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 24.dp, vertical = 16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                Text(
+                    text = "Join global challenges and study with friends.",
+                    fontSize = 14.sp,
+                    color = Color(0xFF8B9BB4),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                
+                Spacer(modifier = Modifier.height(32.dp))
+                
+                // Global Event Section
+                Text(
+                    text = "Global Event",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+                )
+                
+                // 101 Hours Challenge Card
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF151F28)),
+                    shape = RoundedCornerShape(24.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFFD700).copy(alpha = 0.3f)),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    // Header Icon
-                    Box(
-                        modifier = Modifier
-                            .size(80.dp)
-                            .background(Color(0xFFFFD700).copy(alpha = 0.2f), CircleShape),
-                        contentAlignment = Alignment.Center
+                    Column(
+                        modifier = Modifier.padding(24.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Filled.Group, // Could use a different icon like Flag or Star if available
-                            contentDescription = "Missions",
-                            tint = Color(0xFFFFD700),
-                            modifier = Modifier.size(40.dp)
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    Text(
-                        text = "Study Group",
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    Text(
-                        text = "Join global challenges and study with friends.",
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                        textAlign = TextAlign.Center
-                    )
-                    
-                    Spacer(modifier = Modifier.height(32.dp))
-    
-                    // --- Global Mission Selection ---
-                    Text(
-                        text = "Global Event",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
-                    )
-    
-                    uiState.globalMission?.let { mission ->
-                         GlobalMissionCard(
-                            mission = mission,
-                            progress = uiState.globalMissionProgress,
-                            onJoinClick = { socialViewModel.joinGlobalMission() }
-                         )
-                    } ?: run {
-                        // Loading placeholder
-                        CircularProgressIndicator(color = Color(0xFFFFD700))
-                    }
-    
-                    Spacer(modifier = Modifier.height(32.dp))
-    
-                    // --- Custom Missions ---
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Your Missions",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                        
-                        IconButton(onClick = { socialViewModel.showAddMissionDialog() }) {
-                            Icon(
-                                imageVector = Icons.Filled.Add,
-                                contentDescription = "Add Mission",
-                                tint = Color(0xFFFFD700)
-                            )
-                        }
-                    }
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    if (uiState.customMissions.isEmpty()) {
-                         Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 16.dp)
-                                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
-                                .padding(24.dp),
-                            contentAlignment = Alignment.Center
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                "Create your first custom mission!",
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                text = "LIMITED TIME EVENT",
+                                color = Color(0xFFFFD700),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.weight(1f))
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .background(Color.Red, CircleShape)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "LIVE",
+                                color = Color.Red,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
                             )
                         }
-                    } else {
-                        uiState.customMissions.forEach { mission ->
-                            // Determine progress for custom mission (placeholder logic for now)
-                            // In real app, we'd query specific mission progress
-                            // For now we just show a generic progress or 0 if not tracked per-mission yet
-                            CustomMissionItem(mission)
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }
-                    }
-    
-                    Spacer(modifier = Modifier.height(32.dp))
-                    
-                    // --- Friends Section (Optional/Secondary) ---
-                    if (uiState.friends.isNotEmpty()) {
-                         Text(
-                            text = "Studying Friends",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onBackground,
-                             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
-                        )
-                         uiState.friends.forEach { friend ->
-                            FriendItem(friend)
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }
-                    }
-                    
-                    Spacer(modifier = Modifier.height(32.dp))
-                    
-                    Spacer(modifier = Modifier.height(32.dp))
-                }
-            }
-        }
-        
-        // Add Mission Dialog
-        if (uiState.showAddMissionDialog) {
-            AlertDialog(
-                onDismissRequest = { socialViewModel.hideAddMissionDialog() },
-                title = { Text("New Custom Mission") },
-                text = {
-                    Column {
-                        Text("Define your study goal:")
+                        
                         Spacer(modifier = Modifier.height(16.dp))
-                        OutlinedTextField(
-                            value = uiState.newMissionTitle,
-                            onValueChange = { socialViewModel.updateNewMissionTitle(it) },
-                            singleLine = true,
-                            label = { Text("Mission Title") },
-                            placeholder = { Text("e.g. Master Calculus") }
+                        
+                        Text(
+                            text = "101 Hours Challenge",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
                         )
+                        
                         Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = uiState.newMissionTargetHours,
-                            onValueChange = { socialViewModel.updateNewMissionTargetHours(it) },
-                            singleLine = true,
-                            label = { Text("Target Hours") },
-                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)
+                        
+                        Text(
+                            text = "Study 101 hours in the last week of 2025 (168 Hours). The toughest mission!",
+                            fontSize = 14.sp,
+                            color = Color(0xFF8B9BB4),
+                            lineHeight = 20.sp
                         )
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = { socialViewModel.createCustomMission() }) {
-                        Text("Create")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { socialViewModel.hideAddMissionDialog() }) {
-                        Text("Cancel")
+                        
+                        Spacer(modifier = Modifier.height(24.dp))
+                        
+                        // Progress
+                        Row(
+                            verticalAlignment = Alignment.Bottom
+                        ) {
+                            Text(
+                                text = "1.3",
+                                fontSize = 32.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFFFD700)
+                            )
+                            Spacer(modifier = Modifier.weight(1f))
+                            Text(
+                                text = "/ 101 hrs",
+                                fontSize = 14.sp,
+                                color = Color(0xFF8B9BB4),
+                                modifier = Modifier.padding(bottom = 6.dp)
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        // Progress Bar
+                        LinearProgressIndicator(
+                            progress = 1.3f / 101f, // Mock progress
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(6.dp)
+                                .clip(RoundedCornerShape(3.dp)),
+                            trackColor = Color(0xFF2A3744),
+                            color = Color(0xFFFFD700)
+                        )
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.People,
+                                contentDescription = null,
+                                tint = Color(0xFF8B9BB4),
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "1,240 participants fighting now",
+                                fontSize = 12.sp,
+                                color = Color(0xFF8B9BB4)
+                            )
+                        }
                     }
                 }
-            )
+                
+                Spacer(modifier = Modifier.height(32.dp))
+                
+                // Your Missions Section
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Your Missions",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    
+                    Icon(
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = "Add Mission",
+                        tint = Color(0xFFFFD700),
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Placeholder for Custom Missions
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(80.dp)
+                        .background(Color(0xFF151F28), RoundedCornerShape(16.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Create your first custom mission!",
+                        color = Color(0xFF8B9BB4).copy(alpha = 0.5f),
+                        fontSize = 14.sp
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(100.dp)) // Bottom padding
+            }
         }
     }
 }
-
-// CustomMissionItem moved to ui/components/CustomMissionItem.kt
-
-@Composable
-fun FriendItem(user: com.perseverance.pvc.data.SocialUser) {
-    val isStudying = user.status == "STUDYING"
-    
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isStudying) Color(0xFF4CAF50).copy(alpha = 0.2f) else MaterialTheme.colorScheme.surface
-        ),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Setup simple avatar placeholder
-            Box(
-                modifier = Modifier.size(40.dp).background(Color.Gray, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                 Text(user.displayName.first().toString(), color = Color.White)
-            }
-            
-            Spacer(modifier = Modifier.width(16.dp))
-            
-            Column {
-                Text(user.displayName, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                if (isStudying) {
-                    Text("Studying ${user.currentSubject}", color = Color(0xFF4CAF50))
-                } else {
-                    Text("Idle", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
-                }
-            }
-        }
-    }
-}
-
-
