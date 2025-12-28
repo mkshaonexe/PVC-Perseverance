@@ -137,7 +137,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            PerseverancePVCTheme(darkTheme = useDarkTheme) {
+            PerseverancePVCTheme(themeMode = darkMode) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -373,7 +373,7 @@ fun AppNavigation(
 @Preview(showBackground = true)
 @Composable
 fun AppNavigationPreview() {
-    PerseverancePVCTheme {
+    PerseverancePVCTheme(themeMode = "Dark") {
         AppNavigation()
     }
 }
