@@ -18,6 +18,23 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
+data class GroupMember(
+    val name: String,
+    val imageUrl: String? = null,
+    val timeSeconds: Long = 0,
+    val isActive: Boolean = false,
+    val isStudying: Boolean = false,
+    val avatarResId: Int = 0
+) {
+    val time: String
+        get() {
+            val hours = timeSeconds / 3600
+            val minutes = (timeSeconds % 3600) / 60
+            val seconds = timeSeconds % 60
+            return String.format("%02d:%02d:%02d", hours, minutes, seconds)
+        }
+}
+
 data class SocialUiState(
     val isSignedIn: Boolean = false,
     val currentUser: SocialUser? = null,
@@ -36,7 +53,9 @@ data class SocialUiState(
     // Groups
     val groups: List<com.perseverance.pvc.data.StudyGroup> = emptyList(),
     val selectedGroup: com.perseverance.pvc.data.StudyGroup? = null,
-    val isLoadingGroups: Boolean = false
+    val isLoadingGroups: Boolean = false,
+    // Simulation
+    val groupMembers: List<GroupMember> = emptyList()
 )
 
 class SocialViewModel(application: Application) : AndroidViewModel(application) {
@@ -54,6 +73,85 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
         observeProfile()
         loadMissions()
         loadGroups()
+        initializeSimulation()
+    }
+
+    private fun initializeSimulation() {
+        // Initial Mock Data with some randomization
+        val initialMembers = listOf(
+            GroupMember("Tanjim Shakil", timeSeconds = 9701, isActive = true, isStudying = true, avatarResId = com.perseverance.pvc.R.drawable.study),
+            GroupMember("Nusrat Jahan", timeSeconds = 4359, isActive = true, isStudying = true, avatarResId = com.perseverance.pvc.R.drawable.study),
+            GroupMember("Ahmed Riaz", timeSeconds = 3523, isActive = true, isStudying = true, avatarResId = com.perseverance.pvc.R.drawable.study),
+            GroupMember("Farhana Rifa", timeSeconds = 2752, isActive = true, isStudying = true, avatarResId = com.perseverance.pvc.R.drawable.study),
+            GroupMember("Leonor", timeSeconds = 40579, isActive = false, isStudying = false, avatarResId = com.perseverance.pvc.R.drawable.home),
+            GroupMember("Abid Hasan", timeSeconds = 38476, isActive = true, isStudying = true, avatarResId = com.perseverance.pvc.R.drawable.study),
+            GroupMember("Jenifar Akter", timeSeconds = 25247, isActive = false, isStudying = false, avatarResId = com.perseverance.pvc.R.drawable.home),
+            GroupMember("Sajjad Hossain", timeSeconds = 20543, isActive = true, isStudying = true, avatarResId = com.perseverance.pvc.R.drawable.study),
+            GroupMember("Mehedi Hasan", timeSeconds = 17627, isActive = false, isStudying = false, avatarResId = com.perseverance.pvc.R.drawable.home),
+            GroupMember("Sumaiya Islam", timeSeconds = 16802, isActive = false, isStudying = false, avatarResId = com.perseverance.pvc.R.drawable.home),
+            GroupMember("Rafiqul Islam", timeSeconds = 16542, isActive = true, isStudying = true, avatarResId = com.perseverance.pvc.R.drawable.study),
+            GroupMember("Tasnim Rahman", timeSeconds = 15150, isActive = true, isStudying = true, avatarResId = com.perseverance.pvc.R.drawable.study),
+            GroupMember("Karim Ullah", timeSeconds = 11550, isActive = false, isStudying = false, avatarResId = com.perseverance.pvc.R.drawable.home),
+            GroupMember("Rahim Badsha", timeSeconds = 7950, isActive = true, isStudying = true, avatarResId = com.perseverance.pvc.R.drawable.study),
+            GroupMember("Ayesha Siddi..", timeSeconds = 4350, isActive = true, isStudying = true, avatarResId = com.perseverance.pvc.R.drawable.study),
+            GroupMember("User 12", timeSeconds = 750, isActive = false, isStudying = false, avatarResId = com.perseverance.pvc.R.drawable.home)
+        )
+        _uiState.value = _uiState.value.copy(groupMembers = initialMembers)
+        startSimulationLoop()
+    }
+
+    private fun startSimulationLoop() {
+        viewModelScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(1000)
+                updateSimulation()
+            }
+        }
+    }
+
+    private fun updateSimulation() {
+        val currentMembers = _uiState.value.groupMembers
+        val updatedMembers = currentMembers.map { member ->
+            var newTime = member.timeSeconds
+            var newIsStudying = member.isStudying
+            var newIsActive = member.isActive
+            
+            // Logic:
+            // 1. If studying, increment time
+            // 2. Random chance to stop studying (small chance)
+            // 3. Random chance to start studying (if idle)
+            // 4. Update status/icon based on studying state
+
+            if (member.isStudying) {
+                newTime += 1
+                // Chance to stop: 0.5% per second (~once every 3 mins roughly on avg, but logic is per tick)
+                // Let's make it rare so they study for a while. 0.1% chance.
+                if (Math.random() < 0.001) {
+                    newIsStudying = false
+                    newIsActive = false // "Offline" or just not studying
+                }
+            } else {
+                // Chance to start: 0.2% per second
+                 if (Math.random() < 0.002) {
+                    newIsStudying = true
+                    newIsActive = true
+                }
+            }
+            
+            member.copy(
+                timeSeconds = newTime, 
+                isStudying = newIsStudying, 
+                isActive = newIsActive,
+                avatarResId = if (newIsStudying) com.perseverance.pvc.R.drawable.study else com.perseverance.pvc.R.drawable.home
+            )
+        }
+        
+        // Sort: Studying first, then by time descending? Or just keep original order for stability?
+        // Reference image shows studying members in a separate list. The UI handles filtering.
+        // But for the grid, maybe we want some order? 
+        // For now, keep stability to avoid jumping UI.
+        
+        _uiState.value = _uiState.value.copy(groupMembers = updatedMembers)
     }
 
     private fun observeProfile() {
@@ -364,3 +462,4 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 }
+
