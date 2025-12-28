@@ -25,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -70,11 +71,12 @@ fun GroupDetailsScreen(
         GroupMember("User 12", time = "0:12:30", isActive = true),
     )
 
-    // Using MaterialTheme.colorScheme.background ensures it matches the app's current theme (Midnight/Dark/Light)
-    val backgroundColor = MaterialTheme.colorScheme.background
+    // Colors from Reference
+    val backgroundColor = MaterialTheme.colorScheme.background // Black/Midnight
+    val midNightGray = Color(0xFF2A2A2A) // Dark gray for circle backgrounds
+    val orangeAccent = Color(0xFFFF9100) // Orange for text
+    val blueBanner = Color(0xFF1976D2) // Blue for group banner
     val primaryTextColor = MaterialTheme.colorScheme.onBackground
-    val secondaryTextColor = MaterialTheme.colorScheme.onSurfaceVariant
-    val accentColor = MaterialTheme.colorScheme.primary
 
     Scaffold(
         containerColor = backgroundColor,
@@ -124,10 +126,10 @@ fun GroupDetailsScreen(
                 Image(
                     painter = painterResource(id = com.perseverance.pvc.R.drawable.group_cover),
                     contentDescription = "Group Cover Photo",
-                    contentScale = ContentScale.Crop,
+                    contentScale = ContentScale.FillWidth, // Match width, height auto or manual
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(200.dp) // Adjusted height for better visibility
+                        .height(220.dp) // Taller to show content
                 )
             }
 
@@ -136,14 +138,14 @@ fun GroupDetailsScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color(0xFF1565C0)) // Slightly lighter blue or distinct color
-                        .padding(vertical = 8.dp, horizontal = 16.dp)
+                        .background(blueBanner)
+                        .padding(vertical = 12.dp, horizontal = 16.dp)
                 ) {
                     Text(
                         text = "Group by MK Shaon",
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp
+                        fontSize = 14.sp
                     )
                 }
             }
@@ -202,25 +204,26 @@ fun GroupDetailsScreen(
                     ) {
                         Text(
                             text = "Studying",
-                            color = secondaryTextColor,
-                            fontSize = 14.sp
+                            color = Color.Gray,
+                            fontSize = 15.sp
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = "${activeMembers.size} members",
-                            color = accentColor,
-                            fontSize = 14.sp,
+                            color = orangeAccent, // Orange text
+                            fontSize = 15.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.weight(1f))
                         Icon(
                             imageVector = Icons.Filled.DateRange,
                              contentDescription = null,
-                             tint = secondaryTextColor
+                             tint = Color.Gray, // Light gray icon
+                             modifier = Modifier.size(20.dp)
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
 
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(24.dp)
@@ -229,31 +232,35 @@ fun GroupDetailsScreen(
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                // Avatar
+                                // Avatar Circle
                                 Box(
                                     modifier = Modifier
-                                        .size(50.dp)
+                                        .size(60.dp)
                                         .clip(CircleShape)
-                                        .background(Color.DarkGray) // Placeholder
+                                        .background(midNightGray) // Dark Gray Background
                                 ) {
                                     Icon(
-                                        painter = painterResource(id = android.R.drawable.ic_menu_edit), // Placeholder Icon
+                                        imageVector = Icons.Filled.Edit, // Pencil Icon
                                         contentDescription = null,
-                                        tint = Color.White,
-                                        modifier = Modifier.align(Alignment.Center)
+                                        tint = Color.LightGray,
+                                        modifier = Modifier
+                                            .size(30.dp)
+                                            .align(Alignment.Center)
+                                            .rotate(90f) // Rotate to look like writing? Or just normal
                                     )
                                 }
-                                Spacer(modifier = Modifier.height(4.dp))
+                                Spacer(modifier = Modifier.height(8.dp))
                                 Text(
                                     text = member.name,
-                                    color = if (member.isActive) accentColor else secondaryTextColor,
-                                    fontSize = 12.sp,
-                                    maxLines = 1
+                                    color = orangeAccent,
+                                    fontSize = 13.sp,
+                                    maxLines = 1,
+                                    fontWeight = FontWeight.Medium
                                 )
                                 Text(
                                     text = member.time,
-                                    color = if (member.isActive) accentColor else secondaryTextColor,
-                                    fontSize = 12.sp,
+                                    color = orangeAccent,
+                                    fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
@@ -280,32 +287,35 @@ fun GroupDetailsScreen(
                                  ) {
                                      Box(
                                          modifier = Modifier
-                                             .size(50.dp)
+                                             .size(60.dp) // Larger circle
                                              .clip(CircleShape)
-                                             .background(Color.DarkGray)
+                                             .background(midNightGray)
                                      ) {
                                           Icon(
-                                             painter = painterResource(id = android.R.drawable.ic_menu_view), 
+                                             imageVector = if (member.isActive) Icons.Filled.Edit else Icons.Filled.Public, // Eye for viewers, Edit for studiers
                                              contentDescription = null,
-                                             tint = Color.White,
-                                             modifier = Modifier.align(Alignment.Center)
+                                             tint = Color.LightGray,
+                                             modifier = Modifier
+                                                 .size(30.dp)
+                                                 .align(Alignment.Center)
                                          )
                                      }
                                      Spacer(modifier = Modifier.height(8.dp))
                                      Text(
                                          text = member.name,
-                                         color = if (member.isActive) accentColor else secondaryTextColor,
-                                         fontSize = 12.sp,
+                                         color = orangeAccent,
+                                         fontSize = 13.sp,
                                          textAlign = TextAlign.Center,
                                          maxLines = 1,
                                          modifier = Modifier.fillMaxWidth()
                                      )
                                      Text(
                                          text = member.time,
-                                         color = if (member.isActive) accentColor else secondaryTextColor,
-                                         fontSize = 12.sp,
+                                         color = orangeAccent,
+                                         fontSize = 13.sp,
                                          textAlign = TextAlign.Center,
-                                         modifier = Modifier.fillMaxWidth()
+                                         modifier = Modifier.fillMaxWidth(),
+                                         fontWeight = FontWeight.Bold
                                      )
                                  }
                              }
