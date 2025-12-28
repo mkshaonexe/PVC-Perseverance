@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.perseverance.pvc.data.AuthRepository
 import com.perseverance.pvc.data.SocialRepository
 import com.perseverance.pvc.data.SocialUser
+import com.perseverance.pvc.data.StudyGroup
 import com.perseverance.pvc.utils.AnalyticsHelper
 import io.github.jan.supabase.auth.status.SessionStatus
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,7 +31,9 @@ data class SocialUiState(
     val customMissions: List<com.perseverance.pvc.data.Mission> = emptyList(),
     val showAddMissionDialog: Boolean = false,
     val newMissionTitle: String = "",
-    val newMissionTargetHours: String = ""
+    val newMissionTargetHours: String = "",
+    // Groups
+    val groups: List<com.perseverance.pvc.data.StudyGroup> = emptyList()
 )
 
 class SocialViewModel(application: Application) : AndroidViewModel(application) {
@@ -45,6 +48,7 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
     init {
         observeAuthStatus()
         loadMissions()
+        loadGroups()
     }
     
     private fun observeAuthStatus() {
@@ -103,6 +107,15 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
                 missionRepository.getCustomMissions().collectLatest { missions ->
                     _uiState.value = _uiState.value.copy(customMissions = missions)
                 }
+            }
+        }
+    }
+    
+    private fun loadGroups() {
+        viewModelScope.launch {
+            val groups = repository.getGroups()
+            if (groups.isNotEmpty()) {
+                _uiState.value = _uiState.value.copy(groups = groups)
             }
         }
     }

@@ -213,4 +213,14 @@ class SocialRepository {
             emit(emptyList())
         }
     }
+    // --- Group Management ---
+
+    suspend fun getGroups(): List<StudyGroup> {
+        return try {
+            client.from("groups").select().decodeList<StudyGroup>()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching groups", e)
+            emptyList()
+        }
+    }
 }

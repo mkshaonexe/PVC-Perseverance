@@ -22,6 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.perseverance.pvc.ui.components.TopHeader
+import com.perseverance.pvc.data.StudyGroup
 
 @Composable
 fun GroupScreen(
@@ -210,6 +211,90 @@ fun GroupScreen(
                 }
                 
                 Spacer(modifier = Modifier.height(32.dp))
+                
+                // Study Groups Section
+                if (uiState.groups.isNotEmpty()) {
+                    Text(
+                        text = "Study Groups",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+                    )
+                    
+                    uiState.groups.forEach { group ->
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF151F28)),
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .background(Color(0xFFFFD700).copy(alpha = 0.2f), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = group.name.firstOrNull()?.toString() ?: "G",
+                                        color = Color(0xFFFFD700),
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 20.sp
+                                    )
+                                }
+                                
+                                Spacer(modifier = Modifier.width(16.dp))
+                                
+                                Column(
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text(
+                                        text = group.name,
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                    group.description?.let { desc ->
+                                        Text(
+                                            text = desc,
+                                            fontSize = 12.sp,
+                                            color = Color(0xFF8B9BB4),
+                                            lineHeight = 16.sp,
+                                            maxLines = 2,
+                                            modifier = Modifier.padding(top = 4.dp)
+                                        )
+                                    }
+                                    
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.People,
+                                            contentDescription = null,
+                                            tint = Color(0xFF8B9BB4),
+                                            modifier = Modifier.size(12.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = "${group.memberCount} members",
+                                            fontSize = 12.sp,
+                                            color = Color(0xFF8B9BB4)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
                 
                 // Your Missions Section
                 Row(
