@@ -121,16 +121,14 @@ fun GroupDetailsScreen(
         ) {
             // 1. Cover Photo
             item {
-                Box(
+                Image(
+                    painter = painterResource(id = com.perseverance.pvc.R.drawable.group_cover),
+                    contentDescription = "Group Cover Photo",
+                    contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(150.dp) // Adjust height as needed
-                        .background(Color(0xFF0D47A1)) // Placeholder Blue or use Image
-                ) {
-                    // Placeholder for Cover Photo
-                    // If you have a specific resource:
-                    // Image(painter = painterResource(id = R.drawable.cover), contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-                }
+                        .height(200.dp) // Adjusted height for better visibility
+                )
             }
 
             // 2. Group by Banner
