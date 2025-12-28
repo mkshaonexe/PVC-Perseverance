@@ -89,7 +89,8 @@ fun Page1Screen(
                 onNavigateToInsights = onNavigateToInsights,
                 onHamburgerClick = onNavigateToMenu,
                 onBackClick = onBackClick,
-                showBackButton = true
+                showBackButton = true,
+                title = "Insights"
             )
             
             // Main content with padding

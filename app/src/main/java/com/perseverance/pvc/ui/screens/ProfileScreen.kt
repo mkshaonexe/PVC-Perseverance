@@ -84,7 +84,7 @@ fun ProfileScreen(
                 onHamburgerClick = onNavigateToMenu,
                 showBackButton = isEditing,
                 onBackClick = { isEditing = false },
-                title = if (isEditing) "Edit Profile" else null
+                title = if (isEditing) "Edit Profile" else "Profile"
             )
         },
         containerColor = MaterialTheme.colorScheme.background

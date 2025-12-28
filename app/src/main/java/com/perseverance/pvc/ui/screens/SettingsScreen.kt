@@ -85,7 +85,8 @@ fun SettingsScreen(
                 onNavigateToInsights = onNavigateToInsights,
                 onHamburgerClick = onNavigateToMenu,
                 onBackClick = onBackClick,
-                showBackButton = true
+                showBackButton = true,
+                title = "Settings"
             )
             
             // Main content with scroll
