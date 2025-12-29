@@ -116,13 +116,39 @@ fun GroupDetailsScreen(
                             text = selectedGroup?.name ?: "College Student Community",
                             style = MaterialTheme.typography.headlineSmall,
                             color = primaryTextColor,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.weight(1f)
                         )
-                        Icon(
-                            imageVector = Icons.Filled.ChevronRight,
-                            contentDescription = null,
-                            tint = primaryTextColor
-                        )
+                        
+                        if (selectedGroup != null && !uiState.hasJoinedCurrentGroup) {
+                             Button(
+                                onClick = { 
+                                    if (!uiState.isLoading) {
+                                        socialViewModel.joinGroup(selectedGroup.id) 
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                shape = RoundedCornerShape(20.dp),
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                                modifier = Modifier.padding(start = 8.dp)
+                             ) {
+                                if (uiState.isLoading) {
+                                     CircularProgressIndicator(
+                                        modifier = Modifier.size(16.dp),
+                                        color = Color.White,
+                                        strokeWidth = 2.dp
+                                     )
+                                } else {
+                                     Text("Join", fontWeight = FontWeight.Bold)
+                                }
+                             }
+                        } else {
+                            Icon(
+                                imageVector = Icons.Filled.ChevronRight,
+                                contentDescription = null,
+                                tint = primaryTextColor
+                            )
+                        }
                     }
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -221,54 +247,68 @@ fun GroupDetailsScreen(
             // 5. Grid/List of Other Members
             item {
                  Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                     val chunks = allMembers.chunked(4)
-                     chunks.forEach { rowMembers ->
-                         Row(
-                             modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
-                             horizontalArrangement = Arrangement.SpaceBetween
-                         ) {
-                             rowMembers.forEach { member ->
-                                 Column(
-                                     horizontalAlignment = Alignment.CenterHorizontally,
-                                     modifier = Modifier.width(70.dp) // Fixed width for alignment
-                                 ) {
-                                     Box(
-                                         modifier = Modifier
-                                             .size(60.dp)
-                                             // Removed background(midNightGray) and clip as requested
-                                     ) {
-                                         Image(
-                                             painter = painterResource(
-                                                 id = if (member.avatarResId != 0) member.avatarResId else if (member.isStudying) com.perseverance.pvc.R.drawable.study else com.perseverance.pvc.R.drawable.home
-                                             ),
-                                             contentDescription = if (member.isStudying) "Studying" else "Not Studying",
-                                             modifier = Modifier
-                                                 .size(40.dp)
-                                                 .align(Alignment.Center)
-                                         )
-                                     }
-                                     Spacer(modifier = Modifier.height(8.dp))
-                                     Text(
-                                         text = member.name,
-                                         color = orangeAccent,
-                                         fontSize = 13.sp,
-                                         textAlign = TextAlign.Center,
-                                         maxLines = 1,
-                                         modifier = Modifier.fillMaxWidth()
-                                     )
-                                     Text(
-                                         text = member.time,
-                                         color = if (member.isStudying) orangeAccent else Color.Gray, // Orange if studying, Ash/Gray if not
-                                         fontSize = 13.sp,
-                                         textAlign = TextAlign.Center,
-                                         modifier = Modifier.fillMaxWidth(),
-                                         fontWeight = FontWeight.Bold
-                                     )
+                     if (uiState.isLoadingMembers) {
+                         // Skeleton Grid - Show 2 rows of skeletons
+                         repeat(2) {
+                             Row(
+                                 modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
+                                 horizontalArrangement = Arrangement.SpaceBetween
+                             ) {
+                                 repeat(4) {
+                                     com.perseverance.pvc.ui.components.GroupMemberSkeleton()
                                  }
                              }
-                             // Fill empty spots if last row is incomplete
-                             repeat(4 - rowMembers.size) {
-                                 Spacer(modifier = Modifier.width(70.dp))
+                         }
+                     } else {
+                         val chunks = allMembers.chunked(4)
+                         chunks.forEach { rowMembers ->
+                             Row(
+                                 modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
+                                 horizontalArrangement = Arrangement.SpaceBetween
+                             ) {
+                                 rowMembers.forEach { member ->
+                                     Column(
+                                         horizontalAlignment = Alignment.CenterHorizontally,
+                                         modifier = Modifier.width(70.dp) // Fixed width for alignment
+                                     ) {
+                                         Box(
+                                             modifier = Modifier
+                                                 .size(60.dp)
+                                                 // Removed background(midNightGray) and clip as requested
+                                         ) {
+                                             Image(
+                                                 painter = painterResource(
+                                                     id = if (member.avatarResId != 0) member.avatarResId else if (member.isStudying) com.perseverance.pvc.R.drawable.study else com.perseverance.pvc.R.drawable.home
+                                                 ),
+                                                 contentDescription = if (member.isStudying) "Studying" else "Not Studying",
+                                                 modifier = Modifier
+                                                     .size(40.dp)
+                                                     .align(Alignment.Center)
+                                             )
+                                         }
+                                         Spacer(modifier = Modifier.height(8.dp))
+                                         Text(
+                                             text = member.name,
+                                             color = orangeAccent,
+                                             fontSize = 13.sp,
+                                             textAlign = TextAlign.Center,
+                                             maxLines = 1,
+                                             modifier = Modifier.fillMaxWidth()
+                                         )
+                                         Text(
+                                             text = member.time,
+                                             color = if (member.isStudying) orangeAccent else Color.Gray, // Orange if studying, Ash/Gray if not
+                                             fontSize = 13.sp,
+                                             textAlign = TextAlign.Center,
+                                             modifier = Modifier.fillMaxWidth(),
+                                             fontWeight = FontWeight.Bold
+                                         )
+                                     }
+                                 }
+                                 // Fill empty spots if last row is incomplete
+                                 repeat(4 - rowMembers.size) {
+                                     Spacer(modifier = Modifier.width(70.dp))
+                                 }
                              }
                          }
                      }
