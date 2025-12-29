@@ -19,15 +19,16 @@ data class GroupMemberRecord(
  * Represents a group member with their full user info and study status.
  * Used for UI display in group details screen.
  */
+@Serializable
 data class GroupMemberWithStatus(
-    val userId: String,
-    val displayName: String,
-    val avatarUrl: String?,
+    @SerialName("user_id") val userId: String,
+    @SerialName("display_name") val displayName: String,
+    @SerialName("avatar_url") val avatarUrl: String?,
     val status: String = "IDLE", // STUDYING or IDLE
-    val studyStartTime: Long = 0, // Unix timestamp when study started
-    val studyDuration: Long = 0, // Total accumulated study time in seconds
-    val lastActive: Long = 0, // Last heartbeat timestamp
-    val currentSubject: String = ""
+    @SerialName("study_start_time") val studyStartTime: Long = 0, // Unix timestamp when study started
+    @SerialName("study_duration") val studyDuration: Long = 0, // Total accumulated study time in seconds
+    @SerialName("last_active") val lastActive: Long = 0, // Last heartbeat timestamp
+    @SerialName("current_subject") val currentSubject: String = ""
 ) {
     val isStudying: Boolean get() = status == "STUDYING"
     
