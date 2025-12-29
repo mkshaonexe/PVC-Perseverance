@@ -387,6 +387,27 @@ class SocialRepository {
             )
             
             Log.d(TAG, "Joined group: $groupId")
+            
+            // Increment member count
+            // Note: In a real app, use an RPC or Trigger. Here we do a simple read-modify-write for speed.
+            try {
+                val group = client.from("groups").select {
+                    filter { eq("id", groupId) }
+                }.decodeSingleOrNull<StudyGroup>()
+                
+                if (group != null) {
+                    client.from("groups").update(
+                        {
+                            set("member_count", group.memberCount + 1)
+                        }
+                    ) {
+                        filter { eq("id", groupId) }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error incrementing member count", e)
+            }
+
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Error joining group", e)
@@ -401,10 +422,34 @@ class SocialRepository {
         val user = client.auth.currentUserOrNull() ?: return Result.failure(Exception("Not logged in"))
         
         return try {
+            // Get current group ID before leaving
+            val groupId = getCurrentGroupId()
+
             client.from("group_members").delete {
                 filter { eq("user_id", user.id) }
             }
             Log.d(TAG, "Left group")
+            
+            // Decrement member count if we were in a group
+            if (groupId != null) {
+                try {
+                    val group = client.from("groups").select {
+                        filter { eq("id", groupId) }
+                    }.decodeSingleOrNull<StudyGroup>()
+                    
+                    if (group != null && group.memberCount > 0) {
+                        client.from("groups").update(
+                            {
+                                set("member_count", group.memberCount - 1)
+                            }
+                        ) {
+                            filter { eq("id", groupId) }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error decrementing member count", e)
+                }
+            }
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Error leaving group", e)
