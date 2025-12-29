@@ -120,14 +120,32 @@ fun GroupDetailsScreen(
                             modifier = Modifier.weight(1f)
                         )
                         
-                        if (selectedGroup != null && !uiState.hasJoinedCurrentGroup) {
+
+                        // Join / Joined Button
+                        if (selectedGroup != null) {
+                            val isJoined = uiState.hasJoinedCurrentGroup
+                            
                              Button(
                                 onClick = { 
                                     if (!uiState.isLoading) {
-                                        socialViewModel.joinGroup(selectedGroup.id) 
+                                        if (isJoined) {
+                                            // Handle Leave Logic or show menu
+                                            // For now, let's just toggle leave for simplicity or show a toast?
+                                            // The user requirement says "if user join show the 3 don on the join button place"
+                                            // actually it says "show the 3 don on the join button place" -> likely "Done" or checkmark
+                                            // And "if user not join show a join button"
+                                            
+                                            // If clicking "Joined", maybe we ask to leave?
+                                            socialViewModel.leaveGroup()
+                                        } else {
+                                            socialViewModel.joinGroup(selectedGroup.id) 
+                                        }
                                     }
                                 },
-                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (isJoined) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.primary,
+                                    contentColor = if (isJoined) MaterialTheme.colorScheme.onSecondaryContainer else Color.White
+                                ),
                                 shape = RoundedCornerShape(20.dp),
                                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                                 modifier = Modifier.padding(start = 8.dp)
@@ -135,19 +153,23 @@ fun GroupDetailsScreen(
                                 if (uiState.isLoading) {
                                      CircularProgressIndicator(
                                         modifier = Modifier.size(16.dp),
-                                        color = Color.White,
+                                        color = if (isJoined) MaterialTheme.colorScheme.onSecondaryContainer else Color.White,
                                         strokeWidth = 2.dp
                                      )
                                 } else {
-                                     Text("Join", fontWeight = FontWeight.Bold)
+                                     if (isJoined) {
+                                         Icon(
+                                             imageVector = Icons.Filled.Check,
+                                             contentDescription = "Joined",
+                                             modifier = Modifier.size(16.dp)
+                                         )
+                                         Spacer(modifier = Modifier.width(4.dp))
+                                         Text("Joined", fontWeight = FontWeight.Bold)
+                                     } else {
+                                         Text("Join", fontWeight = FontWeight.Bold)
+                                     }
                                 }
                              }
-                        } else {
-                            Icon(
-                                imageVector = Icons.Filled.ChevronRight,
-                                contentDescription = null,
-                                tint = primaryTextColor
-                            )
                         }
                     }
 
