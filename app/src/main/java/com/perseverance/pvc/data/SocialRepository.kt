@@ -477,40 +477,15 @@ class SocialRepository {
     /**
      * Get all members of a specific group with their study status.
      */
+    /**
+     * Get all members of a specific group with their study status.
+     */
     suspend fun getGroupMembers(groupId: String): List<GroupMemberWithStatus> {
         return try {
-            // 1. Get all user IDs in the group
-            val memberships = client.from("group_members").select {
+            // Use the SQL View for efficient fetching
+            client.from("view_group_members_status").select {
                 filter { eq("group_id", groupId) }
-            }.decodeList<GroupMemberRecord>()
-            
-            val userIds = memberships.map { it.userId }
-            
-            if (userIds.isEmpty()) {
-                Log.d(TAG, "No members in group: $groupId")
-                return emptyList()
-            }
-            
-            Log.d(TAG, "Found ${userIds.size} members in group: $groupId")
-            
-            // 2. Fetch user details for all members
-            val users = client.from("users").select {
-                filter { isIn("id", userIds) }
-            }.decodeList<SocialUser>()
-            
-            // 3. Convert to GroupMemberWithStatus
-            users.map { user ->
-                GroupMemberWithStatus(
-                    userId = user.id,
-                    displayName = user.displayName.ifEmpty { user.email.substringBefore("@") },
-                    avatarUrl = user.photoUrl.ifEmpty { null },
-                    status = user.status,
-                    studyStartTime = user.studyStartTime,
-                    studyDuration = user.studyDuration,
-                    lastActive = user.lastActive,
-                    currentSubject = user.currentSubject
-                )
-            }
+            }.decodeList<GroupMemberWithStatus>()
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching group members", e)
             emptyList()
