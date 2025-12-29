@@ -12,6 +12,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import io.github.jan.supabase.realtime.realtime
+import io.github.jan.supabase.realtime.createChannel
+import io.github.jan.supabase.realtime.PostgresAction
+import io.github.jan.supabase.realtime.postgresChangeFlow
 
 @Serializable
 data class SocialUser(
@@ -389,24 +393,8 @@ class SocialRepository {
             Log.d(TAG, "Joined group: $groupId")
             
             // Increment member count
-            // Note: In a real app, use an RPC or Trigger. Here we do a simple read-modify-write for speed.
-            try {
-                val group = client.from("groups").select {
-                    filter { eq("id", groupId) }
-                }.decodeSingleOrNull<StudyGroup>()
-                
-                if (group != null) {
-                    client.from("groups").update(
-                        {
-                            set("member_count", group.memberCount + 1)
-                        }
-                    ) {
-                        filter { eq("id", groupId) }
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error incrementing member count", e)
-            }
+            // Managed by Supabase Trigger 'update_group_member_count'
+            // We do not manually update it here to avoid race conditions.
 
             Result.success(Unit)
         } catch (e: Exception) {
@@ -430,26 +418,8 @@ class SocialRepository {
             }
             Log.d(TAG, "Left group")
             
-            // Decrement member count if we were in a group
-            if (groupId != null) {
-                try {
-                    val group = client.from("groups").select {
-                        filter { eq("id", groupId) }
-                    }.decodeSingleOrNull<StudyGroup>()
-                    
-                    if (group != null && group.memberCount > 0) {
-                        client.from("groups").update(
-                            {
-                                set("member_count", group.memberCount - 1)
-                            }
-                        ) {
-                            filter { eq("id", groupId) }
-                        }
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error decrementing member count", e)
-                }
-            }
+            // Decrement member count
+            // Managed by Supabase Trigger 'update_group_member_count'
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Error leaving group", e)
@@ -594,6 +564,24 @@ class SocialRepository {
      */
     suspend fun onAppResume() {
         updateHeartbeat()
+    }
+    /**
+     * Subscribe to real-time updates for a specific group.
+     * Listens for changes in 'group_members' table for this group.
+     */
+    suspend fun subscribeToGroupUpdates(groupId: String): Flow<PostgresAction> {
+        return try {
+            val channel = client.realtime.createChannel("group_$groupId")
+            val flow = channel.postgresChangeFlow<PostgresAction>(schema = "public") {
+                table = "group_members"
+                filter = "group_id=eq.$groupId"
+            }
+            channel.subscribe()
+            flow
+        } catch (e: Exception) {
+            Log.e(TAG, "Error subscribing to group updates", e)
+            flow { } // Return empty flow on error
+        }
     }
 }
 
