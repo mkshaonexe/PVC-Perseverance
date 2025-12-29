@@ -159,8 +159,10 @@ fun GroupDetailsScreen(
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
+                        
+                        val count = if (groupMembers.isNotEmpty()) groupMembers.size else selectedGroup?.memberCount ?: 0
                         Text(
-                            text = "Public group • ${selectedGroup?.memberCount ?: "1.2K"} members",
+                            text = "Public group • $count members",
                             color = Color.Gray,
                             fontSize = 12.sp
                         )
