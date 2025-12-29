@@ -109,3 +109,46 @@ fun GroupsLoadingSkeleton() {
         }
     }
 }
+
+@Composable
+fun GroupMemberSkeleton() {
+    val infiniteTransition = rememberInfiniteTransition(label = "skeleton")
+    val shimmerAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.3f,
+        targetValue = 0.7f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "shimmer"
+    )
+    val shimmerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = shimmerAlpha)
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.width(70.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(60.dp)
+                .clip(CircleShape)
+                .background(shimmerColor)
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Box(
+            modifier = Modifier
+                .width(50.dp)
+                .height(12.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(shimmerColor)
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Box(
+            modifier = Modifier
+                .width(40.dp)
+                .height(12.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(shimmerColor)
+        )
+    }
+}
