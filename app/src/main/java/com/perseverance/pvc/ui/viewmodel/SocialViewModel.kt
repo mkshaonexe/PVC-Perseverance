@@ -13,6 +13,7 @@ import com.perseverance.pvc.data.StudyGroup
 import com.perseverance.pvc.data.GroupMemberWithStatus
 import com.perseverance.pvc.utils.AnalyticsHelper
 import io.github.jan.supabase.auth.status.SessionStatus
+import io.github.jan.supabase.realtime.PostgresAction
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -86,6 +87,7 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
     private var timerJob: Job? = null
     private var heartbeatJob: Job? = null
     private var refreshJob: Job? = null
+    private var realtimeJob: Job? = null
     
     init {
         observeAuthStatus()
@@ -174,6 +176,28 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
             
             // Also update UI immediately
             updateLiveTimers()
+
+            // Start Realtime Subscription
+            startRealtimeSubscription(groupId)
+        }
+    }
+
+    private fun startRealtimeSubscription(groupId: String) {
+        realtimeJob?.cancel()
+        realtimeJob = viewModelScope.launch {
+            repository.subscribeToGroupUpdates(groupId).collect { action ->
+                // On any change (INSERT, UPDATE, DELETE), reload the list
+                // Reloading is safer for ensuring we get the full profile data from the View
+                val updatedMembers = repository.getGroupMembers(groupId)
+                _uiState.value = _uiState.value.copy(realGroupMembers = updatedMembers)
+                
+                // Update specific state if needed
+                if (action is PostgresAction.Insert || action is PostgresAction.Delete) {
+                   // Member count changed, could refresh group details to get new count 
+                   // (Although our list size is the count)
+                }
+                updateLiveTimers()
+            }
         }
     }
 
@@ -334,6 +358,7 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
     fun onExitGroupDetails() {
         timerJob?.cancel()
         refreshJob?.cancel()
+        realtimeJob?.cancel()
         _uiState.value = _uiState.value.copy(
             selectedGroup = null,
             realGroupMembers = emptyList(),
