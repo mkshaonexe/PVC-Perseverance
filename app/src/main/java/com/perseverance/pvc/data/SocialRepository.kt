@@ -13,9 +13,11 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import io.github.jan.supabase.realtime.realtime
-import io.github.jan.supabase.realtime.createChannel
+import io.github.jan.supabase.realtime.channel
 import io.github.jan.supabase.realtime.PostgresAction
 import io.github.jan.supabase.realtime.postgresChangeFlow
+import io.github.jan.supabase.postgrest.query.filter.FilterOperation
+import io.github.jan.supabase.postgrest.query.filter.FilterOperator
 
 @Serializable
 data class SocialUser(
@@ -571,10 +573,10 @@ class SocialRepository {
      */
     suspend fun subscribeToGroupUpdates(groupId: String): Flow<PostgresAction> {
         return try {
-            val channel = client.realtime.createChannel("group_$groupId")
+            val channel = client.realtime.channel("group_$groupId")
             val flow = channel.postgresChangeFlow<PostgresAction>(schema = "public") {
                 table = "group_members"
-                filter = "group_id=eq.$groupId"
+                filter(FilterOperation("group_id", FilterOperator.EQ, groupId))
             }
             channel.subscribe()
             flow
