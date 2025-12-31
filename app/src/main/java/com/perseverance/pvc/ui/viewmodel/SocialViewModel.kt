@@ -158,11 +158,28 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoadingMembers = true)
             
-            val members = repository.getGroupMembers(groupId)
+            var members = repository.getGroupMembers(groupId)
             
             // Check if current user has joined this group
             val currentGroupId = repository.getCurrentGroupId()
             val hasJoined = currentGroupId == groupId
+            
+            // Safe fallback: If current user is joined but not in members list (e.g. view lag or mismatch), add them manually
+            val currentUser = _uiState.value.currentUser
+            if (hasJoined && currentUser != null && members.none { it.userId == currentUser.id }) {
+                 val selfMember = GroupMemberWithStatus(
+                     userId = currentUser.id,
+                     displayName = currentUser.displayName,
+                     avatarUrl = currentUser.photoUrl,
+                     status = currentUser.status,
+                     // Use current time/duration from user profile
+                     studyStartTime = currentUser.studyStartTime,
+                     studyDuration = currentUser.studyDuration,
+                     lastActive = currentUser.lastActive,
+                     currentSubject = currentUser.currentSubject
+                 )
+                 members = members + selfMember
+            }
             
             _uiState.value = _uiState.value.copy(
                 realGroupMembers = members,
@@ -191,12 +208,8 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
                 val updatedMembers = repository.getGroupMembers(groupId)
                 _uiState.value = _uiState.value.copy(realGroupMembers = updatedMembers)
                 
-                // Update specific state if needed
-                if (action is PostgresAction.Insert || action is PostgresAction.Delete) {
-                   // Member count changed, could refresh group details to get new count 
-                   // (Although our list size is the count)
-                }
-                updateLiveTimers()
+                // Trigger reload to apply fallback if needed
+                loadGroupMembers(groupId) 
             }
         }
     }
@@ -245,10 +258,16 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
             val result = repository.joinGroup(groupId)
             
             if (result.isSuccess) {
+                // Optimistic update for member count
+                val updatedGroup = _uiState.value.selectedGroup?.let { 
+                    it.copy(memberCount = it.memberCount + 1)
+                }
+
                 _uiState.value = _uiState.value.copy(
                     hasJoinedCurrentGroup = true,
                     currentGroupId = groupId,
-                    isLoading = false
+                    isLoading = false,
+                    selectedGroup = updatedGroup
                 )
                 Toast.makeText(getApplication(), "Joined group!", Toast.LENGTH_SHORT).show()
                 AnalyticsHelper.logEvent("group_join")
@@ -293,10 +312,16 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
             val result = repository.leaveGroup()
             
             if (result.isSuccess) {
+                // Optimistic update for member count
+                val updatedGroup = _uiState.value.selectedGroup?.let { 
+                    it.copy(memberCount = (it.memberCount - 1).coerceAtLeast(0))
+                }
+
                 _uiState.value = _uiState.value.copy(
                     hasJoinedCurrentGroup = false,
                     currentGroupId = null,
-                    isLoading = false
+                    isLoading = false,
+                    selectedGroup = updatedGroup
                 )
                 Toast.makeText(getApplication(), "Left group", Toast.LENGTH_SHORT).show()
                 AnalyticsHelper.logEvent("group_leave")
