@@ -9,10 +9,10 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class GroupMemberRecord(
-    val id: String = "",
+    val id: String? = null,
     @SerialName("group_id") val groupId: String = "",
     @SerialName("user_id") val userId: String = "",
-    @SerialName("joined_at") val joinedAt: String = ""
+    @SerialName("joined_at") val joinedAt: String? = null
 )
 
 /**

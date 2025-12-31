@@ -395,8 +395,8 @@ class SocialRepository {
             Log.d(TAG, "Joined group: $groupId")
             
             // Increment member count
-            // Managed by Supabase Trigger 'update_group_member_count'
-            // We do not manually update it here to avoid race conditions.
+            // Manually update since no trigger exists
+            syncGroupMemberCount(groupId)
 
             Result.success(Unit)
         } catch (e: Exception) {
@@ -421,7 +421,7 @@ class SocialRepository {
             Log.d(TAG, "Left group")
             
             // Decrement member count
-            // Managed by Supabase Trigger 'update_group_member_count'
+            groupId?.let { syncGroupMemberCount(it) }
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Error leaving group", e)
@@ -583,6 +583,26 @@ class SocialRepository {
         } catch (e: Exception) {
             Log.e(TAG, "Error subscribing to group updates", e)
             flow { } // Return empty flow on error
+        }
+    }
+
+    private suspend fun syncGroupMemberCount(groupId: String) {
+        try {
+            val count = client.from("group_members").select {
+                filter { eq("group_id", groupId) }
+                count(io.github.jan.supabase.postgrest.query.Count.EXACT)
+            }.countOrNull() ?: 0
+
+            client.from("groups").update(
+                {
+                    set("member_count", count)
+                }
+            ) {
+                filter { eq("id", groupId) }
+            }
+            Log.d(TAG, "Synced member count for group $groupId: $count")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error syncing group member count", e)
         }
     }
 }
