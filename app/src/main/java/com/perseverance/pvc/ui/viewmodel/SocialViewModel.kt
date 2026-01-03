@@ -3,6 +3,7 @@ package com.perseverance.pvc.ui.viewmodel
 import android.app.Application
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -542,16 +543,50 @@ class SocialViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
     
-    fun performGoogleLogin() {
+    fun performEmailLogin(email: String, pass: String) {
+        if (email.isBlank() || pass.isBlank()) {
+            Log.w("AuthDebug", "VM: Login failed - Empty email or password")
+            Toast.makeText(getApplication(), "Please enter email and password", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         viewModelScope.launch {
+            Log.d("AuthDebug", "VM: Starting login for $email")
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
-                // Supabase internal OAuth handle
-                // Since this opens a browser, we just call the repo function
-                // The deep link will bring us back, and sessionStatus will update automatically.
-                authRepository.signInWithGoogle() 
-                AnalyticsHelper.logLogin("google")
+                authRepository.signInWithEmail(email, pass)
+                Log.d("AuthDebug", "VM: Login successful for $email")
+                AnalyticsHelper.logLogin("email")
+                _uiState.value = _uiState.value.copy(isLoading = false)
+                Toast.makeText(getApplication(), "Login Successful", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(error = e.message)
+                Log.e("AuthDebug", "VM: Login error for $email: ${e.message}", e)
+                _uiState.value = _uiState.value.copy(isLoading = false, error = e.message ?: "Login Failed")
+                Toast.makeText(getApplication(), "Login Failed: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    fun performEmailSignUp(email: String, pass: String, name: String) {
+        if (email.isBlank() || pass.isBlank() || name.isBlank()) {
+            Log.w("AuthDebug", "VM: SignUp failed - Empty fields")
+            Toast.makeText(getApplication(), "Please fill all fields", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        viewModelScope.launch {
+            Log.d("AuthDebug", "VM: Starting signup for $email")
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            try {
+                authRepository.signUpWithEmail(email, pass, name)
+                Log.d("AuthDebug", "VM: Signup successful request for $email")
+                AnalyticsHelper.logLogin("email_signup")
+                _uiState.value = _uiState.value.copy(isLoading = false)
+                Toast.makeText(getApplication(), "Check email for confirmation or Login now.", Toast.LENGTH_LONG).show()
+            } catch (e: Exception) {
+                Log.e("AuthDebug", "VM: Signup error for $email: ${e.message}", e)
+                _uiState.value = _uiState.value.copy(isLoading = false, error = e.message ?: "Sign Up Failed")
+                Toast.makeText(getApplication(), "Sign Up Failed: ${e.message}", Toast.LENGTH_LONG).show()
             }
         }
     }
