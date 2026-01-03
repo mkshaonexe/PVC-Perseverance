@@ -119,6 +119,11 @@ fun EditProfileScreen(
                             .padding(32.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        var email by remember { mutableStateOf("") }
+                        var password by remember { mutableStateOf("") }
+                        var name by remember { mutableStateOf("") }
+                        var isSignUp by remember { mutableStateOf(false) }
+
                         Icon(
                             imageVector = Icons.Filled.Lock,
                             contentDescription = "Sign In Required",
@@ -127,7 +132,7 @@ fun EditProfileScreen(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "Sign In Required",
+                            text = if (isSignUp) "Create Account" else "Sign In Required",
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -140,22 +145,61 @@ fun EditProfileScreen(
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(24.dp))
+
+                        OutlinedTextField(
+                            value = email,
+                            onValueChange = { email = it },
+                            label = { Text("Email") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        OutlinedTextField(
+                            value = password,
+                            onValueChange = { password = it },
+                            label = { Text("Password") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation()
+                        )
+                        
+                        if (isSignUp) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            OutlinedTextField(
+                                value = name,
+                                onValueChange = { name = it },
+                                label = { Text("Display Name") },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
                         Button(
                             onClick = { 
-                                socialViewModel.performGoogleLogin()
+                                if (isSignUp) {
+                                    socialViewModel.performEmailSignUp(email, password, name)
+                                } else {
+                                    socialViewModel.performEmailLogin(email, password)
+                                }
                             },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.primary
                             ),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Icon(
-                                imageVector = Icons.Filled.Login,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp)
+                            Text(if (isSignUp) "Sign Up" else "Login", fontSize = 16.sp)
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                                
+                        TextButton(onClick = { isSignUp = !isSignUp }) {
+                            Text(
+                                text = if (isSignUp) "Already have an account? Login" else "Don't have an account? Sign Up",
+                                color = MaterialTheme.colorScheme.primary
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Sign in with Google", fontSize = 16.sp)
                         }
                     }
                 }

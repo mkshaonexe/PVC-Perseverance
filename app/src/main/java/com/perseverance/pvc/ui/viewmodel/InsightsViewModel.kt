@@ -8,10 +8,8 @@ import com.perseverance.pvc.data.WeekStudyData
 import com.perseverance.pvc.data.WeeklyChartData
 import com.perseverance.pvc.data.TodayStudyData
 import com.perseverance.pvc.data.PeriodInsights
-import com.perseverance.pvc.data.AuthRepository
 import com.perseverance.pvc.ui.components.SubjectRadarData
 import com.perseverance.pvc.utils.AnalyticsHelper
-import io.github.jan.supabase.auth.status.SessionStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -50,7 +48,8 @@ data class InsightsUiState(
     // Mission State for Challenges Tab
     val globalMission: com.perseverance.pvc.data.Mission? = null,
     val globalMissionProgress: Long = 0,
-    val customMissions: List<com.perseverance.pvc.data.Mission> = emptyList()
+    val customMissions: List<com.perseverance.pvc.data.Mission> = emptyList(),
+    val error: String? = null
 )
 
 class InsightsViewModel(application: Application) : AndroidViewModel(application) {
@@ -58,24 +57,13 @@ class InsightsViewModel(application: Application) : AndroidViewModel(application
     // Initialize MissionRepository
     private val missionRepository = com.perseverance.pvc.data.MissionRepository(application, repository)
     // Initialize AuthRepository
-    private val authRepository = AuthRepository()
-    
-    private val _uiState = MutableStateFlow(InsightsUiState())
-    val uiState: StateFlow<InsightsUiState> = _uiState.asStateFlow()
-    
     init {
         loadMonthData()
         // Load period data by default since PERIOD is the default selected period
         loadPeriodData()
         
-        // Collect authentication status
-        viewModelScope.launch {
-            authRepository.sessionStatus.collect { status ->
-                _uiState.value = _uiState.value.copy(
-                    isSignedIn = status is SessionStatus.Authenticated
-                )
-            }
-        }
+        // Auth removed, default to offline/signed out for cloud features
+        _uiState.value = _uiState.value.copy(isSignedIn = false)
     }
     
     fun selectPeriod(period: PeriodType) {
@@ -334,18 +322,6 @@ class InsightsViewModel(application: Application) : AndroidViewModel(application
             missionRepository.joinGlobalMission()
             // Reload to update UI
             loadMissions()
-        }
-    }
-    
-    // Function to sign in with Google
-    fun signInWithGoogle() {
-        viewModelScope.launch {
-            try {
-                authRepository.signInWithGoogle()
-            } catch (e: Exception) {
-                // Handle error silently or log it
-                AnalyticsHelper.logEvent("sign_in_error", mapOf("error" to e.message.orEmpty()))
-            }
         }
     }
 }

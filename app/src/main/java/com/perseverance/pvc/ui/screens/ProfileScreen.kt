@@ -63,21 +63,27 @@ fun ProfileScreen(
             },
             containerColor = MaterialTheme.colorScheme.background
         ) { paddingValues ->
-            Box(modifier = Modifier.padding(paddingValues)) {
+
+            Box(
+                modifier = Modifier
+                    .padding(paddingValues)
+                    .fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
                 Card(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(all = 16.dp),
+                        .fillMaxWidth(0.9f) // Use 90% width instead of default logic
+                        .padding(16.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surface
                     ),
                     shape = RoundedCornerShape(16.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(32.dp),
+                            .padding(24.dp), // Reduced from 32dp
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         var email by remember { mutableStateOf("") }
@@ -85,36 +91,45 @@ fun ProfileScreen(
                         var name by remember { mutableStateOf("") }
                         var isSignUp by remember { mutableStateOf(false) }
 
+                        // Show Toast on Error
+                        val currentError = socialUiState.error
+                        LaunchedEffect(currentError) {
+                            if (currentError != null) {
+                                android.widget.Toast.makeText(context, "Error: $currentError", android.widget.Toast.LENGTH_LONG).show()
+                            }
+                        }
+
                         Icon(
                             imageVector = Icons.Filled.Leaderboard,
                             contentDescription = "Profile",
-                            modifier = Modifier.size(64.dp),
+                            modifier = Modifier.size(48.dp), // Reduced from 64dp
                             tint = MaterialTheme.colorScheme.primary
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(12.dp)) // Reduced form 16
                         Text(
                             text = if (isSignUp) "Create Account" else "Welcome Back",
-                            fontSize = 24.sp,
+                            fontSize = 20.sp, // Reduced from 24
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(4.dp)) // Reduced from 8
                         Text(
                             text = "Sign in to view your profile and stats.",
-                            fontSize = 14.sp,
+                            fontSize = 12.sp, // Reduced from 14
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                             textAlign = TextAlign.Center
                         )
-                        Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(modifier = Modifier.height(16.dp)) // Reduced from 24
 
                         OutlinedTextField(
                             value = email,
                             onValueChange = { email = it },
-                            label = { Text("Email") },
+                            label = { Text("Email", fontSize = 12.sp) }, // Smaller label
                             modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
+                            singleLine = true,
+                            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp)
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(8.dp)) // Reduced from 12
 
                         OutlinedTextField(
                             value = password,
@@ -138,20 +153,38 @@ fun ProfileScreen(
 
                         Spacer(modifier = Modifier.height(24.dp))
 
-                        Button(
-                            onClick = { 
-                                if (isSignUp) {
-                                    socialViewModel.performEmailSignUp(email, password, name)
-                                } else {
-                                    socialViewModel.performEmailLogin(email, password)
-                                }
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            ),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(if (isSignUp) "Sign Up" else "Login", fontSize = 16.sp)
+                        if (socialUiState.isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(48.dp).padding(8.dp),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        } else {
+                            Button(
+                                onClick = { 
+                                    if (isSignUp) {
+                                        socialViewModel.performEmailSignUp(email, password, name)
+                                    } else {
+                                        socialViewModel.performEmailLogin(email, password)
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary
+                                ),
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = !socialUiState.isLoading
+                            ) {
+                                Text(if (isSignUp) "Sign Up" else "Login", fontSize = 16.sp)
+                            }
+                        }
+
+                        if (socialUiState.error != null) {
+                            Text(
+                                text = socialUiState.error ?: "",
+                                color = MaterialTheme.colorScheme.error,
+                                fontSize = 14.sp,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(top = 8.dp)
+                            )
                         }
 
                         Spacer(modifier = Modifier.height(16.dp))

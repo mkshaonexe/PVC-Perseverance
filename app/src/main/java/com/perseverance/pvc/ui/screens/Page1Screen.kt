@@ -13,6 +13,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -194,30 +195,71 @@ fun Page1Screen(
                                     .padding(32.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
+                                var email by remember { mutableStateOf("") }
+                                var password by remember { mutableStateOf("") }
+                                var name by remember { mutableStateOf("") }
+                                var isSignUp by remember { mutableStateOf(false) }
+
                                 Icon(
-                                    imageVector = Icons.Filled.KeyboardArrowRight,
-                                    contentDescription = "Challenges",
-                                    modifier = Modifier.size(64.dp),
+                                    imageVector = Icons.Filled.Lock,
+                                    contentDescription = "Login",
+                                    modifier = Modifier.size(48.dp),
                                     tint = Color(0xFFFFD700)
                                 )
                                 Spacer(modifier = Modifier.height(16.dp))
                                 Text(
-                                    text = "Join Challenges",
+                                    text = if (isSignUp) "Create Account" else "Welcome Back",
                                     fontSize = 24.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    text = "Sign in with Google to view and participate in study challenges and missions.",
+                                    text = "Sign in to join challenges and track progress.",
                                     fontSize = 14.sp,
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                                     textAlign = TextAlign.Center
                                 )
                                 Spacer(modifier = Modifier.height(24.dp))
+
+                                OutlinedTextField(
+                                    value = email,
+                                    onValueChange = { email = it },
+                                    label = { Text("Email") },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true
+                                )
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                OutlinedTextField(
+                                    value = password,
+                                    onValueChange = { password = it },
+                                    label = { Text("Password") },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true,
+                                    visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation()
+                                )
+                                
+                                if (isSignUp) {
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    OutlinedTextField(
+                                        value = name,
+                                        onValueChange = { name = it },
+                                        label = { Text("Display Name") },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        singleLine = true
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(24.dp))
+                                
                                 Button(
                                     onClick = { 
-                                        viewModel.signInWithGoogle()
+                                        if (isSignUp) {
+                                            viewModel.performEmailSignUp(email, password, name)
+                                        } else {
+                                            viewModel.performEmailLogin(email, password)
+                                        }
                                     },
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = Color(0xFFFFD700),
@@ -225,13 +267,16 @@ fun Page1Screen(
                                     ),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.KeyboardArrowRight,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(20.dp)
+                                    Text(if (isSignUp) "Sign Up" else "Login", fontSize = 16.sp)
+                                }
+                                
+                                Spacer(modifier = Modifier.height(16.dp))
+                                
+                                TextButton(onClick = { isSignUp = !isSignUp }) {
+                                    Text(
+                                        text = if (isSignUp) "Already have an account? Login" else "Don't have an account? Sign Up",
+                                        color = MaterialTheme.colorScheme.primary
                                     )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Sign in with Google", fontSize = 16.sp)
                                 }
                             }
                         }

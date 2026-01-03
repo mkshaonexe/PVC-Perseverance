@@ -64,17 +64,13 @@ dependencies {
     implementation("com.google.firebase:firebase-messaging")
     implementation("com.google.firebase:firebase-inappmessaging-display")
 
-    // Supabase
-    // Supabase
-    implementation("io.github.jan-tennert.supabase:auth-kt:3.0.0")
-    implementation("io.github.jan-tennert.supabase:postgrest-kt:3.0.0")
-    implementation("io.github.jan-tennert.supabase:storage-kt:3.0.0")
-    implementation("io.github.jan-tennert.supabase:realtime-kt:3.0.0")
-    implementation("io.ktor:ktor-client-android:3.0.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3") // Update serialization for Ktor 3?
+
+    // Supabase removed
     
-    // Google Sign-In
-    implementation("com.google.android.gms:play-services-auth:20.7.0")
+    // Ktor and Serialization maintained if needed for other things, but standardizing
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+    
+
     
     // Material icons (for pause/stop icons)
     implementation("androidx.compose.material:material-icons-extended")
