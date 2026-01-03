@@ -135,66 +135,9 @@ fun GroupScreen(
                             }
                         }
                     }
-                } else if (!uiState.isSignedIn) {
-                    // Not Authenticated - Show Sign In Card
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 16.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        ),
-                        shape = RoundedCornerShape(16.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(32.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Group,
-                                contentDescription = "Groups",
-                                modifier = Modifier.size(64.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = "Join Study Groups",
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "Sign in with Google to view and join study groups with other students.",
-                                fontSize = 14.sp,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                            )
-                            Spacer(modifier = Modifier.height(24.dp))
-                            Button(
-                                onClick = { 
-                                    socialViewModel.performGoogleLogin()
-                                },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary
-                                ),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Login,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Sign in with Google", fontSize = 16.sp)
-                            }
-                        }
-                    }
-                } else if (uiState.isLoadingGroups) {
-                    // Loading State - Show Skeleton
+                // Study Groups Section (Always visible if loaded)
+                if (uiState.isLoadingGroups) {
+                     // Loading State - Show Skeleton
                     Text(
                         text = "Study Groups",
                         fontSize = 18.sp,
@@ -203,13 +146,7 @@ fun GroupScreen(
                         modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
                     )
                     com.perseverance.pvc.ui.components.GroupsLoadingSkeleton()
-                } else {
-                    // Loaded - Show Groups
-                
-                Spacer(modifier = Modifier.height(32.dp))
-                
-                // Study Groups Section
-                if (uiState.groups.isNotEmpty()) {
+                } else if (uiState.groups.isNotEmpty()) {
                     Text(
                         text = "Study Groups",
                         fontSize = 18.sp,
@@ -226,8 +163,17 @@ fun GroupScreen(
                                 .fillMaxWidth()
                                 .padding(bottom = 12.dp)
                                 .clickable {
-                                    socialViewModel.selectGroup(group)
-                                    onNavigateToGroupDetails()
+                                    // Only allow click action if signed in, or maybe prompt login? 
+                                    // For now, let's allow click but maybe handle in VM or detail screen if auth needed.
+                                    // The user request implies seeing them is fine.
+                                    if (uiState.isSignedIn) {
+                                        socialViewModel.selectGroup(group)
+                                        onNavigateToGroupDetails()
+                                    } else {
+                                        // Maybe scroll to bottom or show toast?
+                                        // For now, let's just show a toast helper
+                                        android.widget.Toast.makeText(context, "Sign in to join groups", android.widget.Toast.LENGTH_SHORT).show()
+                                    }
                                 }
                         ) {
                             Row(
@@ -294,6 +240,119 @@ fun GroupScreen(
                     }
                     
                     Spacer(modifier = Modifier.height(24.dp))
+                } else if (!uiState.isLoadingGroups) {
+                     // Empty state if no groups found
+                     Text(
+                        text = "No groups found. Run the SQL script in Supabase!",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(16.dp)
+                     )
+                     Spacer(modifier = Modifier.height(24.dp))
+                }
+
+                // Authentication Card - Moved to Bottom
+                if (!uiState.isSignedIn) {
+                    // Not Authenticated - Show Sign In Card
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        ),
+                        shape = RoundedCornerShape(16.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(32.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            var email by remember { mutableStateOf("") }
+                            var password by remember { mutableStateOf("") }
+                            var name by remember { mutableStateOf("") }
+                            var isSignUp by remember { mutableStateOf(false) }
+
+                            Icon(
+                                imageVector = Icons.Filled.Group,
+                                contentDescription = "Groups",
+                                modifier = Modifier.size(64.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = if (isSignUp) "Create Account" else "Welcome Back",
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Sign in to view and join study groups.",
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            OutlinedTextField(
+                                value = email,
+                                onValueChange = { email = it },
+                                label = { Text("Email") },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            OutlinedTextField(
+                                value = password,
+                                onValueChange = { password = it },
+                                label = { Text("Password") },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                                visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation()
+                            )
+                            
+                            if (isSignUp) {
+                                Spacer(modifier = Modifier.height(12.dp))
+                                OutlinedTextField(
+                                    value = name,
+                                    onValueChange = { name = it },
+                                    label = { Text("Display Name") },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true
+                                )
+                            }
+                            
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            Button(
+                                onClick = { 
+                                     if (isSignUp) {
+                                        socialViewModel.performEmailSignUp(email, password, name)
+                                    } else {
+                                        socialViewModel.performEmailLogin(email, password)
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(if (isSignUp) "Sign Up" else "Login", fontSize = 16.sp)
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+                                
+                            TextButton(onClick = { isSignUp = !isSignUp }) {
+                                Text(
+                                    text = if (isSignUp) "Already have an account? Login" else "Don't have an account? Sign Up",
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
                 }
                 
                 // End of authentication/loading checks
