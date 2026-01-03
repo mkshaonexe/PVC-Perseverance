@@ -344,7 +344,7 @@ fun ProfileSkeletonView(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(
-                            text = "Login with Google",
+                            text = "Login",
                             style = MaterialTheme.typography.titleMedium
                         )
                     }
